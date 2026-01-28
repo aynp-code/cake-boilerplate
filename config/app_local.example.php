@@ -135,5 +135,21 @@ return [
             'prefix' => 'cake_model_',
             'duration' => '+1 days',
         ],
+        '_cake_core_' => [
+            'className' => \Cake\Cache\Engine\RedisEngine::class,
+            'server' => 'redis_host',
+            'port' => 6379,
+            'database' => 2,
+            'prefix' => 'cake_core_',
+            'duration' => '+1 days',
+        ],
+        '_cake_routes_' => [
+            'className' => \Cake\Cache\Engine\RedisEngine::class,
+            'server' => 'redis_host',
+            'port' => 6379,
+            'database' => 2,
+            'prefix' => 'cake_routes_',
+            'duration' => '+1 days',
+        ],
     ],
 ];
