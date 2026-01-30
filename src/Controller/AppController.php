@@ -45,6 +45,12 @@ class AppController extends Controller
         $this->loadComponent('Authentication.Authentication');
     }
 
+    /*
+    * ビュー描画前のフック処理です。
+    *
+    * 全てのアクションで CakeLte のデフォルトレイアウトを使用するため、
+    * レンダリング前にレイアウトを明示的に設定します。
+    */
     public function beforeRender(\Cake\Event\EventInterface $event)
     {
         parent::beforeRender($event);

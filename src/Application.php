@@ -87,6 +87,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             // See https://github.com/CakeDC/cakephp-cached-routing
             ->add(new RoutingMiddleware($this))
 
+            // リクエストに対して認証処理を行うためのミドルウェアを追加します。
             ->add(new AuthenticationMiddleware($this))
 
             // Parse various types of encoded request bodies so that they are
@@ -130,16 +131,22 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         return $eventManager;
     }
 
+    /*
+    * 認証サービスを構築するためのメソッドです。
+    *
+    * セッション認証とフォーム認証を組み合わせて使用し、
+    * 未認証ユーザはログイン画面へリダイレクトされます。
+    *
+    * ユーザの認証には Users テーブルを使用し、
+    * ユーザ名とパスワードによる認証を行います。
+    */
     public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
     {
         $service = new AuthenticationService();
-
         $service->setConfig([
             'unauthenticatedRedirect' => '/users/login',
             'queryParam' => 'redirect',
         ]);
-
-        // ここがポイント：Identifierは service に load せず、Authenticatorへ渡す
         $passwordIdentifier = [
             'Authentication.Password' => [
                 'fields' => [
@@ -152,9 +159,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
                 ],
             ],
         ];
-
         $service->loadAuthenticator('Authentication.Session');
-
         $service->loadAuthenticator('Authentication.Form', [
             'fields' => [
                 'username' => 'username',
