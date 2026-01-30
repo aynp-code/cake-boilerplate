@@ -28,6 +28,7 @@ use Cake\Http\MiddlewareQueue;
 use Cake\ORM\Locator\TableLocator;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
+use Cake\I18n\I18n;
 
 /**
  * Application setup class.
@@ -51,6 +52,10 @@ class Application extends BaseApplication
 
         // By default, does not allow fallback classes.
         FactoryLocator::add('Table', (new TableLocator())->allowFallbackClass(false));
+
+        // app_local.php の値を読む
+        $locale = Configure::read('App.defaultLocale', 'ja_JP');
+        I18n::setLocale($locale);
     }
 
     /**

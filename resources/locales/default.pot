@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2026-01-30 02:49+0000\n"
+"POT-Creation-Date: 2026-01-30 06:02+0000\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -14,175 +14,50 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: ./templates/Roles/add.php:10
-#: ./templates/Roles/edit.php:10
-#: ./templates/Roles/index.php:21
-#: ./templates/Roles/view.php:10
-#: ./templates/Roles/view.php:66
-#: ./templates/Users/index.php:45
-msgid "Actions"
+#: ./src/Controller/RolesController.php:50
+#: ./src/Controller/RolesController.php:72
+msgid "The role has been saved."
 msgstr ""
 
-#: ./templates/Roles/add.php:11
-#: ./templates/Roles/edit.php:16
-#: ./templates/Roles/view.php:13
-msgid "List Roles"
+#: ./src/Controller/RolesController.php:54
+#: ./src/Controller/RolesController.php:76
+msgid "The role could not be saved. Please, try again."
 msgstr ""
 
-#: ./templates/Roles/add.php:18
+#: ./src/Controller/RolesController.php:93
+msgid "The role has been deleted."
+msgstr ""
+
+#: ./src/Controller/RolesController.php:95
+msgid "The role could not be deleted. Please, try again."
+msgstr ""
+
+#: ./src/Controller/UsersController.php:51
+#: ./src/Controller/UsersController.php:74
+msgid "The user has been saved."
+msgstr ""
+
+#: ./src/Controller/UsersController.php:55
+#: ./src/Controller/UsersController.php:78
+msgid "The user could not be saved. Please, try again."
+msgstr ""
+
+#: ./src/Controller/UsersController.php:96
+msgid "The user has been deleted."
+msgstr ""
+
+#: ./src/Controller/UsersController.php:98
+msgid "The user could not be deleted. Please, try again."
+msgstr ""
+
+#: ./templates/Roles/add.php:9
 msgid "Add Role"
 msgstr ""
 
-#: ./templates/Roles/add.php:26
-#: ./templates/Roles/edit.php:31
-msgid "Submit"
-msgstr ""
-
-#: ./templates/Roles/edit.php:12
-#: ./templates/Roles/index.php:38
-#: ./templates/Roles/view.php:84
-#: ./templates/Users/edit.php:33
-#: ./templates/Users/index.php:64
-#: ./templates/Users/view.php:68
-msgid "Delete"
-msgstr ""
-
-#: ./templates/Roles/edit.php:14
-#: ./templates/Roles/index.php:42
-#: ./templates/Roles/view.php:12
-#: ./templates/Roles/view.php:88
-#: ./templates/Users/edit.php:35
-#: ./templates/Users/index.php:64
-#: ./templates/Users/view.php:70
-msgid "Are you sure you want to delete # {0}?"
-msgstr ""
-
-#: ./templates/Roles/edit.php:23
+#: ./templates/Roles/add.php:11
+#: ./templates/Roles/edit.php:11
+#: ./templates/Roles/index.php:11
 #: ./templates/Roles/view.php:11
-msgid "Edit Role"
-msgstr ""
-
-#: ./templates/Roles/index.php:8
-#: ./templates/Roles/view.php:14
-msgid "New Role"
-msgstr ""
-
-#: ./templates/Roles/index.php:9
-msgid "Roles"
-msgstr ""
-
-#: ./templates/Roles/index.php:35
-#: ./templates/Roles/view.php:81
-#: ./templates/Users/edit.php:13
-#: ./templates/Users/index.php:62
-#: ./templates/Users/view.php:13
-#: ./vendor/cakephp/cakephp/src/View/Helper/PaginatorHelper.php:1225
-msgid "View"
-msgstr ""
-
-#: ./templates/Roles/index.php:36
-#: ./templates/Roles/view.php:82
-#: ./templates/Users/edit.php:14
-#: ./templates/Users/index.php:63
-#: ./templates/Users/view.php:74
-msgid "Edit"
-msgstr ""
-
-#: ./templates/Roles/index.php:53
-msgid "first"
-msgstr ""
-
-#: ./templates/Roles/index.php:54
-msgid "previous"
-msgstr ""
-
-#: ./templates/Roles/index.php:56
-msgid "next"
-msgstr ""
-
-#: ./templates/Roles/index.php:57
-msgid "last"
-msgstr ""
-
-#: ./templates/Roles/index.php:59
-#: ./templates/Users/index.php:74
-msgid "Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total"
-msgstr ""
-
-#: ./templates/Roles/view.php:12
-msgid "Delete Role"
-msgstr ""
-
-#: ./templates/Roles/view.php:22
-#: ./templates/Roles/view.php:56
-#: ./templates/Users/view.php:24
-msgid "Id"
-msgstr ""
-
-#: ./templates/Roles/view.php:26
-msgid "Name"
-msgstr ""
-
-#: ./templates/Roles/view.php:30
-msgid "Description"
-msgstr ""
-
-#: ./templates/Roles/view.php:34
-#: ./templates/Roles/view.php:63
-#: ./templates/Users/view.php:44
-msgid "Created By"
-msgstr ""
-
-#: ./templates/Roles/view.php:38
-#: ./templates/Roles/view.php:65
-#: ./templates/Users/view.php:48
-msgid "Modified By"
-msgstr ""
-
-#: ./templates/Roles/view.php:42
-#: ./templates/Roles/view.php:62
-#: ./templates/Users/view.php:52
-msgid "Created"
-msgstr ""
-
-#: ./templates/Roles/view.php:46
-#: ./templates/Roles/view.php:64
-#: ./templates/Users/view.php:56
-msgid "Modified"
-msgstr ""
-
-#: ./templates/Roles/view.php:51
-msgid "Related Users"
-msgstr ""
-
-#: ./templates/Roles/view.php:57
-#: ./templates/Users/view.php:28
-msgid "Username"
-msgstr ""
-
-#: ./templates/Roles/view.php:58
-msgid "Password"
-msgstr ""
-
-#: ./templates/Roles/view.php:59
-#: ./templates/Users/view.php:32
-msgid "Display Name"
-msgstr ""
-
-#: ./templates/Roles/view.php:60
-#: ./templates/Users/view.php:36
-msgid "Email"
-msgstr ""
-
-#: ./templates/Roles/view.php:61
-#: ./templates/Users/view.php:60
-msgid "Is Active"
-msgstr ""
-
-#: ./templates/Users/add.php:9
-msgid "Add User"
-msgstr ""
-
 #: ./templates/Users/add.php:11
 #: ./templates/Users/edit.php:11
 #: ./templates/Users/index.php:11
@@ -191,6 +66,147 @@ msgstr ""
 msgid "Home"
 msgstr ""
 
+#: ./templates/Roles/add.php:12
+#: ./templates/Roles/edit.php:12
+#: ./templates/Roles/index.php:12
+#: ./templates/Roles/view.php:12
+msgid "List Roles"
+msgstr ""
+
+#: ./templates/Roles/add.php:13
+#: ./templates/Users/add.php:13
+msgid "Add"
+msgstr ""
+
+#: ./templates/Roles/add.php:25
+#: ./templates/Roles/edit.php:33
+#: ./templates/Users/add.php:29
+#: ./templates/Users/edit.php:37
+msgid "Save"
+msgstr ""
+
+#: ./templates/Roles/add.php:26
+#: ./templates/Roles/edit.php:34
+#: ./templates/Roles/view.php:66
+#: ./templates/Users/add.php:30
+#: ./templates/Users/edit.php:38
+#: ./templates/Users/view.php:78
+msgid "Cancel"
+msgstr ""
+
+#: ./templates/Roles/edit.php:9
+msgid "Edit Role"
+msgstr ""
+
+#: ./templates/Roles/edit.php:13
+#: ./templates/Roles/index.php:59
+#: ./templates/Roles/view.php:13
+#: ./templates/Roles/view.php:116
+#: ./templates/Users/edit.php:13
+#: ./templates/Users/index.php:62
+#: ./templates/Users/view.php:13
+#: ./vendor/cakephp/cakephp/src/View/Helper/PaginatorHelper.php:1225
+msgid "View"
+msgstr ""
+
+#: ./templates/Roles/edit.php:14
+#: ./templates/Roles/index.php:70
+#: ./templates/Roles/view.php:65
+#: ./templates/Roles/view.php:127
+#: ./templates/Users/edit.php:14
+#: ./templates/Users/index.php:73
+#: ./templates/Users/view.php:77
+msgid "Edit"
+msgstr ""
+
+#: ./templates/Roles/edit.php:27
+#: ./templates/Roles/index.php:82
+#: ./templates/Roles/view.php:59
+#: ./templates/Roles/view.php:138
+#: ./templates/Users/edit.php:31
+#: ./templates/Users/index.php:85
+#: ./templates/Users/view.php:71
+msgid "Delete"
+msgstr ""
+
+#: ./templates/Roles/edit.php:29
+#: ./templates/Roles/index.php:81
+#: ./templates/Roles/view.php:61
+#: ./templates/Roles/view.php:140
+#: ./templates/Users/edit.php:33
+#: ./templates/Users/index.php:84
+#: ./templates/Users/view.php:73
+msgid "Are you sure you want to delete # {0}?"
+msgstr ""
+
+#: ./templates/Roles/index.php:9
+msgid "Roles"
+msgstr ""
+
+#: ./templates/Roles/index.php:30
+msgid "New Role"
+msgstr ""
+
+#: ./templates/Roles/index.php:38
+#: ./templates/Roles/view.php:86
+#: ./templates/Users/index.php:38
+msgid "Actions"
+msgstr ""
+
+#: ./templates/Roles/index.php:102
+#: ./templates/Users/index.php:108
+msgid "Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total"
+msgstr ""
+
+#: ./templates/Roles/view.php:9
+#: ./templates/Users/view.php:38
+msgid "Role"
+msgstr ""
+
+#: ./templates/Roles/view.php:26
+#: ./templates/Roles/view.php:90
+#: ./templates/Users/view.php:30
+msgid "Name"
+msgstr ""
+
+#: ./templates/Roles/view.php:30
+msgid "Description"
+msgstr ""
+
+#: ./templates/Roles/view.php:34
+#: ./templates/Roles/view.php:94
+#: ./templates/Users/view.php:42
+msgid "Created By"
+msgstr ""
+
+#: ./templates/Roles/view.php:38
+#: ./templates/Roles/view.php:96
+#: ./templates/Users/view.php:46
+msgid "Modified By"
+msgstr ""
+
+#: ./templates/Roles/view.php:45
+#: ./templates/Roles/view.php:93
+#: ./templates/Users/view.php:53
+msgid "Created"
+msgstr ""
+
+#: ./templates/Roles/view.php:49
+#: ./templates/Roles/view.php:95
+#: ./templates/Users/view.php:57
+msgid "Modified"
+msgstr ""
+
+#: ./templates/Roles/view.php:76
+msgid "Related Users"
+msgstr ""
+
+#: ./templates/Roles/view.php:78
+#: ./templates/Users/index.php:30
+msgid "New User"
+msgstr ""
+
+#: ./templates/Roles/view.php:79
 #: ./templates/Users/add.php:12
 #: ./templates/Users/edit.php:12
 #: ./templates/Users/index.php:12
@@ -198,19 +214,31 @@ msgstr ""
 msgid "List Users"
 msgstr ""
 
-#: ./templates/Users/add.php:13
-msgid "Add"
+#: ./templates/Roles/view.php:88
+#: ./templates/Users/view.php:26
+msgid "Username"
 msgstr ""
 
-#: ./templates/Users/add.php:31
-#: ./templates/Users/edit.php:39
-msgid "Save"
+#: ./templates/Roles/view.php:89
+msgid "Password"
 msgstr ""
 
-#: ./templates/Users/add.php:32
-#: ./templates/Users/edit.php:40
-#: ./templates/Users/view.php:75
-msgid "Cancel"
+#: ./templates/Roles/view.php:91
+#: ./templates/Users/view.php:34
+msgid "Email"
+msgstr ""
+
+#: ./templates/Roles/view.php:92
+#: ./templates/Users/view.php:62
+msgid "Is Active"
+msgstr ""
+
+#: ./templates/Roles/view.php:102
+msgid "Users record not found!"
+msgstr ""
+
+#: ./templates/Users/add.php:9
+msgid "Add User"
 msgstr ""
 
 #: ./templates/Users/edit.php:9
@@ -221,26 +249,18 @@ msgstr ""
 msgid "Users"
 msgstr ""
 
-#: ./templates/Users/index.php:27
-msgid "New User"
-msgstr ""
-
-#: ./templates/Users/index.php:56
-#: ./templates/Users/view.php:61
+#: ./templates/Users/index.php:95
+#: ./templates/Users/view.php:63
 msgid "Yes"
 msgstr ""
 
-#: ./templates/Users/index.php:56
-#: ./templates/Users/view.php:61
+#: ./templates/Users/index.php:95
+#: ./templates/Users/view.php:63
 msgid "No"
 msgstr ""
 
 #: ./templates/Users/view.php:9
 msgid "User"
-msgstr ""
-
-#: ./templates/Users/view.php:40
-msgid "Role"
 msgstr ""
 
 #: ./templates/layout/error.php:36

@@ -18,6 +18,17 @@ return [
     'debug' => True,
 
     /*
+    * アプリケーション共通設定
+    *
+    * - defaultLocale
+    *   アプリケーション全体で使用するデフォルトのロケールを指定します。
+    *   日付・時刻・数値・言語表記などの地域設定に影響します。
+    */
+    'App' => [
+        'defaultLocale' => 'ja_JP',
+    ],
+    
+    /*
     * DebugKit 設定
     *
     * - ignoreAuthorization
