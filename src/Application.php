@@ -30,6 +30,11 @@ use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
 use Cake\I18n\I18n;
 
+use Authentication\AuthenticationServiceProviderInterface;
+use Authentication\AuthenticationServiceInterface;
+use Authentication\AuthenticationService;
+use Authentication\Middleware\AuthenticationMiddleware;
+use Psr\Http\Message\ServerRequestInterface;
 /**
  * Application setup class.
  *
@@ -38,7 +43,7 @@ use Cake\I18n\I18n;
  *
  * @extends \Cake\Http\BaseApplication<\App\Application>
  */
-class Application extends BaseApplication
+class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {
     /**
      * Load all the application configuration and bootstrap logic.
@@ -82,6 +87,8 @@ class Application extends BaseApplication
             // See https://github.com/CakeDC/cakephp-cached-routing
             ->add(new RoutingMiddleware($this))
 
+            ->add(new AuthenticationMiddleware($this))
+
             // Parse various types of encoded request bodies so that they are
             // available as array through $request->getData()
             // https://book.cakephp.org/5/en/controllers/middleware.html#body-parser-middleware
@@ -121,5 +128,42 @@ class Application extends BaseApplication
         // $eventManager->on(new SomeCustomListenerClass());
 
         return $eventManager;
+    }
+
+    public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
+    {
+        $service = new AuthenticationService();
+
+        $service->setConfig([
+            'unauthenticatedRedirect' => '/users/login',
+            'queryParam' => 'redirect',
+        ]);
+
+        // ここがポイント：Identifierは service に load せず、Authenticatorへ渡す
+        $passwordIdentifier = [
+            'Authentication.Password' => [
+                'fields' => [
+                    'username' => 'username',
+                    'password' => 'password',
+                ],
+                'resolver' => [
+                    'className' => 'Authentication.Orm',
+                    'userModel' => 'Users',
+                ],
+            ],
+        ];
+
+        $service->loadAuthenticator('Authentication.Session');
+
+        $service->loadAuthenticator('Authentication.Form', [
+            'fields' => [
+                'username' => 'username',
+                'password' => 'password',
+            ],
+            'loginUrl' => '/users/login',
+            'identifier' => $passwordIdentifier,
+        ]);
+
+        return $service;
     }
 }

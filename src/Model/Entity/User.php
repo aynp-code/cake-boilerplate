@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Model\Entity;
 
 use Cake\ORM\Entity;
+use Authentication\PasswordHasher\DefaultPasswordHasher;
 
 /**
  * User Entity
@@ -34,17 +35,8 @@ class User extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        'username' => true,
-        'password' => true,
-        'name' => true,
-        'email' => true,
-        'role_id' => true,
-        'is_active' => true,
-        'created' => true,
-        'created_by' => true,
-        'modified' => true,
-        'modified_by' => true,
-        'role' => true,
+        '*' => true,
+        'id' => false,
     ];
 
     /**
@@ -55,4 +47,12 @@ class User extends Entity
     protected array $_hidden = [
         'password',
     ];
+
+    protected function _setPassword($password)
+    {
+        if ($password === null || $password === '') {
+            return $password;
+        }
+        return (new DefaultPasswordHasher())->hash($password);
+    }
 }

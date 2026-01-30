@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Event\EventInterface;
+
 /**
  * Users Controller
  *
@@ -10,6 +12,13 @@ namespace App\Controller;
  */
 class UsersController extends AppController
 {
+
+    public function beforeFilter(EventInterface $event)
+    {
+        parent::beforeFilter($event);
+        $this->Authentication->allowUnauthenticated(['login', 'logout']);
+    }
+
     /**
      * Index method
      *
@@ -99,5 +108,31 @@ class UsersController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    public function login()
+    {
+        $this->request->allowMethod(['get', 'post']);
+        $result = $this->Authentication->getResult();
+        // POSTで認証成功したらリダイレクト
+        if ($this->request->is('post') && $result && $result->isValid()) {
+            $target = $this->Authentication->getLoginRedirect() ?? [
+                'controller' => 'Pages',
+                'action' => 'display',
+                'home',
+            ];
+            return $this->redirect($target);
+        }
+        // 失敗時
+        if ($this->request->is('post') && (!$result || !$result->isValid())) {
+            $this->Flash->error(__('Invalid username or password'));
+        }
+    }
+
+    public function logout()
+    {
+        $this->request->allowMethod(['post', 'get']);
+        $this->Authentication->logout();
+        return $this->redirect(['action' => 'login']);
     }
 }
