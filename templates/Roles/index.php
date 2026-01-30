@@ -1,15 +1,15 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var \App\Model\Entity\User[]|\Cake\Collection\CollectionInterface $users
+ * @var \App\Model\Entity\Role[]|\Cake\Collection\CollectionInterface $roles
  */
 ?>
 
 <?php
-$this->assign('title', __('Users'));
+$this->assign('title', __('Roles'));
 $this->Breadcrumbs->add([
     ['title' => __('Home'), 'url' => '/'],
-    ['title' => __('List Users')],
+    ['title' => __('List Roles')],
 ]);
 ?>
 
@@ -27,7 +27,7 @@ $this->Breadcrumbs->add([
                 'class' => 'form-control form-control-sm',
                 'templates' => ['inputContainer' => '{{content}}']
             ]); ?>
-            <?= $this->Html->link(__('New User'), ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
+            <?= $this->Html->link(__('New Role'), ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
         </div>
     </div>
 
@@ -37,11 +37,8 @@ $this->Breadcrumbs->add([
                 <tr>
                                         <th class="actions"><?= __('Actions') ?></th>
 
-                    <th><?= $this->Paginator->sort('username') ?></th>
                     <th><?= $this->Paginator->sort('name') ?></th>
-                    <th><?= $this->Paginator->sort('email') ?></th>
-                    <th><?= $this->Paginator->sort('role_id') ?></th>
-                    <th><?= $this->Paginator->sort('is_active') ?></th>
+                    <th><?= $this->Paginator->sort('description') ?></th>
                     <th><?= $this->Paginator->sort('created') ?></th>
                     <th><?= $this->Paginator->sort('created_by') ?></th>
                     <th><?= $this->Paginator->sort('modified') ?></th>
@@ -50,12 +47,12 @@ $this->Breadcrumbs->add([
             </thead>
 
             <tbody>
-                <?php foreach ($users as $user) : ?>
+                <?php foreach ($roles as $role) : ?>
                     <tr>
                                                 <td class="actions text-nowrap">
                             <?= $this->Html->link(
                                 '<i class="fas fa-eye"></i>',
-                                ['action' => 'view', $user->id],
+                                ['action' => 'view', $role->id],
                                 [
                                     'class' => 'btn btn-xs btn-outline-info',
                                     'escape' => false,
@@ -66,7 +63,7 @@ $this->Breadcrumbs->add([
 
                             <?= $this->Html->link(
                                 '<i class="fas fa-edit"></i>',
-                                ['action' => 'edit', $user->id],
+                                ['action' => 'edit', $role->id],
                                 [
                                     'class' => 'btn btn-xs btn-outline-primary ml-1',
                                     'escape' => false,
@@ -77,26 +74,23 @@ $this->Breadcrumbs->add([
 
                             <?= $this->Form->postLink(
                                 '<i class="fas fa-trash"></i>',
-                                ['action' => 'delete', $user->id],
+                                ['action' => 'delete', $role->id],
                                 [
                                     'class' => 'btn btn-xs btn-outline-danger ml-1',
                                     'escape' => false,
-                                    'confirm' => __('Are you sure you want to delete # {0}?', $user->id),
+                                    'confirm' => __('Are you sure you want to delete # {0}?', $role->id),
                                     'title' => __('Delete'),
                                     'data-toggle' => 'tooltip',
                                 ]
                             ) ?>
                         </td>
 
-                        <td><?= h($user->username) ?></td>
-                        <td><?= h($user->name) ?></td>
-                        <td><?= h($user->email) ?></td>
-                        <td><?= $user->has('role') ? $this->Html->link($user->role->name, ['controller' => 'Roles', 'action' => 'view', $user->role->id]) : '' ?></td>
-                        <td><?= ($user->is_active) ? __('Yes') : __('No') ?></td>
-                        <td><?= h($user->created) ?></td>
-                        <td><?= h($user->created_by) ?></td>
-                        <td><?= h($user->modified) ?></td>
-                        <td><?= h($user->modified_by) ?></td>
+                        <td><?= h($role->name) ?></td>
+                        <td><?= h($role->description) ?></td>
+                        <td><?= h($role->created) ?></td>
+                        <td><?= h($role->created_by) ?></td>
+                        <td><?= h($role->modified) ?></td>
+                        <td><?= h($role->modified_by) ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

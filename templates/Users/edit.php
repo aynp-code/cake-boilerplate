@@ -18,9 +18,12 @@ $this->Breadcrumbs->add([
 <div class="card card-primary card-outline">
     <?= $this->Form->create($user) ?>
     <div class="card-body">
+        <?= $this->Form->control('username') ?>
+        <?= $this->Form->control('password') ?>
         <?= $this->Form->control('name') ?>
         <?= $this->Form->control('email') ?>
-        <?= $this->Form->control('password') ?>
+        <?= $this->Form->control('role_id', ['options' => $roles, 'class' => 'form-control']) ?>
+        <?= $this->Form->control('is_active', ['custom' => true]) ?>
     </div>
     <div class="card-footer d-flex">
         <div class="mr-auto">

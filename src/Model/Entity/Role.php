@@ -6,23 +6,19 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * User Entity
+ * Role Entity
  *
  * @property string $id
- * @property string $username
- * @property string $password
  * @property string $name
- * @property string $email
- * @property string $role_id
- * @property bool $is_active
+ * @property string|null $description
  * @property \Cake\I18n\DateTime|null $created
  * @property string|null $created_by
  * @property \Cake\I18n\DateTime|null $modified
  * @property string|null $modified_by
  *
- * @property \App\Model\Entity\Role $role
+ * @property \App\Model\Entity\User[] $users
  */
-class User extends Entity
+class Role extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -34,25 +30,12 @@ class User extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        'username' => true,
-        'password' => true,
         'name' => true,
-        'email' => true,
-        'role_id' => true,
-        'is_active' => true,
+        'description' => true,
         'created' => true,
         'created_by' => true,
         'modified' => true,
         'modified_by' => true,
-        'role' => true,
-    ];
-
-    /**
-     * Fields that are excluded from JSON versions of the entity.
-     *
-     * @var array<string>
-     */
-    protected array $_hidden = [
-        'password',
+        'users' => true,
     ];
 }

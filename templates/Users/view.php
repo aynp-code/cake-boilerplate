@@ -14,12 +14,18 @@ $this->Breadcrumbs->add([
 ]);
 ?>
 
+
+                                                                                                
 <div class="view card card-primary card-outline">
     <div class="card-header d-sm-flex">
-        <h2 class="card-title"><?= h($user->name) ?></h2>
+        <h2 class="card-title"><?= h($user->username) ?></h2>
     </div>
     <div class="card-body table-responsive p-0">
         <table class="table table-hover text-nowrap">
+            <tr>
+                <th><?= __('Username') ?></th>
+                <td><?= h($user->username) ?></td>
+            </tr>
             <tr>
                 <th><?= __('Name') ?></th>
                 <td><?= h($user->name) ?></td>
@@ -29,9 +35,20 @@ $this->Breadcrumbs->add([
                 <td><?= h($user->email) ?></td>
             </tr>
             <tr>
-                <th><?= __('Id') ?></th>
-                <td><?= $this->Number->format($user->id) ?></td>
+                <th><?= __('Role') ?></th>
+                <td><?= $user->has('role') ? $this->Html->link($user->role->name, ['controller' => 'Roles', 'action' => 'view', $user->role->id]) : '' ?></td>
             </tr>
+            <tr>
+                <th><?= __('Created By') ?></th>
+                <td><?= h($user->created_by) ?></td>
+            </tr>
+            <tr>
+                <th><?= __('Modified By') ?></th>
+                <td><?= h($user->modified_by) ?></td>
+            </tr>
+
+
+
             <tr>
                 <th><?= __('Created') ?></th>
                 <td><?= h($user->created) ?></td>
@@ -40,8 +57,14 @@ $this->Breadcrumbs->add([
                 <th><?= __('Modified') ?></th>
                 <td><?= h($user->modified) ?></td>
             </tr>
+
+            <tr>
+                <th><?= __('Is Active') ?></th>
+                <td><?= $user->is_active ? __('Yes') : __('No'); ?></td>
+            </tr>
         </table>
     </div>
+
     <div class="card-footer d-flex">
         <div class="mr-auto">
             <?= $this->Form->postLink(
@@ -56,3 +79,5 @@ $this->Breadcrumbs->add([
         </div>
     </div>
 </div>
+
+

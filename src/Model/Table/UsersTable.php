@@ -11,6 +11,8 @@ use Cake\Validation\Validator;
 /**
  * Users Model
  *
+ * @property \App\Model\Table\RolesTable&\Cake\ORM\Association\BelongsTo $Roles
+ *
  * @method \App\Model\Entity\User newEmptyEntity()
  * @method \App\Model\Entity\User newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\User> newEntities(array $data, array $options = [])
@@ -44,6 +46,11 @@ class UsersTable extends Table
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
+
+        $this->belongsTo('Roles', [
+            'foreignKey' => 'role_id',
+            'joinType' => 'INNER',
+        ]);
     }
 
     /**
@@ -55,6 +62,19 @@ class UsersTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->scalar('username')
+            ->maxLength('username', 255)
+            ->requirePresence('username', 'create')
+            ->notEmptyString('username')
+            ->add('username', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
+
+        $validator
+            ->scalar('password')
+            ->maxLength('password', 255)
+            ->requirePresence('password', 'create')
+            ->notEmptyString('password');
+
+        $validator
             ->scalar('name')
             ->maxLength('name', 255)
             ->requirePresence('name', 'create')
@@ -63,13 +83,24 @@ class UsersTable extends Table
         $validator
             ->email('email')
             ->requirePresence('email', 'create')
-            ->notEmptyString('email');
+            ->notEmptyString('email')
+            ->add('email', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
 
         $validator
-            ->scalar('password')
-            ->maxLength('password', 255)
-            ->requirePresence('password', 'create')
-            ->notEmptyString('password');
+            ->uuid('role_id')
+            ->notEmptyString('role_id');
+
+        $validator
+            ->boolean('is_active')
+            ->notEmptyString('is_active');
+
+        $validator
+            ->uuid('created_by')
+            ->allowEmptyString('created_by');
+
+        $validator
+            ->uuid('modified_by')
+            ->allowEmptyString('modified_by');
 
         return $validator;
     }
@@ -83,7 +114,9 @@ class UsersTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
+        $rules->add($rules->isUnique(['username']), ['errorField' => 'username']);
         $rules->add($rules->isUnique(['email']), ['errorField' => 'email']);
+        $rules->add($rules->existsIn(['role_id'], 'Roles'), ['errorField' => 'role_id']);
 
         return $rules;
     }

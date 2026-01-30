@@ -1,19 +1,23 @@
 <?php
 /**
- * @var \App\View\AppView $this
- * @var \App\Model\Entity\User[]|\Cake\Collection\CollectionInterface $users
+ * @var \{{ namespace }}\View\AppView $this
+ * @var \{{ entityClass }}[]|\Cake\Collection\CollectionInterface ${{ pluralVar }}
  */
 ?>
 
 <?php
-$this->assign('title', __('Users'));
+$this->assign('title', __('{{ pluralHumanName }}'));
 $this->Breadcrumbs->add([
     ['title' => __('Home'), 'url' => '/'],
-    ['title' => __('List Users')],
+    ['title' => __('List {{ pluralHumanName }}')],
 ]);
 ?>
 
+{# ① まず通常通りフィールド抽出 #}
+{%- set fields = Bake.filterFields(fields, schema, modelObject, indexColumns, ['binary', 'text']) %}
 
+{# ② primaryKey（＝ID）を一覧表示から除外 #}
+{%- set fields = fields|filter(f => f not in primaryKey) %}
 
 
 <div class="card card-primary card-outline">
@@ -25,9 +29,9 @@ $this->Breadcrumbs->add([
             <?= $this->Paginator->limitControl([], null, [
                 'label' => false,
                 'class' => 'form-control form-control-sm',
-                'templates' => ['inputContainer' => '{{content}}']
+                'templates' => ['inputContainer' => '{{'{{content}}'}}']
             ]); ?>
-            <?= $this->Html->link(__('New User'), ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
+            <?= $this->Html->link(__('New {{ singularHumanName }}'), ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
         </div>
     </div>
 
@@ -35,27 +39,24 @@ $this->Breadcrumbs->add([
         <table class="table table-hover text-nowrap">
             <thead>
                 <tr>
-                                        <th class="actions"><?= __('Actions') ?></th>
+                    {# ③ Actions を一番左へ #}
+                    <th class="actions"><?= __('Actions') ?></th>
 
-                    <th><?= $this->Paginator->sort('username') ?></th>
-                    <th><?= $this->Paginator->sort('name') ?></th>
-                    <th><?= $this->Paginator->sort('email') ?></th>
-                    <th><?= $this->Paginator->sort('role_id') ?></th>
-                    <th><?= $this->Paginator->sort('is_active') ?></th>
-                    <th><?= $this->Paginator->sort('created') ?></th>
-                    <th><?= $this->Paginator->sort('created_by') ?></th>
-                    <th><?= $this->Paginator->sort('modified') ?></th>
-                    <th><?= $this->Paginator->sort('modified_by') ?></th>
+{% for field in fields %}
+                    <th><?= $this->Paginator->sort('{{ field }}') ?></th>
+{% endfor %}
                 </tr>
             </thead>
 
             <tbody>
-                <?php foreach ($users as $user) : ?>
+                <?php foreach (${{ pluralVar }} as ${{ singularVar }}) : ?>
                     <tr>
-                                                <td class="actions text-nowrap">
+                        {# ④ Actions を一番左へ（行側も） #}
+{% set pk = '$' ~ singularVar ~ '->' ~ primaryKey[0] %}
+                        <td class="actions text-nowrap">
                             <?= $this->Html->link(
                                 '<i class="fas fa-eye"></i>',
-                                ['action' => 'view', $user->id],
+                                ['action' => 'view', {{ pk|raw }}],
                                 [
                                     'class' => 'btn btn-xs btn-outline-info',
                                     'escape' => false,
@@ -66,7 +67,7 @@ $this->Breadcrumbs->add([
 
                             <?= $this->Html->link(
                                 '<i class="fas fa-edit"></i>',
-                                ['action' => 'edit', $user->id],
+                                ['action' => 'edit', {{ pk|raw }}],
                                 [
                                     'class' => 'btn btn-xs btn-outline-primary ml-1',
                                     'escape' => false,
@@ -77,26 +78,38 @@ $this->Breadcrumbs->add([
 
                             <?= $this->Form->postLink(
                                 '<i class="fas fa-trash"></i>',
-                                ['action' => 'delete', $user->id],
+                                ['action' => 'delete', {{ pk|raw }}],
                                 [
                                     'class' => 'btn btn-xs btn-outline-danger ml-1',
                                     'escape' => false,
-                                    'confirm' => __('Are you sure you want to delete # {0}?', $user->id),
+                                    'confirm' => __('Are you sure you want to delete # {0}?', {{ pk|raw }}),
                                     'title' => __('Delete'),
                                     'data-toggle' => 'tooltip',
                                 ]
                             ) ?>
                         </td>
 
-                        <td><?= h($user->username) ?></td>
-                        <td><?= h($user->name) ?></td>
-                        <td><?= h($user->email) ?></td>
-                        <td><?= $user->has('role') ? $this->Html->link($user->role->name, ['controller' => 'Roles', 'action' => 'view', $user->role->id]) : '' ?></td>
-                        <td><?= ($user->is_active) ? __('Yes') : __('No') ?></td>
-                        <td><?= h($user->created) ?></td>
-                        <td><?= h($user->created_by) ?></td>
-                        <td><?= h($user->modified) ?></td>
-                        <td><?= h($user->modified_by) ?></td>
+{% for field in fields %}
+{% set isKey = false %}
+{% if associations.BelongsTo %}
+{% for alias, details in associations.BelongsTo %}
+{% if field == details.foreignKey %}
+{% set isKey = true %}
+                        <td><?= ${{ singularVar }}->has('{{ details.property }}') ? $this->Html->link(${{ singularVar }}->{{ details.property }}->{{ details.displayField }}, ['controller' => '{{ details.controller }}', 'action' => 'view', ${{ singularVar }}->{{ details.property }}->{{ details.primaryKey[0] }}]) : '' ?></td>
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if isKey is not same as(true) %}
+{% set columnData = Bake.columnData(field, schema) %}
+{% if columnData.type in ['integer', 'float', 'decimal', 'biginteger', 'smallinteger', 'tinyinteger'] %}
+                        <td><?= $this->Number->format(${{ singularVar }}->{{ field }}) ?></td>
+{% elseif columnData.type in ['boolean'] %}
+                        <td><?= (${{ singularVar }}->{{ field }}) ? __('Yes') : __('No') ?></td>
+{% else %}
+                        <td><?= h(${{ singularVar }}->{{ field }}) ?></td>
+{% endif %}
+{% endif %}
+{% endfor %}
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -105,7 +118,7 @@ $this->Breadcrumbs->add([
 
     <div class="card-footer d-flex flex-column flex-md-row">
         <div class="text-muted">
-            <?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?>
+            <?= $this->Paginator->counter(__('Page {{ '{{' }}page{{ '}}' }} of {{ '{{' }}pages{{ '}}' }}, showing {{ '{{' }}current{{ '}}' }} record(s) out of {{ '{{' }}count{{ '}}' }} total')) ?>
         </div>
         <ul class="pagination pagination-sm mb-0 ml-auto">
             <?= $this->Paginator->first('<i class="fas fa-angle-double-left"></i>', ['escape' => false]) ?>
