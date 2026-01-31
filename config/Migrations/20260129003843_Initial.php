@@ -15,6 +15,25 @@ class Initial extends BaseMigration
      */
     public function change(): void
     {
+        $table = $this->table('roles', [
+            'id' => false,
+            'primary_key' => ['id'],
+        ]);
+        $table
+            ->addColumn('id', 'uuid')
+            ->addColumn('name', 'string', ['limit' => 255, 'null' => false])
+            ->addColumn('description', 'string', ['limit' => 512, 'null' => true])       
+
+            // 監査用（作成・更新）
+            ->addColumn('created', 'datetime', ['null' => true, 'default' => null])
+            ->addColumn('created_by', 'uuid', ['null' => true, 'default' => null])
+            ->addColumn('modified', 'datetime', ['null' => true, 'default' => null])
+            ->addColumn('modified_by', 'uuid', ['null' => true, 'default' => null])
+
+            // ユニーク制約
+            ->addIndex(['name'], ['unique' => true, 'name' => 'UQ_ROLES_NAME'])
+            ->create();
+
         $table = $this->table('users', [
             'id' => false,
             'primary_key' => ['id'],
@@ -48,25 +67,6 @@ class Initial extends BaseMigration
                 'update' => 'CASCADE',
                 'delete' => 'RESTRICT',
             ])
-            ->create();
-
-        $table = $this->table('roles', [
-            'id' => false,
-            'primary_key' => ['id'],
-        ]);
-        $table
-            ->addColumn('id', 'uuid')
-            ->addColumn('name', 'string', ['limit' => 255, 'null' => false])
-            ->addColumn('description', 'string', ['limit' => 512, 'null' => true])       
-
-            // 監査用（作成・更新）
-            ->addColumn('created', 'datetime', ['null' => true, 'default' => null])
-            ->addColumn('created_by', 'uuid', ['null' => true, 'default' => null])
-            ->addColumn('modified', 'datetime', ['null' => true, 'default' => null])
-            ->addColumn('modified_by', 'uuid', ['null' => true, 'default' => null])
-
-            // ユニーク制約
-            ->addIndex(['name'], ['unique' => true, 'name' => 'UQ_ROLES_NAME'])
             ->create();
     }
 }
