@@ -35,6 +35,8 @@ use Authentication\AuthenticationServiceInterface;
 use Authentication\AuthenticationService;
 use Authentication\Middleware\AuthenticationMiddleware;
 use Psr\Http\Message\ServerRequestInterface;
+use App\Middleware\CurrentUserMiddleware;
+
 /**
  * Application setup class.
  *
@@ -89,6 +91,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
             // リクエストに対して認証処理を行うためのミドルウェアを追加します。
             ->add(new AuthenticationMiddleware($this))
+            ->add(new CurrentUserMiddleware())
 
             // Parse various types of encoded request bodies so that they are
             // available as array through $request->getData()

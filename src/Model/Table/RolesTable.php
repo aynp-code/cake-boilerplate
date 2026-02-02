@@ -29,7 +29,7 @@ use Cake\Validation\Validator;
  *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
-class RolesTable extends Table
+class RolesTable extends AppTable
 {
     /**
      * Initialize method
@@ -44,8 +44,6 @@ class RolesTable extends Table
         $this->setTable('roles');
         $this->setDisplayField('name');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
 
         $this->hasMany('Users', [
             'foreignKey' => 'role_id',
