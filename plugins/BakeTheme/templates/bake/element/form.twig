@@ -37,6 +37,7 @@ $this->Breadcrumbs->add([
     <div class="card-body">
 {% for field in fields %}
 {%- if field not in primaryKey %}
+
 {%- if keyFields[field] %}
 {%- set fieldData = Bake.columnData(field, schema) %}
 {%- if fieldData.null %}
@@ -44,15 +45,42 @@ $this->Breadcrumbs->add([
 {% else %}
         <?= $this->Form->control('{{ field }}', ['options' => ${{ keyFields[field] }}, 'class' => 'form-control']) ?>
 {% endif %}
+
 {%- elseif field not in ['created', 'created_by', 'modified', 'modified_by', 'updated', 'updated_by'] %}
 {%- set fieldData = Bake.columnData(field, schema) %}
-{%- if fieldData.type in ['date', 'datetime', 'time'] and fieldData.null %}
+
+{# ✅ password は特別扱い：右端トグル付き #}
+{% if field == 'password' %}
+        <div class="form-group">
+            <?= $this->Form->label('password', __('Password')) ?>
+
+            <div class="input-group">
+                <?= $this->Form->password('password', [
+                    'class' => 'form-control js-password-input',
+                    'autocomplete' => 'new-password',
+                    'value' => '',
+                ]) ?>
+
+                <div class="input-group-append">
+                    <button type="button"
+                            class="btn btn-outline-secondary js-password-toggle"
+                            aria-label="<?= __('Show password') ?>"
+                            aria-pressed="false">
+                        {# 初期：伏字 → 見えるアイコン #}
+                        <i class="js-password-icon fas fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+{%- elseif fieldData.type in ['date', 'datetime', 'time'] and fieldData.null %}
         <?= $this->Form->control('{{ field }}', ['empty' => true]) ?>
 {% elseif fieldData.type in ['boolean'] %}
         <?= $this->Form->control('{{ field }}', ['custom' => true]) ?>
 {% else %}
         <?= $this->Form->control('{{ field }}') ?>
 {% endif %}
+
 {%- endif %}
 {%- endif %}
 {%- endfor %}
@@ -84,3 +112,32 @@ $this->Breadcrumbs->add([
     </div>
     <?= $this->Form->end() ?>
 </div>
+
+{# ✅ password トグル用 JS（フォームがあるページだけで動く） #}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.js-password-toggle').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const group = btn.closest('.input-group');
+      if (!group) return;
+
+      const input = group.querySelector('.js-password-input');
+      const icon  = btn.querySelector('.js-password-icon');
+      if (!input || !icon) return;
+
+      const show = (input.type === 'password');
+
+      // 入力タイプ切替
+      input.type = show ? 'text' : 'password';
+
+      // aria
+      btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+
+      // 次の操作を示すアイコンに切替
+      icon.classList.toggle('fa-eye-slash', show);
+      icon.classList.toggle('fa-eye', !show);
+    });
+  });
+});
+</script>

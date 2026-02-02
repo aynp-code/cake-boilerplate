@@ -64,6 +64,17 @@ class UsersTableTest extends TestCase
     }
 
     /**
+     * Test validationCreate method
+     *
+     * @return void
+     * @link \App\Model\Table\UsersTable::validationCreate()
+     */
+    public function testValidationCreate(): void
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
      * Test buildRules method
      *
      * @return void

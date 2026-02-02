@@ -53,6 +53,7 @@ class UsersTable extends Table
         ]);
     }
 
+    
     /**
      * Default validation rules.
      *
@@ -101,6 +102,34 @@ class UsersTable extends Table
         $validator
             ->uuid('modified_by')
             ->allowEmptyString('modified_by');
+
+
+                $validator->allowEmptyString('password', null, function ($context) {
+            // newRecord=false（更新）の時は空を許可
+            if (isset($context['newRecord'])) {
+                return $context['newRecord'] === false;
+            }
+            // 念のためのフォールバック
+            return !empty($context['data']['id']);
+        });
+
+        return $validator;
+    }
+
+    
+    /**
+     * Validation rules for create.
+     *
+     * @param \Cake\Validation\Validator $validator Validator instance.
+     * @return \Cake\Validation\Validator
+     */
+    public function validationCreate(Validator $validator): Validator
+    {
+        $validator = $this->validationDefault($validator);
+
+        $validator
+            ->requirePresence('password', 'create')
+            ->notEmptyString('password');
 
         return $validator;
     }

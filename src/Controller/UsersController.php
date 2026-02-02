@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use Cake\Event\EventInterface;
-
 /**
  * Users Controller
  *
@@ -12,13 +10,6 @@ use Cake\Event\EventInterface;
  */
 class UsersController extends AppController
 {
-
-    public function beforeFilter(EventInterface $event)
-    {
-        parent::beforeFilter($event);
-        $this->Authentication->allowUnauthenticated(['login', 'logout']);
-    }
-
     /**
      * Index method
      *
@@ -55,7 +46,9 @@ class UsersController extends AppController
     {
         $user = $this->Users->newEmptyEntity();
         if ($this->request->is('post')) {
-            $user = $this->Users->patchEntity($user, $this->request->getData());
+            $user = $this->Users->patchEntity($user, $this->request->getData(), [
+                'validate' => 'create',
+            ]);
             if ($this->Users->save($user)) {
                 $this->Flash->success(__('The user has been saved.'));
 
@@ -77,8 +70,16 @@ class UsersController extends AppController
     public function edit($id = null)
     {
         $user = $this->Users->get($id, contain: []);
+        $user->set('password', '');
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $user = $this->Users->patchEntity($user, $this->request->getData());
+            $data = $this->request->getData();
+
+            // ✅ edit では未入力なら password を更新しない
+            if (array_key_exists('password', $data) && $data['password'] === '') {
+                unset($data['password']);
+            }
+
+            $user = $this->Users->patchEntity($user, $data);
             if ($this->Users->save($user)) {
                 $this->Flash->success(__('The user has been saved.'));
 
@@ -108,31 +109,5 @@ class UsersController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
-    }
-
-    public function login()
-    {
-        $this->request->allowMethod(['get', 'post']);
-        $result = $this->Authentication->getResult();
-        // POSTで認証成功したらリダイレクト
-        if ($this->request->is('post') && $result && $result->isValid()) {
-            $target = $this->Authentication->getLoginRedirect() ?? [
-                'controller' => 'Pages',
-                'action' => 'display',
-                'home',
-            ];
-            return $this->redirect($target);
-        }
-        // 失敗時
-        if ($this->request->is('post') && (!$result || !$result->isValid())) {
-            $this->Flash->error(__('Invalid username or password'));
-        }
-    }
-
-    public function logout()
-    {
-        $this->request->allowMethod(['post', 'get']);
-        $this->Authentication->logout();
-        return $this->redirect(['action' => 'login']);
     }
 }
