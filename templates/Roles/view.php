@@ -86,7 +86,6 @@ $this->Breadcrumbs->add([
                                 <th class="actions"><?= __('Actions') ?></th>
 
                 <th><?= __('Username') ?></th>
-                <th><?= __('Password') ?></th>
                 <th><?= __('Name') ?></th>
                 <th><?= __('Email') ?></th>
                 <th><?= __('Is Active') ?></th>
@@ -98,7 +97,7 @@ $this->Breadcrumbs->add([
 
             <?php if (empty($role->users)) : ?>
                 <tr>
-                    <td colspan="10" class="text-muted">
+                    <td colspan="9" class="text-muted">
                         <?= __('Users record not found!') ?>
                     </td>
                 </tr>
@@ -143,7 +142,6 @@ $this->Breadcrumbs->add([
                         </td>
 
                         <td><?= h($user->username) ?></td>
-                        <td><?= h($user->password) ?></td>
                         <td><?= h($user->name) ?></td>
                         <td><?= h($user->email) ?></td>
                         <td><?= h($user->is_active) ?></td>

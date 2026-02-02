@@ -122,8 +122,11 @@ $this->Breadcrumbs->add([
 {% set otherPluralHumanName = alias|underscore|humanize %}
 {% set otherSingularHumanName = alias|singularize|underscore|humanize %}
 
-{# ✅ Related の表示フィールドから、相手側 primaryKey を除外（id非表示） #}
-{% set relatedFields = details.fields|filter(f => f != details.primaryKey[0]) %}
+{# ✅ Related の表示フィールドから、除外したいフィールド一覧 #}
+{% set excludeFields = [details.primaryKey[0], 'password'] %}
+{% set relatedFields = details.fields
+    |filter(f => f not in excludeFields)
+%}
 
 <div class="related related-{{ otherSingularVar }} view card">
     <div class="card-header d-flex">
