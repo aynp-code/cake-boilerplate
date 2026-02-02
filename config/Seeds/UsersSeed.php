@@ -21,25 +21,19 @@ class UsersSeed extends BaseSeed
      */
     public function run(): void
     {
-        $rolesTable = TableRegistry::getTableLocator()->get('Roles');
         $usersTable = TableRegistry::getTableLocator()->get('Users');
 
-        $role = $rolesTable->find()
-            ->where(['name' => 'admin'])
-            ->first();
-
-        if (!$role) {
-            throw new \Exception("system admin role not found");
-        }
-
         $user = $usersTable->newEntity([
+            'id' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
             'username' => 'admin',
             'email' => 'admin@example.com',
             'name' => 'System Administrator',
             'password' => 'password',
-            'role_id' => $role['id'],
+            'role_id' => 'faa5ab22-2178-4833-b8e9-4db2f023e38f',
             'is_active' => true,
-        ]);
+            'created_by' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
+            'modified_by' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
+        ], ['accessibleFields' => ['id' => true]]);
         $usersTable->saveOrFail($user);
     }
 }
