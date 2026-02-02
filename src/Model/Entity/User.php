@@ -12,7 +12,7 @@ use Authentication\PasswordHasher\DefaultPasswordHasher;
  * @property string $id
  * @property string $username
  * @property string $password
- * @property string $name
+ * @property string $display_name
  * @property string $email
  * @property string $role_id
  * @property bool $is_active
@@ -35,17 +35,8 @@ class User extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        'username' => true,
-        'password' => true,
-        'name' => true,
-        'email' => true,
-        'role_id' => true,
-        'is_active' => true,
-        'created' => true,
-        'created_by' => true,
-        'modified' => true,
-        'modified_by' => true,
-        'role' => true,
+        '*' => true,
+        'id' => false,
     ];
 
     /**

@@ -42,7 +42,7 @@ class RolesTable extends AppTable
         parent::initialize($config);
 
         $this->setTable('roles');
-        $this->setDisplayField('name');
+        $this->setDisplayField('display_name');
         $this->setPrimaryKey('id');
 
         $this->hasMany('Users', [
@@ -59,10 +59,10 @@ class RolesTable extends AppTable
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->scalar('name')
-            ->maxLength('name', 255)
-            ->requirePresence('name', 'create')
-            ->notEmptyString('name');
+            ->scalar('display_name')
+            ->maxLength('display_name', 255)
+            ->requirePresence('display_name', 'create')
+            ->notEmptyString('display_name');
 
         $validator
             ->scalar('description')

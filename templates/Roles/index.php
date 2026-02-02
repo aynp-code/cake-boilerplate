@@ -37,7 +37,7 @@ $this->Breadcrumbs->add([
                 <tr>
                                         <th class="actions"><?= __('Actions') ?></th>
 
-                    <th><?= $this->Paginator->sort('name') ?></th>
+                    <th><?= $this->Paginator->sort('display_name') ?></th>
                     <th><?= $this->Paginator->sort('description') ?></th>
                     <th><?= $this->Paginator->sort('created') ?></th>
                     <th><?= $this->Paginator->sort('created_by') ?></th>
@@ -85,7 +85,7 @@ $this->Breadcrumbs->add([
                             ) ?>
                         </td>
 
-                        <td><?= h($role->name) ?></td>
+                        <td><?= h($role->display_name) ?></td>
                         <td><?= h($role->description) ?></td>
                         <td><?= h($role->created) ?></td>
                         <td><?= h($role->created_by) ?></td>

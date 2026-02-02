@@ -42,7 +42,7 @@ class UsersTable extends AppTable
         parent::initialize($config);
 
         $this->setTable('users');
-        $this->setDisplayField('name');
+        $this->setDisplayField('display_name');
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
@@ -76,10 +76,10 @@ class UsersTable extends AppTable
             ->notEmptyString('password');
 
         $validator
-            ->scalar('name')
-            ->maxLength('name', 255)
-            ->requirePresence('name', 'create')
-            ->notEmptyString('name');
+            ->scalar('display_name')
+            ->maxLength('display_name', 255)
+            ->requirePresence('display_name', 'create')
+            ->notEmptyString('display_name');
 
         $validator
             ->email('email')

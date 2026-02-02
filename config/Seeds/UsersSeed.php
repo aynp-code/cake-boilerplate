@@ -27,7 +27,7 @@ class UsersSeed extends BaseSeed
             'id' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
             'username' => 'admin',
             'email' => 'admin@example.com',
-            'name' => 'System Administrator',
+            'display_name' => 'System Administrator',
             'password' => 'password',
             'role_id' => 'faa5ab22-2178-4833-b8e9-4db2f023e38f',
             'is_active' => true,

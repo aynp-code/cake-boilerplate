@@ -15,40 +15,54 @@ $this->Breadcrumbs->add([
 ?>
 
 
-                                                                                                
+
 <div class="view card card-primary card-outline">
     <div class="card-header d-sm-flex">
-        <h2 class="card-title"><?= h($role->name) ?></h2>
+        <h2 class="card-title"><?= h($role->display_name) ?></h2>
     </div>
+
     <div class="card-body table-responsive p-0">
         <table class="table table-hover text-nowrap">
-            <tr>
-                <th><?= __('Name') ?></th>
-                <td><?= h($role->name) ?></td>
+
+
+                    <tr>
+                <th><?= __('Display Name') ?></th>
+                <td><?= h($role->display_name) ?></td>
             </tr>
-            <tr>
+    
+
+                    <tr>
                 <th><?= __('Description') ?></th>
                 <td><?= h($role->description) ?></td>
             </tr>
-            <tr>
-                <th><?= __('Created By') ?></th>
-                <td><?= h($role->created_by) ?></td>
-            </tr>
-            <tr>
-                <th><?= __('Modified By') ?></th>
-                <td><?= h($role->modified_by) ?></td>
-            </tr>
+    
 
-
-
-            <tr>
+                    <tr>
                 <th><?= __('Created') ?></th>
                 <td><?= h($role->created) ?></td>
             </tr>
-            <tr>
+
+        
+
+                    <tr>
+                <th><?= __('Created By') ?></th>
+                <td><?= h($role->created_by) ?></td>
+            </tr>
+    
+
+                    <tr>
                 <th><?= __('Modified') ?></th>
                 <td><?= h($role->modified) ?></td>
             </tr>
+
+        
+
+                    <tr>
+                <th><?= __('Modified By') ?></th>
+                <td><?= h($role->modified_by) ?></td>
+            </tr>
+    
+
 
         </table>
     </div>
@@ -86,7 +100,7 @@ $this->Breadcrumbs->add([
                                 <th class="actions"><?= __('Actions') ?></th>
 
                 <th><?= __('Username') ?></th>
-                <th><?= __('Name') ?></th>
+                <th><?= __('Display Name') ?></th>
                 <th><?= __('Email') ?></th>
                 <th><?= __('Is Active') ?></th>
                 <th><?= __('Created') ?></th>
@@ -142,7 +156,7 @@ $this->Breadcrumbs->add([
                         </td>
 
                         <td><?= h($user->username) ?></td>
-                        <td><?= h($user->name) ?></td>
+                        <td><?= h($user->display_name) ?></td>
                         <td><?= h($user->email) ?></td>
                         <td><?= h($user->is_active) ?></td>
                         <td><?= h($user->created) ?></td>
