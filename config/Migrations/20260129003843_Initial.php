@@ -61,5 +61,38 @@ class Initial extends BaseMigration
             ->addIndex(['username'], ['unique' => true, 'name' => 'UQ_USERS_USERNAME'])
             ->addIndex(['email'], ['unique' => true, 'name' => 'UQ_USERS_EMAIL'])
             ->create();
+
+        $table = $this->table('role_permissions', [
+            'id' => false,
+            'primary_key' => ['id'],
+        ]);
+        $table
+            ->addColumn('id', 'uuid')
+            ->addColumn('role_id', 'uuid', ['null' => false])
+
+            // 将来の拡張用（今は全部NULLでOK）
+            ->addColumn('plugin', 'string', ['limit' => 120, 'null' => true])
+            ->addColumn('prefix', 'string', ['limit' => 120, 'null' => true])
+
+            // ここが本題：controller/action 単位
+            ->addColumn('controller', 'string', ['limit' => 120, 'null' => false])
+            ->addColumn('action', 'string', ['limit' => 120, 'null' => false])
+
+            // 許可・不許可
+            ->addColumn('allowed', 'boolean', ['default' => true, 'null' => false])
+            
+            // 監査用（作成・更新）
+            ->addColumn('created', 'datetime', ['null' => false])
+            ->addColumn('created_by', 'uuid', ['null' => false])
+            ->addColumn('modified', 'datetime', ['null' => false])
+            ->addColumn('modified_by', 'uuid', ['null' => false])
+
+            // 1 role につき 1 controller/action を一意に
+            ->addIndex(
+                ['role_id', 'plugin', 'prefix', 'controller', 'action'],
+                ['unique' => true, 'name' => 'UQ_ROLE_PERMISSIONS_RULE']
+            )
+            ->addIndex(['role_id'], ['name' => 'IDX_ROLE_PERMISSIONS_ROLE'])
+            ->create();
     }
 }

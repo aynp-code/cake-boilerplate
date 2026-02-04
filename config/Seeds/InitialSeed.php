@@ -5,9 +5,9 @@ use Migrations\BaseSeed;
 use Cake\ORM\TableRegistry;
 
 /**
- * Roles seed.
+ * Initial seed.
  */
-class RolesSeed extends BaseSeed
+class InitialSeed extends BaseSeed
 {
     /**
      * Run Method.
@@ -44,7 +44,6 @@ class RolesSeed extends BaseSeed
                 'modified_by' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
             ],
         ];
-
         $rolesTable = TableRegistry::getTableLocator()->get('Roles');
         foreach ($roles as $roleData) {
             $entity = $rolesTable->newEntity(
@@ -53,5 +52,32 @@ class RolesSeed extends BaseSeed
             );
             $rolesTable->saveOrFail($entity);
         }
+
+        $rolePermissionTable = TableRegistry::getTableLocator()->get('RolePermissions');
+        $rolePermission = $rolePermissionTable->newEntity([
+            'role_id' => 'faa5ab22-2178-4833-b8e9-4db2f023e38f',
+            'plugin' => null,
+            'prefix' => null,
+            'controller' => '*',
+            'action' => '*',
+            'allowed' => 1,
+            'created_by' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
+            'modified_by' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
+        ]);
+        $rolePermissionTable->saveOrFail($rolePermission);
+
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $usersTable->newEntity([
+            'id' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
+            'username' => 'admin',
+            'email' => 'admin@example.com',
+            'display_name' => 'System Administrator',
+            'password' => 'password',
+            'role_id' => 'faa5ab22-2178-4833-b8e9-4db2f023e38f',
+            'is_active' => true,
+            'created_by' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
+            'modified_by' => '61b448bd-7611-4a2a-ab1f-fa35319465ac',
+        ], ['accessibleFields' => ['id' => true]]);
+        $usersTable->saveOrFail($user);
     }
 }

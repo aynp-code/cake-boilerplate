@@ -18,7 +18,7 @@ $this->Breadcrumbs->add([
 
 <div class="view card card-primary card-outline">
     <div class="card-header d-sm-flex">
-        <h2 class="card-title"><?= h($user->name) ?></h2>
+        <h2 class="card-title"><?= h($user->display_name) ?></h2>
     </div>
 
     <div class="card-body table-responsive p-0">
@@ -32,8 +32,8 @@ $this->Breadcrumbs->add([
     
 
                     <tr>
-                <th><?= __('Name') ?></th>
-                <td><?= h($user->name) ?></td>
+                <th><?= __('Display Name') ?></th>
+                <td><?= h($user->display_name) ?></td>
             </tr>
     
 
@@ -47,7 +47,7 @@ $this->Breadcrumbs->add([
                 <th><?= __('Role') ?></th>
                 <td><?= $user->has('role')
                     ? $this->Html->link(
-                        $user->role->name,
+                        $user->role->display_name,
                         ['controller' => 'Roles', 'action' => 'view', $user->role->id]
                     )
                     : '' ?></td>
@@ -69,11 +69,17 @@ $this->Breadcrumbs->add([
 
         
 
-                    <tr>
-                <th><?= __('Created By') ?></th>
-                <td><?= h($user->created_by) ?></td>
+                            <tr>
+                <th><?= __('Created By User') ?></th>
+                <td><?= $user->has('created_by_user')
+                    ? $this->Html->link(
+                        $user->created_by_user->display_name,
+                        ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]
+                    )
+                    : '' ?></td>
             </tr>
-    
+
+        
 
                     <tr>
                 <th><?= __('Modified') ?></th>
@@ -82,11 +88,17 @@ $this->Breadcrumbs->add([
 
         
 
-                    <tr>
-                <th><?= __('Modified By') ?></th>
-                <td><?= h($user->modified_by) ?></td>
+                            <tr>
+                <th><?= __('Modified By User') ?></th>
+                <td><?= $user->has('modified_by_user')
+                    ? $this->Html->link(
+                        $user->modified_by_user->display_name,
+                        ['controller' => 'Users', 'action' => 'view', $user->modified_by_user->id]
+                    )
+                    : '' ?></td>
             </tr>
-    
+
+        
 
 
         </table>

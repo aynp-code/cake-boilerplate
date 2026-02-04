@@ -16,7 +16,10 @@ declare(strict_types=1);
  */
 namespace App\Controller;
 
+use App\Service\RolePermissionChecker;
 use Cake\Controller\Controller;
+use Cake\Event\EventInterface;
+use Cake\Http\Exception\ForbiddenException;
 
 /**
  * Application Controller
@@ -28,6 +31,8 @@ use Cake\Controller\Controller;
  */
 class AppController extends Controller
 {
+    protected RolePermissionChecker $permissionChecker;
+
     /**
      * Initialization hook method.
      *
@@ -43,6 +48,44 @@ class AppController extends Controller
 
         $this->loadComponent('Flash');
         $this->loadComponent('Authentication.Authentication');
+        $this->permissionChecker = new RolePermissionChecker();
+    }
+
+    public function beforeFilter(EventInterface $event)
+    {
+        parent::beforeFilter($event);
+
+        $controller = (string)$this->request->getParam('controller');
+        $action     = (string)$this->request->getParam('action');
+        $plugin     = $this->request->getParam('plugin'); // nullが多い
+        $prefix     = $this->request->getParam('prefix'); // nullが多い
+
+        // login/logout は常に許可（無限リダイレクト防止）
+        if ($controller === 'Users' && in_array($action, ['login', 'logout'], true)) {
+            return;
+        }
+
+        $identity = $this->request->getAttribute('identity');
+        if (!$identity) {
+            // 未認証は Authentication が redirect する想定
+            return;
+        }
+
+        $roleId = $identity->get('role_id');
+        if (!$roleId) {
+            throw new ForbiddenException('Role is not assigned.');
+        }
+
+        $allowed = $this->permissionChecker->can((string)$roleId, [
+            'plugin' => $plugin,
+            'prefix' => $prefix,
+            'controller' => $controller,
+            'action' => $action,
+        ]);
+
+        if (!$allowed) {
+            throw new ForbiddenException('You are not allowed to access this resource.');
+        }
     }
 
     /*

@@ -44,11 +44,17 @@ $this->Breadcrumbs->add([
 
         
 
-                    <tr>
-                <th><?= __('Created By') ?></th>
-                <td><?= h($role->created_by) ?></td>
+                            <tr>
+                <th><?= __('Created By User') ?></th>
+                <td><?= $role->has('created_by_user')
+                    ? $this->Html->link(
+                        $role->created_by_user->display_name,
+                        ['controller' => 'Users', 'action' => 'view', $role->created_by_user->id]
+                    )
+                    : '' ?></td>
             </tr>
-    
+
+        
 
                     <tr>
                 <th><?= __('Modified') ?></th>
@@ -57,11 +63,17 @@ $this->Breadcrumbs->add([
 
         
 
-                    <tr>
-                <th><?= __('Modified By') ?></th>
-                <td><?= h($role->modified_by) ?></td>
+                            <tr>
+                <th><?= __('Modified By User') ?></th>
+                <td><?= $role->has('modified_by_user')
+                    ? $this->Html->link(
+                        $role->modified_by_user->display_name,
+                        ['controller' => 'Users', 'action' => 'view', $role->modified_by_user->id]
+                    )
+                    : '' ?></td>
             </tr>
-    
+
+        
 
 
         </table>

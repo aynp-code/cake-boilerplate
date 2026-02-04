@@ -88,9 +88,9 @@ $this->Breadcrumbs->add([
                         <td><?= h($role->display_name) ?></td>
                         <td><?= h($role->description) ?></td>
                         <td><?= h($role->created) ?></td>
-                        <td><?= h($role->created_by) ?></td>
+                        <td><?= $role->has('created_by_user') ? $this->Html->link($role->created_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $role->created_by_user->id]) : '' ?></td>
                         <td><?= h($role->modified) ?></td>
-                        <td><?= h($role->modified_by) ?></td>
+                        <td><?= $role->has('modified_by_user') ? $this->Html->link($role->modified_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $role->modified_by_user->id]) : '' ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

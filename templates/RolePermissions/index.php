@@ -1,15 +1,15 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var \App\Model\Entity\User[]|\Cake\Collection\CollectionInterface $users
+ * @var \App\Model\Entity\RolePermission[]|\Cake\Collection\CollectionInterface $rolePermissions
  */
 ?>
 
 <?php
-$this->assign('title', __('Users'));
+$this->assign('title', __('Role Permissions'));
 $this->Breadcrumbs->add([
     ['title' => __('Home'), 'url' => '/'],
-    ['title' => __('List Users')],
+    ['title' => __('List Role Permissions')],
 ]);
 ?>
 
@@ -27,7 +27,7 @@ $this->Breadcrumbs->add([
                 'class' => 'form-control form-control-sm',
                 'templates' => ['inputContainer' => '{{content}}']
             ]); ?>
-            <?= $this->Html->link(__('New User'), ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
+            <?= $this->Html->link(__('New Role Permission'), ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
         </div>
     </div>
 
@@ -37,11 +37,12 @@ $this->Breadcrumbs->add([
                 <tr>
                                         <th class="actions"><?= __('Actions') ?></th>
 
-                    <th><?= $this->Paginator->sort('username') ?></th>
-                    <th><?= $this->Paginator->sort('display_name') ?></th>
-                    <th><?= $this->Paginator->sort('email') ?></th>
                     <th><?= $this->Paginator->sort('role_id') ?></th>
-                    <th><?= $this->Paginator->sort('is_active') ?></th>
+                    <th><?= $this->Paginator->sort('plugin') ?></th>
+                    <th><?= $this->Paginator->sort('prefix') ?></th>
+                    <th><?= $this->Paginator->sort('controller') ?></th>
+                    <th><?= $this->Paginator->sort('action') ?></th>
+                    <th><?= $this->Paginator->sort('allowed') ?></th>
                     <th><?= $this->Paginator->sort('created') ?></th>
                     <th><?= $this->Paginator->sort('created_by') ?></th>
                     <th><?= $this->Paginator->sort('modified') ?></th>
@@ -50,12 +51,12 @@ $this->Breadcrumbs->add([
             </thead>
 
             <tbody>
-                <?php foreach ($users as $user) : ?>
+                <?php foreach ($rolePermissions as $rolePermission) : ?>
                     <tr>
                                                 <td class="actions text-nowrap">
                             <?= $this->Html->link(
                                 '<i class="fas fa-eye"></i>',
-                                ['action' => 'view', $user->id],
+                                ['action' => 'view', $rolePermission->id],
                                 [
                                     'class' => 'btn btn-xs btn-outline-info',
                                     'escape' => false,
@@ -66,7 +67,7 @@ $this->Breadcrumbs->add([
 
                             <?= $this->Html->link(
                                 '<i class="fas fa-edit"></i>',
-                                ['action' => 'edit', $user->id],
+                                ['action' => 'edit', $rolePermission->id],
                                 [
                                     'class' => 'btn btn-xs btn-outline-primary ml-1',
                                     'escape' => false,
@@ -77,26 +78,27 @@ $this->Breadcrumbs->add([
 
                             <?= $this->Form->postLink(
                                 '<i class="fas fa-trash"></i>',
-                                ['action' => 'delete', $user->id],
+                                ['action' => 'delete', $rolePermission->id],
                                 [
                                     'class' => 'btn btn-xs btn-outline-danger ml-1',
                                     'escape' => false,
-                                    'confirm' => __('Are you sure you want to delete # {0}?', $user->id),
+                                    'confirm' => __('Are you sure you want to delete # {0}?', $rolePermission->id),
                                     'title' => __('Delete'),
                                     'data-toggle' => 'tooltip',
                                 ]
                             ) ?>
                         </td>
 
-                        <td><?= h($user->username) ?></td>
-                        <td><?= h($user->display_name) ?></td>
-                        <td><?= h($user->email) ?></td>
-                        <td><?= $user->has('role') ? $this->Html->link($user->role->display_name, ['controller' => 'Roles', 'action' => 'view', $user->role->id]) : '' ?></td>
-                        <td><?= ($user->is_active) ? __('Yes') : __('No') ?></td>
-                        <td><?= h($user->created) ?></td>
-                        <td><?= $user->has('created_by_user') ? $this->Html->link($user->created_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]) : '' ?></td>
-                        <td><?= h($user->modified) ?></td>
-                        <td><?= $user->has('modified_by_user') ? $this->Html->link($user->modified_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $user->modified_by_user->id]) : '' ?></td>
+                        <td><?= $rolePermission->has('role') ? $this->Html->link($rolePermission->role->display_name, ['controller' => 'Roles', 'action' => 'view', $rolePermission->role->id]) : '' ?></td>
+                        <td><?= h($rolePermission->plugin) ?></td>
+                        <td><?= h($rolePermission->prefix) ?></td>
+                        <td><?= h($rolePermission->controller) ?></td>
+                        <td><?= h($rolePermission->action) ?></td>
+                        <td><?= ($rolePermission->allowed) ? __('Yes') : __('No') ?></td>
+                        <td><?= h($rolePermission->created) ?></td>
+                        <td><?= h($rolePermission->created_by) ?></td>
+                        <td><?= h($rolePermission->modified) ?></td>
+                        <td><?= h($rolePermission->modified_by) ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

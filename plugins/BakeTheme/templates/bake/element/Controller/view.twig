@@ -17,6 +17,14 @@
 {% set allAssociations = allAssociations|merge(Bake.aliasExtractor(modelObj, 'BelongsToMany')) %}
 {% set allAssociations = allAssociations|merge(Bake.aliasExtractor(modelObj, 'HasOne')) %}
 {% set allAssociations = allAssociations|merge(Bake.aliasExtractor(modelObj, 'HasMany')) %}
+
+{# --- 監査ユーザ関連がある場合に contain に足す（AppTableで自動付与している想定） --- #}
+{% if modelObj.hasAssociation('CreatedByUser') and ('CreatedByUser' not in allAssociations) %}
+{% set allAssociations = allAssociations|merge(['CreatedByUser']) %}
+{% endif %}
+{% if modelObj.hasAssociation('ModifiedByUser') and ('ModifiedByUser' not in allAssociations) %}
+{% set allAssociations = allAssociations|merge(['ModifiedByUser']) %}
+{% endif %}
     /**
      * View method
      *

@@ -1,33 +1,46 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var \App\Model\Entity\Role $role
+ * @var \App\Model\Entity\RolePermission $rolePermission
  */
 ?>
 
 <?php
-$this->assign('title', __('Add Role'));
+$this->assign('title', __('Edit Role Permission'));
 $this->Breadcrumbs->add([
     ['title' => __('Home'), 'url' => '/'],
-    ['title' => __('List Roles'), 'url' => ['action' => 'index']],
-    ['title' => __('Add')],
+    ['title' => __('List Role Permissions'), 'url' => ['action' => 'index']],
+    ['title' => __('View'), 'url' => ['action' => 'view', $rolePermission->id]],
+    ['title' => __('Edit')],
 ]);
 ?>
 
 <div class="card card-primary card-outline">
-    <?= $this->Form->create($role, ['valueSources' => ['query', 'context']]) ?>
+    <?= $this->Form->create($rolePermission) ?>
     <div class="card-body">
+        <?= $this->Form->control('role_id', ['options' => $roles, 'class' => 'form-control']) ?>
 
-        <?= $this->Form->control('display_name') ?>
+        <?= $this->Form->control('plugin') ?>
 
-        <?= $this->Form->control('description') ?>
-        <?= $this->Form->control('created_by', ['options' => $createdByUser, 'class' => 'form-control']) ?>
-        <?= $this->Form->control('modified_by', ['options' => $modifiedByUser, 'class' => 'form-control']) ?>
+        <?= $this->Form->control('prefix') ?>
+
+        <?= $this->Form->control('controller') ?>
+
+        <?= $this->Form->control('action') ?>
+
+        <?= $this->Form->control('allowed', ['custom' => true]) ?>
     </div>
     <div class="card-footer d-flex">
+        <div class="mr-auto">
+            <?= $this->Form->postLink(
+                __('Delete'),
+                ['action' => 'delete', $rolePermission->id],
+                ['confirm' => __('Are you sure you want to delete # {0}?', $rolePermission->id), 'class' => 'btn btn-danger']
+            ) ?>
+        </div>
         <div class="ml-auto">
             <?= $this->Form->button(__('Save'), ['class' => 'btn btn-primary']) ?>
-            <?= $this->Html->link(__('Cancel'), ['action' => 'index'], ['class' => 'btn btn-default']) ?>
+            <?= $this->Html->link(__('Cancel'), ['action' => 'view', $rolePermission->id], ['class' => 'btn btn-default']) ?>
         </div>
     </div>
     <?= $this->Form->end() ?>

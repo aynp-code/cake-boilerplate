@@ -1,28 +1,33 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var \App\Model\Entity\Role $role
+ * @var \App\Model\Entity\RolePermission $rolePermission
  */
 ?>
 
 <?php
-$this->assign('title', __('Add Role'));
+$this->assign('title', __('Add Role Permission'));
 $this->Breadcrumbs->add([
     ['title' => __('Home'), 'url' => '/'],
-    ['title' => __('List Roles'), 'url' => ['action' => 'index']],
+    ['title' => __('List Role Permissions'), 'url' => ['action' => 'index']],
     ['title' => __('Add')],
 ]);
 ?>
 
 <div class="card card-primary card-outline">
-    <?= $this->Form->create($role, ['valueSources' => ['query', 'context']]) ?>
+    <?= $this->Form->create($rolePermission, ['valueSources' => ['query', 'context']]) ?>
     <div class="card-body">
+        <?= $this->Form->control('role_id', ['options' => $roles, 'class' => 'form-control']) ?>
 
-        <?= $this->Form->control('display_name') ?>
+        <?= $this->Form->control('plugin') ?>
 
-        <?= $this->Form->control('description') ?>
-        <?= $this->Form->control('created_by', ['options' => $createdByUser, 'class' => 'form-control']) ?>
-        <?= $this->Form->control('modified_by', ['options' => $modifiedByUser, 'class' => 'form-control']) ?>
+        <?= $this->Form->control('prefix') ?>
+
+        <?= $this->Form->control('controller') ?>
+
+        <?= $this->Form->control('action') ?>
+
+        <?= $this->Form->control('allowed', ['custom' => true]) ?>
     </div>
     <div class="card-footer d-flex">
         <div class="ml-auto">

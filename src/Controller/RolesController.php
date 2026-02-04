@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use PDOException;
+
 /**
  * Roles Controller
  *
@@ -18,11 +19,15 @@ class RolesController extends AppController
      */
     public function index()
     {
-        $query = $this->Roles->find();
+
+
+        $query = $this->Roles->find()
+            ->contain(['CreatedByUser', 'ModifiedByUser']);
         $roles = $this->paginate($query);
 
         $this->set(compact('roles'));
     }
+
 
     /**
      * View method
@@ -33,7 +38,7 @@ class RolesController extends AppController
      */
     public function view($id = null)
     {
-        $role = $this->Roles->get($id, contain: ['Users']);
+        $role = $this->Roles->get($id, contain: ['CreatedByUser', 'ModifiedByUser', 'Users']);
         $this->set(compact('role'));
     }
 
@@ -46,7 +51,9 @@ class RolesController extends AppController
     {
         $role = $this->Roles->newEmptyEntity();
         if ($this->request->is('post')) {
-            $role = $this->Roles->patchEntity($role, $this->request->getData());
+            $role = $this->Roles->patchEntity($role, $this->request->getData(), [
+                'validate' => 'create',
+            ]);
             if ($this->Roles->save($role)) {
                 $this->Flash->success(__('The role has been saved.'));
 
@@ -54,7 +61,9 @@ class RolesController extends AppController
             }
             $this->Flash->error(__('The role could not be saved. Please, try again.'));
         }
-        $this->set(compact('role'));
+        $createdByUser = $this->Roles->CreatedByUser->find('list', limit: 200)->all();
+        $modifiedByUser = $this->Roles->ModifiedByUser->find('list', limit: 200)->all();
+        $this->set(compact('role', 'createdByUser', 'modifiedByUser'));
     }
 
     /**
@@ -67,8 +76,16 @@ class RolesController extends AppController
     public function edit($id = null)
     {
         $role = $this->Roles->get($id, contain: []);
+        $role->set('password', '');
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $role = $this->Roles->patchEntity($role, $this->request->getData());
+            $data = $this->request->getData();
+
+            // ✅ edit では未入力なら password を更新しない
+            if (array_key_exists('password', $data) && $data['password'] === '') {
+                unset($data['password']);
+            }
+
+            $role = $this->Roles->patchEntity($role, $data);
             if ($this->Roles->save($role)) {
                 $this->Flash->success(__('The role has been saved.'));
 
@@ -76,7 +93,9 @@ class RolesController extends AppController
             }
             $this->Flash->error(__('The role could not be saved. Please, try again.'));
         }
-        $this->set(compact('role'));
+        $createdByUser = $this->Roles->CreatedByUser->find('list', limit: 200)->all();
+        $modifiedByUser = $this->Roles->ModifiedByUser->find('list', limit: 200)->all();
+        $this->set(compact('role', 'createdByUser', 'modifiedByUser'));
     }
 
     /**
