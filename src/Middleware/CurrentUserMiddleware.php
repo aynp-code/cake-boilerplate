@@ -25,15 +25,29 @@ class CurrentUserMiddleware implements MiddlewareInterface
     {
         // Authentication が付与する identity を取得
         $identity = $request->getAttribute('identity');
+        $userId = null;
+        $roleId = null;
+
+        if ($identity) {
+            // getIdentifier() は通常 id（主キー）を返す
+            $userId = $identity->getIdentifier();
+
+            // role_id は identity が持つ属性から取得（Identityの実装に合わせる）
+            if (method_exists($identity, 'get')) {
+                $roleId = $identity->get('role_id');
+            }
+        }
 
         // id(uuid)をどこからでも読めるように置く（リクエスト中限定）
-        Configure::write('Auth.User.id', $identity?->getIdentifier());
+        Configure::write('Auth.User.id', $userId);
+        Configure::write('Auth.User.role_id', $roleId);
 
         try {
             return $handler->handle($request);
         } finally {
             // 念のため掃除（長寿命プロセス対策）
             Configure::delete('Auth.User.id');
+            Configure::delete('Auth.User.role_id');
         }
     }
 }
