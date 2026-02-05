@@ -13,18 +13,11 @@
  * @license       https://www.opensource.org/licenses/mit-license.php MIT License
  */
 #}
-{% set allAssociations = Bake.aliasExtractor(modelObj, 'BelongsTo') %}
-{% set allAssociations = allAssociations|merge(Bake.aliasExtractor(modelObj, 'BelongsToMany')) %}
-{% set allAssociations = allAssociations|merge(Bake.aliasExtractor(modelObj, 'HasOne')) %}
-{% set allAssociations = allAssociations|merge(Bake.aliasExtractor(modelObj, 'HasMany')) %}
+{% set baseContain = Bake.aliasExtractor(modelObj, 'BelongsTo') %}
+{% set baseContain = baseContain|merge(Bake.aliasExtractor(modelObj, 'BelongsToMany')) %}
+{% set baseContain = baseContain|merge(Bake.aliasExtractor(modelObj, 'HasOne')) %}
+{% set baseContain = baseContain|merge(Bake.aliasExtractor(modelObj, 'HasMany')) %}
 
-{# --- 監査ユーザ関連がある場合に contain に足す（AppTableで自動付与している想定） --- #}
-{% if modelObj.hasAssociation('CreatedByUser') and ('CreatedByUser' not in allAssociations) %}
-{% set allAssociations = allAssociations|merge(['CreatedByUser']) %}
-{% endif %}
-{% if modelObj.hasAssociation('ModifiedByUser') and ('ModifiedByUser' not in allAssociations) %}
-{% set allAssociations = allAssociations|merge(['ModifiedByUser']) %}
-{% endif %}
     /**
      * View method
      *
@@ -34,7 +27,10 @@
      */
     public function view($id = null)
     {
-        ${{ singularName }} = $this->{{ currentModelName }}->get($id, contain: {{ Bake.exportArray(allAssociations)|raw }});
+        // ✅ 監査ユーザ（CreatedByUser/ModifiedByUser）は AppTable 側で contain を拡張して共通化
+        $contain = $this->{{ currentModelName }}->withAuditUsersContain({{ Bake.exportArray(baseContain)|raw }});
+
+        ${{ singularName }} = $this->{{ currentModelName }}->get($id, contain: $contain);
 {% if Bake.hasPlugin('Authorization') %}
         $this->Authorization->authorize(${{ singularName }});
 {% endif %}

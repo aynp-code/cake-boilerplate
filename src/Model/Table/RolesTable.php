@@ -11,6 +11,7 @@ use Cake\Validation\Validator;
 /**
  * Roles Model
  *
+ * @property \App\Model\Table\RolePermissionsTable&\Cake\ORM\Association\HasMany $RolePermissions
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\HasMany $Users
  *
  * @method \App\Model\Entity\Role newEmptyEntity()
@@ -32,6 +33,21 @@ use Cake\Validation\Validator;
 class RolesTable extends AppTable
 {
     /**
+     * 関連データがある場合は削除を禁止する
+     * DeleteGuardBehavior が beforeDelete で参照し、関連レコードが残っていれば削除を止める。
+     *
+     * @return string[]
+     */
+    public function restrictDeleteAssociations(): array
+    {
+        return [
+            // 関連（hasMany / hasOne / belongsToMany 等）をここに追加します。
+            'Users',
+            // 'RolePermissions',
+        ];
+    }
+
+    /**
      * Initialize method
      *
      * @param array<string, mixed> $config The configuration for the Table.
@@ -45,11 +61,17 @@ class RolesTable extends AppTable
         $this->setDisplayField('display_name');
         $this->setPrimaryKey('id');
 
+        $this->addBehavior('Timestamp');
+
+        $this->hasMany('RolePermissions', [
+            'foreignKey' => 'role_id',
+        ]);
         $this->hasMany('Users', [
             'foreignKey' => 'role_id',
         ]);
     }
 
+    
     /**
      * Default validation rules.
      *
@@ -62,7 +84,8 @@ class RolesTable extends AppTable
             ->scalar('display_name')
             ->maxLength('display_name', 255)
             ->requirePresence('display_name', 'create')
-            ->notEmptyString('display_name');
+            ->notEmptyString('display_name')
+            ->add('display_name', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
 
         $validator
             ->scalar('description')
@@ -71,12 +94,31 @@ class RolesTable extends AppTable
 
         $validator
             ->uuid('created_by')
-            ->allowEmptyString('created_by');
+            ->requirePresence('created_by', 'create')
+            ->notEmptyString('created_by');
 
         $validator
             ->uuid('modified_by')
-            ->allowEmptyString('modified_by');
+            ->requirePresence('modified_by', 'create')
+            ->notEmptyString('modified_by');
 
+
+        
         return $validator;
+    }
+
+    
+    /**
+     * Returns a rules checker object that will be used for validating
+     * application integrity.
+     *
+     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
+     * @return \Cake\ORM\RulesChecker
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
+    {
+        $rules->add($rules->isUnique(['display_name']), ['errorField' => 'display_name']);
+
+        return $rules;
     }
 }

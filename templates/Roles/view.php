@@ -44,17 +44,21 @@ $this->Breadcrumbs->add([
 
         
 
-                            <tr>
-                <th><?= __('Created By User') ?></th>
-                <td><?= $role->has('created_by_user')
-                    ? $this->Html->link(
-                        $role->created_by_user->display_name,
-                        ['controller' => 'Users', 'action' => 'view', $role->created_by_user->id]
-                    )
-                    : '' ?></td>
+                    <tr>
+                <th><?= __('Created By') ?></th>
+                <td>
+                    <?php if ($role->has('created_by_user')) : ?>
+                        <?= $this->Html->link(
+                            h($role->created_by_user->display_name),
+                            ['controller' => 'Users', 'action' => 'view', $role->created_by_user->id]
+                        ) ?>
+                    <?php else : ?>
+                        <?= h($role->created_by) ?>
+                    <?php endif; ?>
+                </td>
             </tr>
 
-        
+    
 
                     <tr>
                 <th><?= __('Modified') ?></th>
@@ -63,14 +67,18 @@ $this->Breadcrumbs->add([
 
         
 
-                            <tr>
-                <th><?= __('Modified By User') ?></th>
-                <td><?= $role->has('modified_by_user')
-                    ? $this->Html->link(
-                        $role->modified_by_user->display_name,
-                        ['controller' => 'Users', 'action' => 'view', $role->modified_by_user->id]
-                    )
-                    : '' ?></td>
+                    <tr>
+                <th><?= __('Modified By') ?></th>
+                <td>
+                    <?php if ($role->has('modified_by_user')) : ?>
+                        <?= $this->Html->link(
+                            h($role->modified_by_user->display_name),
+                            ['controller' => 'Users', 'action' => 'view', $role->modified_by_user->id]
+                        ) ?>
+                    <?php else : ?>
+                        <?= h($role->modified_by) ?>
+                    <?php endif; ?>
+                </td>
             </tr>
 
         
@@ -96,6 +104,111 @@ $this->Breadcrumbs->add([
 
 
 
+<div class="related related-rolePermission view card">
+    <div class="card-header d-flex">
+        <h3 class="card-title"><?= __('Related Role Permissions') ?></h3>
+        <div class="ml-auto">
+            <?= $this->Html->link(__('New Role Permission'), ['controller' => 'RolePermissions', 'action' => 'add', '?' => ['role_id' => $role->id]], ['class' => 'btn btn-primary btn-sm']) ?>
+            <?= $this->Html->link(__('List Role Permissions'), ['controller' => 'RolePermissions', 'action' => 'index'], ['class' => 'btn btn-primary btn-sm']) ?>
+        </div>
+    </div>
+
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover text-nowrap">
+            <tr>
+                                <th class="actions"><?= __('Actions') ?></th>
+
+                                <th><?= __('Plugin') ?></th>
+                                                <th><?= __('Prefix') ?></th>
+                                                <th><?= __('Controller') ?></th>
+                                                <th><?= __('Action') ?></th>
+                                                <th><?= __('Allowed') ?></th>
+                                                <th><?= __('Created') ?></th>
+                                                <th><?= __('Created By User') ?></th>
+                                                <th><?= __('Modified') ?></th>
+                                                <th><?= __('Modified By User') ?></th>
+                            </tr>
+
+            <?php if (empty($role->role_permissions)) : ?>
+                <tr>
+                    <td colspan="10" class="text-muted">
+                        <?= __('Role Permissions record not found!') ?>
+                    </td>
+                </tr>
+            <?php else : ?>
+                <?php foreach ($role->role_permissions as $rolePermission) : ?>
+                    <tr>
+
+                                                <td class="actions text-nowrap">
+                            <?= $this->Html->link(
+                                '<i class="fas fa-eye"></i>',
+                                ['controller' => 'RolePermissions', 'action' => 'view', $rolePermission->id],
+                                [
+                                    'class' => 'btn btn-xs btn-outline-info',
+                                    'escape' => false,
+                                    'title' => __('View'),
+                                    'data-toggle' => 'tooltip',
+                                ]
+                            ) ?>
+
+                            <?= $this->Html->link(
+                                '<i class="fas fa-edit"></i>',
+                                ['controller' => 'RolePermissions', 'action' => 'edit', $rolePermission->id],
+                                [
+                                    'class' => 'btn btn-xs btn-outline-primary ml-1',
+                                    'escape' => false,
+                                    'title' => __('Edit'),
+                                    'data-toggle' => 'tooltip',
+                                ]
+                            ) ?>
+
+                            <?= $this->Form->postLink(
+                                '<i class="fas fa-trash"></i>',
+                                ['controller' => 'RolePermissions', 'action' => 'delete', $rolePermission->id],
+                                [
+                                    'class' => 'btn btn-xs btn-outline-danger ml-1',
+                                    'escape' => false,
+                                    'title' => __('Delete'),
+                                    'data-toggle' => 'tooltip',
+                                    'confirm' => __('Are you sure you want to delete # {0}?', $rolePermission->id),
+                                ]
+                            ) ?>
+                        </td>
+
+                                                <td><?= h($rolePermission->plugin) ?></td>
+                                                                        <td><?= h($rolePermission->prefix) ?></td>
+                                                                        <td><?= h($rolePermission->controller) ?></td>
+                                                                        <td><?= h($rolePermission->action) ?></td>
+                                                                        <td><?= h($rolePermission->allowed) ?></td>
+                                                                        <td><?= h($rolePermission->created) ?></td>
+                                                                        <td>
+                            <?php if ($rolePermission->has('created_by_user')) : ?>
+                                <?= $this->Html->link(
+                                    h($rolePermission->created_by_user->display_name),
+                                    ['controller' => 'Users', 'action' => 'view', $rolePermission->created_by_user->id]
+                                ) ?>
+                            <?php else : ?>
+                                <?= h($rolePermission->created_by) ?>
+                            <?php endif; ?>
+                        </td>
+                                                                        <td><?= h($rolePermission->modified) ?></td>
+                                                                        <td>
+                            <?php if ($rolePermission->has('modified_by_user')) : ?>
+                                <?= $this->Html->link(
+                                    h($rolePermission->modified_by_user->display_name),
+                                    ['controller' => 'Users', 'action' => 'view', $rolePermission->modified_by_user->id]
+                                ) ?>
+                            <?php else : ?>
+                                <?= h($rolePermission->modified_by) ?>
+                            <?php endif; ?>
+                        </td>
+                                            </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </table>
+    </div>
+</div>
+
 
 <div class="related related-user view card">
     <div class="card-header d-flex">
@@ -111,15 +224,15 @@ $this->Breadcrumbs->add([
             <tr>
                                 <th class="actions"><?= __('Actions') ?></th>
 
-                <th><?= __('Username') ?></th>
-                <th><?= __('Display Name') ?></th>
-                <th><?= __('Email') ?></th>
-                <th><?= __('Is Active') ?></th>
-                <th><?= __('Created') ?></th>
-                <th><?= __('Created By') ?></th>
-                <th><?= __('Modified') ?></th>
-                <th><?= __('Modified By') ?></th>
-            </tr>
+                                <th><?= __('Username') ?></th>
+                                                <th><?= __('Display Name') ?></th>
+                                                <th><?= __('Email') ?></th>
+                                                <th><?= __('Is Active') ?></th>
+                                                <th><?= __('Created') ?></th>
+                                                <th><?= __('Created By User') ?></th>
+                                                <th><?= __('Modified') ?></th>
+                                                <th><?= __('Modified By User') ?></th>
+                            </tr>
 
             <?php if (empty($role->users)) : ?>
                 <tr>
@@ -167,15 +280,33 @@ $this->Breadcrumbs->add([
                             ) ?>
                         </td>
 
-                        <td><?= h($user->username) ?></td>
-                        <td><?= h($user->display_name) ?></td>
-                        <td><?= h($user->email) ?></td>
-                        <td><?= h($user->is_active) ?></td>
-                        <td><?= h($user->created) ?></td>
-                        <td><?= h($user->created_by) ?></td>
-                        <td><?= h($user->modified) ?></td>
-                        <td><?= h($user->modified_by) ?></td>
-                    </tr>
+                                                <td><?= h($user->username) ?></td>
+                                                                        <td><?= h($user->display_name) ?></td>
+                                                                        <td><?= h($user->email) ?></td>
+                                                                        <td><?= h($user->is_active) ?></td>
+                                                                        <td><?= h($user->created) ?></td>
+                                                                        <td>
+                            <?php if ($user->has('created_by_user')) : ?>
+                                <?= $this->Html->link(
+                                    h($user->created_by_user->display_name),
+                                    ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]
+                                ) ?>
+                            <?php else : ?>
+                                <?= h($user->created_by) ?>
+                            <?php endif; ?>
+                        </td>
+                                                                        <td><?= h($user->modified) ?></td>
+                                                                        <td>
+                            <?php if ($user->has('modified_by_user')) : ?>
+                                <?= $this->Html->link(
+                                    h($user->modified_by_user->display_name),
+                                    ['controller' => 'Users', 'action' => 'view', $user->modified_by_user->id]
+                                ) ?>
+                            <?php else : ?>
+                                <?= h($user->modified_by) ?>
+                            <?php endif; ?>
+                        </td>
+                                            </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
         </table>

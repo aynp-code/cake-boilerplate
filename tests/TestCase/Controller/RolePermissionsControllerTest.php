@@ -3,16 +3,16 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
-use App\Controller\RolesController;
+use App\Controller\RolePermissionsController;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
 /**
- * App\Controller\RolesController Test Case
+ * App\Controller\RolePermissionsController Test Case
  *
- * @link \App\Controller\RolesController
+ * @link \App\Controller\RolePermissionsController
  */
-class RolesControllerTest extends TestCase
+class RolePermissionsControllerTest extends TestCase
 {
     use IntegrationTestTrait;
 
@@ -22,18 +22,17 @@ class RolesControllerTest extends TestCase
      * @var array<string>
      */
     protected array $fixtures = [
-        'app.Roles',
+        'app.RolePermissions',
         'app.CreatedByUser',
         'app.ModifiedByUser',
-        'app.RolePermissions',
-        'app.Users',
+        'app.Roles',
     ];
 
     /**
      * Test index method
      *
      * @return void
-     * @link \App\Controller\RolesController::index()
+     * @link \App\Controller\RolePermissionsController::index()
      */
     public function testIndex(): void
     {
@@ -44,7 +43,7 @@ class RolesControllerTest extends TestCase
      * Test view method
      *
      * @return void
-     * @link \App\Controller\RolesController::view()
+     * @link \App\Controller\RolePermissionsController::view()
      */
     public function testView(): void
     {
@@ -55,7 +54,7 @@ class RolesControllerTest extends TestCase
      * Test add method
      *
      * @return void
-     * @link \App\Controller\RolesController::add()
+     * @link \App\Controller\RolePermissionsController::add()
      */
     public function testAdd(): void
     {
@@ -66,7 +65,7 @@ class RolesControllerTest extends TestCase
      * Test edit method
      *
      * @return void
-     * @link \App\Controller\RolesController::edit()
+     * @link \App\Controller\RolePermissionsController::edit()
      */
     public function testEdit(): void
     {
@@ -77,7 +76,7 @@ class RolesControllerTest extends TestCase
      * Test delete method
      *
      * @return void
-     * @link \App\Controller\RolesController::delete()
+     * @link \App\Controller\RolePermissionsController::delete()
      */
     public function testDelete(): void
     {

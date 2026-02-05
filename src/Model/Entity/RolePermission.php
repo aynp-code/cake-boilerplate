@@ -20,6 +20,8 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\DateTime $modified
  * @property string $modified_by
  *
+ * @property \App\Model\Entity\User $created_by_user
+ * @property \App\Model\Entity\User $modified_by_user
  * @property \App\Model\Entity\Role $role
  */
 class RolePermission extends Entity

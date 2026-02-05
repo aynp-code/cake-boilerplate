@@ -69,17 +69,21 @@ $this->Breadcrumbs->add([
 
         
 
-                            <tr>
-                <th><?= __('Created By User') ?></th>
-                <td><?= $user->has('created_by_user')
-                    ? $this->Html->link(
-                        $user->created_by_user->display_name,
-                        ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]
-                    )
-                    : '' ?></td>
+                    <tr>
+                <th><?= __('Created By') ?></th>
+                <td>
+                    <?php if ($user->has('created_by_user')) : ?>
+                        <?= $this->Html->link(
+                            h($user->created_by_user->display_name),
+                            ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]
+                        ) ?>
+                    <?php else : ?>
+                        <?= h($user->created_by) ?>
+                    <?php endif; ?>
+                </td>
             </tr>
 
-        
+    
 
                     <tr>
                 <th><?= __('Modified') ?></th>
@@ -88,14 +92,18 @@ $this->Breadcrumbs->add([
 
         
 
-                            <tr>
-                <th><?= __('Modified By User') ?></th>
-                <td><?= $user->has('modified_by_user')
-                    ? $this->Html->link(
-                        $user->modified_by_user->display_name,
-                        ['controller' => 'Users', 'action' => 'view', $user->modified_by_user->id]
-                    )
-                    : '' ?></td>
+                    <tr>
+                <th><?= __('Modified By') ?></th>
+                <td>
+                    <?php if ($user->has('modified_by_user')) : ?>
+                        <?= $this->Html->link(
+                            h($user->modified_by_user->display_name),
+                            ['controller' => 'Users', 'action' => 'view', $user->modified_by_user->id]
+                        ) ?>
+                    <?php else : ?>
+                        <?= h($user->modified_by) ?>
+                    <?php endif; ?>
+                </td>
             </tr>
 
         
@@ -118,5 +126,4 @@ $this->Breadcrumbs->add([
         </div>
     </div>
 </div>
-
 

@@ -18,17 +18,58 @@ $this->Breadcrumbs->add([
 <div class="card card-primary card-outline">
     <?= $this->Form->create($rolePermission) ?>
     <div class="card-body">
-        <?= $this->Form->control('role_id', ['options' => $roles, 'class' => 'form-control']) ?>
 
-        <?= $this->Form->control('plugin') ?>
 
-        <?= $this->Form->control('prefix') ?>
 
-        <?= $this->Form->control('controller') ?>
+                                <?= $this->Form->control('role_id', ['options' => $roles, 'class' => 'form-control']) ?>
+        
+    
 
-        <?= $this->Form->control('action') ?>
 
-        <?= $this->Form->control('allowed', ['custom' => true]) ?>
+        
+                            
+                                <?= $this->Form->control('plugin') ?>
+            
+            
+
+
+        
+                            
+                                <?= $this->Form->control('prefix') ?>
+            
+            
+
+
+        
+                            
+                                <?= $this->Form->control('controller') ?>
+            
+            
+
+
+        
+                            
+                                <?= $this->Form->control('action') ?>
+            
+            
+
+
+        
+                            
+                                <?= $this->Form->control('allowed', ['custom' => true]) ?>
+            
+            
+
+
+        
+                    
+
+
+
+        
+                    
+
+
     </div>
     <div class="card-footer d-flex">
         <div class="mr-auto">

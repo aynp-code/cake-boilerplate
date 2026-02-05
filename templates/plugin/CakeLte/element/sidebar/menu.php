@@ -28,6 +28,36 @@ $menu = [
             return true;
         }
     ],
+    'Users' => [
+        'label' => __('Users'),
+        'badge' => ['text' => __('New'), 'color' => 'danger'],
+        'uri' => ['controller' => 'Users', 'action' => 'index', 'plugin' => false],
+        'icon' => 'fas fa-users text-danger',
+        'show' => function () {
+            // logic condition to show item, return a bool
+            return true;
+        }
+    ],
+    'Roles' => [
+        'label' => __('Roles'),
+        'badge' => ['text' => __('New'), 'color' => 'danger'],
+        'uri' => ['controller' => 'Roles', 'action' => 'index', 'plugin' => false],
+        'icon' => 'fas fa-user-tag text-danger',
+        'show' => function () {
+            // logic condition to show item, return a bool
+            return true;
+        }
+    ],
+    'RolePermissions' => [
+        'label' => __('Role Permissions'),
+        'badge' => ['text' => __('New'), 'color' => 'danger'],
+        'uri' => ['controller' => 'RolePermissions', 'action' => 'index', 'plugin' => false],
+        'icon' => 'fas fa-user-tag text-danger',
+        'show' => function () {
+            // logic condition to show item, return a bool
+            return true;
+        }
+    ],
 ];
 
 echo $this->MenuLte->render($menu);

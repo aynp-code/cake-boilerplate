@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use PDOException;
-
 /**
  * Roles Controller
  *
@@ -38,7 +36,10 @@ class RolesController extends AppController
      */
     public function view($id = null)
     {
-        $role = $this->Roles->get($id, contain: ['CreatedByUser', 'ModifiedByUser', 'Users']);
+        // ✅ 監査ユーザ（CreatedByUser/ModifiedByUser）は AppTable 側で contain を拡張して共通化
+        $contain = $this->Roles->withAuditUsersContain(['CreatedByUser', 'ModifiedByUser', 'RolePermissions', 'Users']);
+
+        $role = $this->Roles->get($id, contain: $contain);
         $this->set(compact('role'));
     }
 
@@ -61,9 +62,8 @@ class RolesController extends AppController
             }
             $this->Flash->error(__('The role could not be saved. Please, try again.'));
         }
-        $createdByUser = $this->Roles->CreatedByUser->find('list', limit: 200)->all();
-        $modifiedByUser = $this->Roles->ModifiedByUser->find('list', limit: 200)->all();
-        $this->set(compact('role', 'createdByUser', 'modifiedByUser'));
+
+        $this->set(compact('role'));
     }
 
     /**
@@ -93,9 +93,9 @@ class RolesController extends AppController
             }
             $this->Flash->error(__('The role could not be saved. Please, try again.'));
         }
-        $createdByUser = $this->Roles->CreatedByUser->find('list', limit: 200)->all();
-        $modifiedByUser = $this->Roles->ModifiedByUser->find('list', limit: 200)->all();
-        $this->set(compact('role', 'createdByUser', 'modifiedByUser'));
+
+
+                $this->set(compact('role'));
     }
 
     /**
@@ -105,31 +105,14 @@ class RolesController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete(string $id)
+    public function delete($id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
-
         $role = $this->Roles->get($id);
-
-        // 1) 事前チェック（FKで落ちる前に止める）
-        $inUse = $this->Roles->Users->find()
-            ->where(['Users.role_id' => $id])
-            ->count();
-
-        if ($inUse > 0) {
-            $this->Flash->error(__('This role is assigned to {0} user(s) and cannot be deleted.', [$inUse]));
-            return $this->redirect(['action' => 'index']);
-        }
-
-        // 2) DB例外も念のため拾う（レースコンディション対策）
-        try {
-            if ($this->Roles->delete($role)) {
-                $this->Flash->success(__('The role has been deleted.'));
-            } else {
-                $this->Flash->error(__('The role could not be deleted. Please try again.'));
-            }
-        } catch (PDOException $e) {
-            $this->Flash->error(__('This role cannot be deleted because it is in use.'));
+        if ($this->Roles->delete($role)) {
+            $this->Flash->success(__('The role has been deleted.'));
+        } else {
+            $this->Flash->error(__('The role could not be deleted. Please, try again.'));
         }
 
         return $this->redirect(['action' => 'index']);

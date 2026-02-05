@@ -26,15 +26,12 @@ class UsersController extends AppController
      */
     public function index()
     {
-
-
         $query = $this->Users->find()
             ->contain(['CreatedByUser', 'ModifiedByUser', 'Roles']);
         $users = $this->paginate($query);
 
         $this->set(compact('users'));
     }
-
 
     /**
      * View method
@@ -45,7 +42,10 @@ class UsersController extends AppController
      */
     public function view($id = null)
     {
-        $user = $this->Users->get($id, contain: ['CreatedByUser', 'ModifiedByUser', 'Roles']);
+        // ✅ 監査ユーザ（CreatedByUser/ModifiedByUser）は AppTable 側で contain を拡張して共通化
+        $contain = $this->Users->withAuditUsersContain(['CreatedByUser', 'ModifiedByUser', 'Roles']);
+
+        $user = $this->Users->get($id, contain: $contain);
         $this->set(compact('user'));
     }
 
@@ -68,10 +68,9 @@ class UsersController extends AppController
             }
             $this->Flash->error(__('The user could not be saved. Please, try again.'));
         }
-        $createdByUser = $this->Users->CreatedByUser->find('list', limit: 200)->all();
-        $modifiedByUser = $this->Users->ModifiedByUser->find('list', limit: 200)->all();
+
         $roles = $this->Users->Roles->find('list', limit: 200)->all();
-        $this->set(compact('user', 'createdByUser', 'modifiedByUser', 'roles'));
+        $this->set(compact('user', 'roles'));
     }
 
     /**
@@ -101,10 +100,9 @@ class UsersController extends AppController
             }
             $this->Flash->error(__('The user could not be saved. Please, try again.'));
         }
-        $createdByUser = $this->Users->CreatedByUser->find('list', limit: 200)->all();
-        $modifiedByUser = $this->Users->ModifiedByUser->find('list', limit: 200)->all();
+
         $roles = $this->Users->Roles->find('list', limit: 200)->all();
-        $this->set(compact('user', 'createdByUser', 'modifiedByUser', 'roles'));
+        $this->set(compact('user', 'roles'));
     }
 
     /**

@@ -32,6 +32,20 @@ use Cake\Validation\Validator;
 class RolePermissionsTable extends AppTable
 {
     /**
+     * 関連データがある場合は削除を禁止する
+     * DeleteGuardBehavior が beforeDelete で参照し、関連レコードが残っていれば削除を止める。
+     *
+     * @return string[]
+     */
+    public function restrictDeleteAssociations(): array
+    {
+        return [
+            // 関連（hasMany / hasOne / belongsToMany 等）をここに追加します。
+            'Roles'
+        ];
+    }
+
+    /**
      * Initialize method
      *
      * @param array<string, mixed> $config The configuration for the Table.
@@ -45,12 +59,15 @@ class RolePermissionsTable extends AppTable
         $this->setDisplayField('controller');
         $this->setPrimaryKey('id');
 
+        $this->addBehavior('Timestamp');
+
         $this->belongsTo('Roles', [
             'foreignKey' => 'role_id',
             'joinType' => 'INNER',
         ]);
     }
 
+    
     /**
      * Default validation rules.
      *
@@ -99,9 +116,12 @@ class RolePermissionsTable extends AppTable
             ->requirePresence('modified_by', 'create')
             ->notEmptyString('modified_by');
 
+
+        
         return $validator;
     }
 
+    
     /**
      * Returns a rules checker object that will be used for validating
      * application integrity.

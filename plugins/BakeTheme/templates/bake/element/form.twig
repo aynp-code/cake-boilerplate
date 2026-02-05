@@ -7,7 +7,7 @@
  * For full copyright and license information, please see the LICENSE.txt
  * Redistributions of files must retain the above copyright notice.
  *
- * @copyright     Copyright (c) Cake Software Foundation, Inc. (http://cakefoundation.org)
+ * @copyright     Copyright (c) Cake Software Foundation, Inc. (http://cakephp.org)
  * @link          http://cakephp.org CakePHP(tm) Project
  * @since         2.0.0
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
@@ -36,21 +36,28 @@ $this->Breadcrumbs->add([
 {% endif %}
     <div class="card-body">
 {% for field in fields %}
-{%- if field not in primaryKey %}
+{# ✅ add/edit では created_by / modified_by を入力させない（プルダウン化も防ぐ） #}
+{% set skipAuditAlways = (field in ['created_by', 'modified_by']) %}
 
-{%- if keyFields[field] %}
-{%- set fieldData = Bake.columnData(field, schema) %}
-{%- if fieldData.null %}
+{% if field not in primaryKey and not skipAuditAlways %}
+
+    {# 外部キー（belongsTo 等）ならプルダウン #}
+    {% if keyFields[field] %}
+        {% set fieldData = Bake.columnData(field, schema) %}
+        {% if fieldData.null %}
         <?= $this->Form->control('{{ field }}', ['options' => ${{ keyFields[field] }}, 'empty' => true, 'class' => 'form-control']) ?>
-{% else %}
+        {% else %}
         <?= $this->Form->control('{{ field }}', ['options' => ${{ keyFields[field] }}, 'class' => 'form-control']) ?>
-{% endif %}
+        {% endif %}
 
-{%- elseif field not in ['created', 'created_by', 'modified', 'modified_by', 'updated', 'updated_by'] %}
-{%- set fieldData = Bake.columnData(field, schema) %}
+    {% else %}
 
-{# ✅ password は特別扱い：右端トグル付き #}
-{% if field == 'password' %}
+        {# created/modified 系はフォームに出さない #}
+        {% if field not in ['created', 'created_by', 'modified', 'modified_by', 'updated', 'updated_by'] %}
+            {% set fieldData = Bake.columnData(field, schema) %}
+
+            {# ✅ password は特別扱い：右端トグル付き #}
+            {% if field == 'password' %}
         <div class="form-group">
             <?= $this->Form->label('password', __('Password')) ?>
 
@@ -73,20 +80,22 @@ $this->Breadcrumbs->add([
             </div>
         </div>
 
-{%- elseif fieldData.type in ['date', 'datetime', 'time'] and fieldData.null %}
+            {% elseif fieldData.type in ['date', 'datetime', 'time'] and fieldData.null %}
         <?= $this->Form->control('{{ field }}', ['empty' => true]) ?>
-{% elseif fieldData.type in ['boolean'] %}
+            {% elseif fieldData.type in ['boolean'] %}
         <?= $this->Form->control('{{ field }}', ['custom' => true]) ?>
-{% else %}
+            {% else %}
         <?= $this->Form->control('{{ field }}') ?>
+            {% endif %}
+
+        {% endif %}
+    {% endif %}
+
 {% endif %}
+{% endfor %}
 
-{%- endif %}
-{%- endif %}
-{%- endfor %}
-
-{%- if associations.BelongsToMany %}
-{%- for assocName, assocData in associations.BelongsToMany %}
+{% if associations.BelongsToMany %}
+{% for assocName, assocData in associations.BelongsToMany %}
         <?= $this->Form->control('{{ assocData.property }}._ids', ['options' => ${{ assocData.variable }}]) ?>
 {% endfor %}
 {% endif %}

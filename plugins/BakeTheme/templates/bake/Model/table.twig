@@ -14,7 +14,7 @@
  */
 #}
 {% set annotations = DocBlock.buildTableAnnotations(associations, associationInfo, behaviors, entity, namespace) %}
-{% set generatedFunctions = ['initialize'] %}
+{% set generatedFunctions = ['initialize', 'restrictDeleteAssociations'] %}
 {{ element('Bake.file_header', {
     namespace: fileBuilder.namespace,
     classImports: fileBuilder.classImports(['Cake\\ORM\\Query\\SelectQuery', 'Cake\\ORM\\RulesChecker', 'Cake\\ORM\\Table', 'Cake\\Validation\\Validator']),
@@ -33,6 +33,45 @@ class {{ name }}Table extends AppTable{{ fileBuilder.classBuilder.implements ? '
     {{~ Bake.concat('\n\n', userProperties) }}
 
 {% endif %}
+    /**
+     * 関連データがある場合は削除を禁止する
+     * DeleteGuardBehavior が beforeDelete で参照し、関連レコードが残っていれば削除を止める。
+     *
+     * @return string[]
+     */
+    public function restrictDeleteAssociations(): array
+    {
+        return [
+            // 関連（hasMany / hasOne / belongsToMany 等）をここに追加します。
+{% set deleteGuardCandidates = [] %}
+{% if associations.hasMany %}
+{% for assoc in associations.hasMany %}
+{% set deleteGuardCandidates = deleteGuardCandidates|merge([assoc.alias]) %}
+{% endfor %}
+{% endif %}
+{% if associations.hasOne %}
+{% for assoc in associations.hasOne %}
+{% set deleteGuardCandidates = deleteGuardCandidates|merge([assoc.alias]) %}
+{% endfor %}
+{% endif %}
+{% if associations.belongsToMany %}
+{% for assoc in associations.belongsToMany %}
+{% set deleteGuardCandidates = deleteGuardCandidates|merge([assoc.alias]) %}
+{% endfor %}
+{% endif %}
+{% set uniqAliases = [] %}
+{% for alias in deleteGuardCandidates %}
+    {% if alias not in uniqAliases %}
+        {% set uniqAliases = uniqAliases|merge([alias]) %}
+    {% endif %}
+{% endfor %}
+
+{% for alias in uniqAliases %}
+            // '{{ alias }}',
+{% endfor %}
+        ];
+    }
+
     /**
      * Initialize method
      *

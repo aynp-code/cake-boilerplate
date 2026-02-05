@@ -34,8 +34,39 @@ $this->Breadcrumbs->add([
 {# ✅ テーブル項目順（= orderedFields の順）で表示 #}
 {% for field in orderedFields %}
 
+    {# ✅ created_by / modified_by は Users.display_name を優先表示（関連がロードされていれば） #}
+    {% if field == 'created_by' %}
+            <tr>
+                <th><?= __('Created By') ?></th>
+                <td>
+                    <?php if (${{ singularVar }}->has('created_by_user')) : ?>
+                        <?= $this->Html->link(
+                            h(${{ singularVar }}->created_by_user->display_name),
+                            ['controller' => 'Users', 'action' => 'view', ${{ singularVar }}->created_by_user->id]
+                        ) ?>
+                    <?php else : ?>
+                        <?= h(${{ singularVar }}->created_by) ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+
+    {% elseif field == 'modified_by' %}
+            <tr>
+                <th><?= __('Modified By') ?></th>
+                <td>
+                    <?php if (${{ singularVar }}->has('modified_by_user')) : ?>
+                        <?= $this->Html->link(
+                            h(${{ singularVar }}->modified_by_user->display_name),
+                            ['controller' => 'Users', 'action' => 'view', ${{ singularVar }}->modified_by_user->id]
+                        ) ?>
+                    <?php else : ?>
+                        <?= h(${{ singularVar }}->modified_by) ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+
     {# ✅ belongsTo の外部キーなど（associationFields にあるもの）はリンク表示 #}
-    {% if associationFields[field] %}
+    {% elseif associationFields[field] %}
         {% set details = associationFields[field] %}
             <tr>
                 <th><?= __('{{ details.property|humanize }}') ?></th>
@@ -118,21 +149,6 @@ $this->Breadcrumbs->add([
     </div>
 </div>
 
-{# ✅ text を「別カードで下に出す」運用に戻したい場合は、上の text 分岐を削除し、ここを有効にしてください。
-{% if groupedFields.text %}
-{% for field in groupedFields.text %}
-<div class="view text card">
-    <div class="card-header">
-        <h3 class="card-title"><?= __('{{ field|humanize }}') ?></h3>
-    </div>
-    <div class="card-body">
-        <?= $this->Text->autoParagraph(h(${{ singularVar }}->{{ field }})); ?>
-    </div>
-</div>
-{% endfor %}
-{% endif %}
-#}
-
 {% set relations = associations.BelongsToMany|merge(associations.HasMany) %}
 {% for alias, details in relations %}
 {% set otherSingularVar = alias|singularize|variable %}
@@ -161,7 +177,13 @@ $this->Breadcrumbs->add([
                 <th class="actions"><?= __('Actions') ?></th>
 
 {% for field in relatedFields %}
+                {% if field == 'created_by' %}
+                <th><?= __('Created By User') ?></th>
+                {% elseif field == 'modified_by' %}
+                <th><?= __('Modified By User') ?></th>
+                {% else %}
                 <th><?= __('{{ field|humanize }}') ?></th>
+                {% endif %}
 {% endfor %}
             </tr>
 
@@ -214,7 +236,31 @@ $this->Breadcrumbs->add([
                         </td>
 
 {% for field in relatedFields %}
+                        {% if field == 'created_by' %}
+                        <td>
+                            <?php if (${{ otherSingularVar }}->has('created_by_user')) : ?>
+                                <?= $this->Html->link(
+                                    h(${{ otherSingularVar }}->created_by_user->display_name),
+                                    ['controller' => 'Users', 'action' => 'view', ${{ otherSingularVar }}->created_by_user->id]
+                                ) ?>
+                            <?php else : ?>
+                                <?= h(${{ otherSingularVar }}->created_by) ?>
+                            <?php endif; ?>
+                        </td>
+                        {% elseif field == 'modified_by' %}
+                        <td>
+                            <?php if (${{ otherSingularVar }}->has('modified_by_user')) : ?>
+                                <?= $this->Html->link(
+                                    h(${{ otherSingularVar }}->modified_by_user->display_name),
+                                    ['controller' => 'Users', 'action' => 'view', ${{ otherSingularVar }}->modified_by_user->id]
+                                ) ?>
+                            <?php else : ?>
+                                <?= h(${{ otherSingularVar }}->modified_by) ?>
+                            <?php endif; ?>
+                        </td>
+                        {% else %}
                         <td><?= h(${{ otherSingularVar }}->{{ field }}) ?></td>
+                        {% endif %}
 {% endfor %}
                     </tr>
                 <?php endforeach; ?>

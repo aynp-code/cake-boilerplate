@@ -19,9 +19,18 @@ $this->Breadcrumbs->add([
     <?= $this->Form->create($user) ?>
     <div class="card-body">
 
-        <?= $this->Form->control('username') ?>
 
-        <div class="form-group">
+
+        
+                            
+                                <?= $this->Form->control('username') ?>
+            
+            
+
+
+        
+                            
+                                <div class="form-group">
             <?= $this->Form->label('password', __('Password')) ?>
 
             <div class="input-group">
@@ -41,14 +50,46 @@ $this->Breadcrumbs->add([
                 </div>
             </div>
         </div>
-        <?= $this->Form->control('display_name') ?>
 
-        <?= $this->Form->control('email') ?>
-        <?= $this->Form->control('role_id', ['options' => $roles, 'class' => 'form-control']) ?>
+            
+            
 
-        <?= $this->Form->control('is_active', ['custom' => true]) ?>
-        <?= $this->Form->control('created_by', ['options' => $createdByUser, 'class' => 'form-control']) ?>
-        <?= $this->Form->control('modified_by', ['options' => $modifiedByUser, 'class' => 'form-control']) ?>
+
+        
+                            
+                                <?= $this->Form->control('display_name') ?>
+            
+            
+
+
+        
+                            
+                                <?= $this->Form->control('email') ?>
+            
+            
+
+
+                                <?= $this->Form->control('role_id', ['options' => $roles, 'class' => 'form-control']) ?>
+        
+    
+
+
+        
+                            
+                                <?= $this->Form->control('is_active', ['custom' => true]) ?>
+            
+            
+
+
+        
+                    
+
+
+
+        
+                    
+
+
     </div>
     <div class="card-footer d-flex">
         <div class="mr-auto">

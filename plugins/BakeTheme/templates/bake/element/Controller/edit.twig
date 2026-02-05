@@ -46,11 +46,20 @@
             }
             $this->Flash->error(__('The {{ singularHumanName|lower }} could not be saved. Please, try again.'));
         }
+
+{# ✅ 監査系（created_by / modified_by / updated_by 等）の関連はBehaviorが勝手に扱うので除外 #}
+{% set auditAssociationAliases = [
+    'CreatedByUser', 'ModifiedByUser', 'UpdatedByUser',
+    'CreatedBy', 'ModifiedBy', 'UpdatedBy'
+] %}
+
 {% for assoc in belongsTo|merge(belongsToMany) %}
-    {%~ set otherName = Bake.getAssociatedTableAlias(modelObj, assoc) %}
-    {%~ set otherPlural = otherName|variable %}
+    {% if assoc not in auditAssociationAliases %}
+        {%~ set otherName = Bake.getAssociatedTableAlias(modelObj, assoc) %}
+        {%~ set otherPlural = otherName|variable %}
         ${{ otherPlural }} = $this->{{ currentModelName }}->{{ otherName }}->find('list', limit: 200)->all();
-    {%~ set compact = compact|merge(["'#{otherPlural}'"]) %}
+        {%~ set compact = compact|merge(["'#{otherPlural}'"]) %}
+    {% endif %}
 {% endfor %}
         $this->set(compact({{ compact|join(', ')|raw }}));
     }
