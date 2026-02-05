@@ -36,7 +36,18 @@ class RolePermission extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        '*' => true,
-        'id' => false,
+        'role_id' => true,
+        'plugin' => true,
+        'prefix' => true,
+        'controller' => true,
+        'action' => true,
+        'allowed' => true,
+        'created' => true,
+        'created_by' => true,
+        'modified' => true,
+        'modified_by' => true,
+        'created_by_user' => true,
+        'modified_by_user' => true,
+        'role' => true,
     ];
 }

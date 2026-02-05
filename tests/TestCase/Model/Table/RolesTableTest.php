@@ -25,6 +25,8 @@ class RolesTableTest extends TestCase
      */
     protected array $fixtures = [
         'app.Roles',
+        'app.CreatedByUser',
+        'app.ModifiedByUser',
         'app.RolePermissions',
         'app.Users',
     ];
@@ -54,12 +56,34 @@ class RolesTableTest extends TestCase
     }
 
     /**
+     * Test restrictDeleteAssociations method
+     *
+     * @return void
+     * @link \App\Model\Table\RolesTable::restrictDeleteAssociations()
+     */
+    public function testRestrictDeleteAssociations(): void
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
      * Test validationDefault method
      *
      * @return void
      * @link \App\Model\Table\RolesTable::validationDefault()
      */
     public function testValidationDefault(): void
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
+     * Test validationCreate method
+     *
+     * @return void
+     * @link \App\Model\Table\RolesTable::validationCreate()
+     */
+    public function testValidationCreate(): void
     {
         $this->markTestIncomplete('Not implemented yet.');
     }

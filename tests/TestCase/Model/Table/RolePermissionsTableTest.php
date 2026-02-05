@@ -55,12 +55,34 @@ class RolePermissionsTableTest extends TestCase
     }
 
     /**
+     * Test restrictDeleteAssociations method
+     *
+     * @return void
+     * @link \App\Model\Table\RolePermissionsTable::restrictDeleteAssociations()
+     */
+    public function testRestrictDeleteAssociations(): void
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
      * Test validationDefault method
      *
      * @return void
      * @link \App\Model\Table\RolePermissionsTable::validationDefault()
      */
     public function testValidationDefault(): void
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
+     * Test validationCreate method
+     *
+     * @return void
+     * @link \App\Model\Table\RolePermissionsTable::validationCreate()
+     */
+    public function testValidationCreate(): void
     {
         $this->markTestIncomplete('Not implemented yet.');
     }

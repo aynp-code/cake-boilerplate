@@ -42,8 +42,9 @@ class RolesTable extends AppTable
     {
         return [
             // 関連（hasMany / hasOne / belongsToMany 等）をここに追加します。
-            'Users',
+                                
             // 'RolePermissions',
+            // 'Users',
         ];
     }
 
@@ -60,9 +61,7 @@ class RolesTable extends AppTable
         $this->setTable('roles');
         $this->setDisplayField('display_name');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
-
+                
         $this->hasMany('RolePermissions', [
             'foreignKey' => 'role_id',
         ]);
@@ -103,11 +102,23 @@ class RolesTable extends AppTable
             ->notEmptyString('modified_by');
 
 
-        
         return $validator;
     }
 
     
+    /**
+     * Validation rules for create.
+     *
+     * @param \Cake\Validation\Validator $validator Validator instance.
+     * @return \Cake\Validation\Validator
+     */
+    public function validationCreate(Validator $validator): Validator
+    {
+        $validator = $this->validationDefault($validator);
+
+        return $validator;
+    }
+
     /**
      * Returns a rules checker object that will be used for validating
      * application integrity.

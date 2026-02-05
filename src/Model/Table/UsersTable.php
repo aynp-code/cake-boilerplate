@@ -32,6 +32,20 @@ use Cake\Validation\Validator;
 class UsersTable extends AppTable
 {
     /**
+     * 関連データがある場合は削除を禁止する
+     * DeleteGuardBehavior が beforeDelete で参照し、関連レコードが残っていれば削除を止める。
+     *
+     * @return string[]
+     */
+    public function restrictDeleteAssociations(): array
+    {
+        return [
+            // 関連（hasMany / hasOne / belongsToMany 等）をここに追加します。
+
+        ];
+    }
+
+    /**
      * Initialize method
      *
      * @param array<string, mixed> $config The configuration for the Table.
@@ -44,9 +58,7 @@ class UsersTable extends AppTable
         $this->setTable('users');
         $this->setDisplayField('display_name');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
-
+                
         $this->belongsTo('Roles', [
             'foreignKey' => 'role_id',
             'joinType' => 'INNER',
@@ -97,14 +109,15 @@ class UsersTable extends AppTable
 
         $validator
             ->uuid('created_by')
-            ->allowEmptyString('created_by');
+            ->requirePresence('created_by', 'create')
+            ->notEmptyString('created_by');
 
         $validator
             ->uuid('modified_by')
-            ->allowEmptyString('modified_by');
+            ->requirePresence('modified_by', 'create')
+            ->notEmptyString('modified_by');
 
-
-                $validator->allowEmptyString('password', null, function ($context) {
+        $validator->allowEmptyString('password', null, function ($context) {
             // newRecord=false（更新）の時は空を許可
             if (isset($context['newRecord'])) {
                 return $context['newRecord'] === false;
@@ -148,5 +161,13 @@ class UsersTable extends AppTable
         $rules->add($rules->existsIn(['role_id'], 'Roles'), ['errorField' => 'role_id']);
 
         return $rules;
+    }
+
+    public function beforeMarshal(\Cake\Event\EventInterface $event, \ArrayObject $data, \ArrayObject $options): void
+    {
+        // 空文字の password はリクエストから取り除く（edit時の「未入力は更新しない」実現）
+        if (array_key_exists('password', (array)$data) && $data['password'] === '') {
+            unset($data['password']);
+        }
     }
 }

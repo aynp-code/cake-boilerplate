@@ -33,11 +33,6 @@
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
 
-            // ✅ edit では未入力なら password を更新しない
-            if (array_key_exists('password', $data) && $data['password'] === '') {
-                unset($data['password']);
-            }
-
             ${{ singularName }} = $this->{{ currentModelName }}->patchEntity(${{ singularName }}, $data);
             if ($this->{{ currentModelName }}->save(${{ singularName }})) {
                 $this->Flash->success(__('The {{ singularHumanName|lower }} has been saved.'));
@@ -52,14 +47,13 @@
     'CreatedByUser', 'ModifiedByUser', 'UpdatedByUser',
     'CreatedBy', 'ModifiedBy', 'UpdatedBy'
 ] %}
-
 {% for assoc in belongsTo|merge(belongsToMany) %}
-    {% if assoc not in auditAssociationAliases %}
+{% if assoc not in auditAssociationAliases %}
         {%~ set otherName = Bake.getAssociatedTableAlias(modelObj, assoc) %}
         {%~ set otherPlural = otherName|variable %}
         ${{ otherPlural }} = $this->{{ currentModelName }}->{{ otherName }}->find('list', limit: 200)->all();
         {%~ set compact = compact|merge(["'#{otherPlural}'"]) %}
-    {% endif %}
+{% endif %}
 {% endfor %}
         $this->set(compact({{ compact|join(', ')|raw }}));
     }

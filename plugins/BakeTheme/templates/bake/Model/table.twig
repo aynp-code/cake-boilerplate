@@ -109,9 +109,12 @@ class {{ name }}Table extends AppTable{{ fileBuilder.classBuilder.implements ? '
     {%~ endfor %}
 {% endif %}
 {% if behaviors %}
-
     {%~ for behavior, behaviorData in behaviors %}
+        {# AppTableで共通付与するBehaviorは個別Tableに出力しない #}
+        {% if behavior not in ['Timestamp', 'UserTracking'] %}
+
         $this->addBehavior('{{ behavior }}'{{ (behaviorData ? (", " ~ Bake.exportArray(behaviorData, 2)|raw ~ '') : '')|raw }});
+        {% endif %}
     {%~ endfor %}
 {% endif %}
 {% if associations.belongsTo or associations.hasMany or associations.belongsToMany %}
@@ -158,9 +161,8 @@ class {{ name }}Table extends AppTable{{ fileBuilder.classBuilder.implements ? '
 
         {%~ endif %}
     {%~ endfor %}
-
-        {# ✅ edit(更新)では password 未入力を許可（未入力なら controller 側で unset して更新しない運用とセット） #}
-        {%~ if validation.password is defined %}
+{# ✅ edit(更新)では password 未入力を許可（未入力なら controller 側で unset して更新しない運用とセット） #}
+{%~ if validation.password is defined %}
         $validator->allowEmptyString('password', null, function ($context) {
             // newRecord=false（更新）の時は空を許可
             if (isset($context['newRecord'])) {
@@ -169,13 +171,12 @@ class {{ name }}Table extends AppTable{{ fileBuilder.classBuilder.implements ? '
             // 念のためのフォールバック
             return !empty($context['data']['id']);
         });
-        {%~ endif %}
+{%~ endif %}
 
         return $validator;
     }
 
     {# ✅ add(作成)時は password 必須にする #}
-    {%~ if validation.password is defined %}
 
     /**
      * Validation rules for create.
@@ -186,14 +187,15 @@ class {{ name }}Table extends AppTable{{ fileBuilder.classBuilder.implements ? '
     public function validationCreate(Validator $validator): Validator
     {
         $validator = $this->validationDefault($validator);
+{%~ if validation.password is defined %}
 
         $validator
             ->requirePresence('password', 'create')
             ->notEmptyString('password');
+{%~ endif %}
 
         return $validator;
     }
-    {%~ endif %}
 {% endif %}
 {%- if rulesChecker %}
     {%~ set generatedFunctions = generatedFunctions|merge(['buildRules']) %}

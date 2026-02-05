@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\RolePermissionMatrixService;
+
 /**
  * RolePermissions Controller
  *
@@ -17,8 +19,6 @@ class RolePermissionsController extends AppController
      */
     public function index()
     {
-
-
         $query = $this->RolePermissions->find()
             ->contain(['CreatedByUser', 'ModifiedByUser', 'Roles']);
         $rolePermissions = $this->paginate($query);
@@ -81,11 +81,6 @@ class RolePermissionsController extends AppController
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
 
-            // ✅ edit では未入力なら password を更新しない
-            if (array_key_exists('password', $data) && $data['password'] === '') {
-                unset($data['password']);
-            }
-
             $rolePermission = $this->RolePermissions->patchEntity($rolePermission, $data);
             if ($this->RolePermissions->save($rolePermission)) {
                 $this->Flash->success(__('The role permission has been saved.'));
@@ -95,9 +90,8 @@ class RolePermissionsController extends AppController
             $this->Flash->error(__('The role permission could not be saved. Please, try again.'));
         }
 
-
-                    $roles = $this->RolePermissions->Roles->find('list', limit: 200)->all();
-            $this->set(compact('rolePermission', 'roles'));
+        $roles = $this->RolePermissions->Roles->find('list', limit: 200)->all();
+        $this->set(compact('rolePermission', 'roles'));
     }
 
     /**
@@ -119,4 +113,18 @@ class RolePermissionsController extends AppController
 
         return $this->redirect(['action' => 'index']);
     }
-}
+
+    public function matrix()
+    {
+        $svc = new RolePermissionMatrixService();
+
+        if ($this->request->is('post')) {
+            $svc->save((array)$this->request->getData('perm'));
+            $this->Flash->success(__('Permissions updated.'));
+            return $this->redirect(['action' => 'matrix']);
+        }
+
+        $vm = $svc->buildViewModel();
+        $this->set($vm);
+    }
+}   

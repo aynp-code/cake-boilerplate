@@ -87,11 +87,6 @@ class UsersController extends AppController
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
 
-            // ✅ edit では未入力なら password を更新しない
-            if (array_key_exists('password', $data) && $data['password'] === '') {
-                unset($data['password']);
-            }
-
             $user = $this->Users->patchEntity($user, $data);
             if ($this->Users->save($user)) {
                 $this->Flash->success(__('The user has been saved.'));

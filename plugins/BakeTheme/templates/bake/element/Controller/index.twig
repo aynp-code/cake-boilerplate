@@ -21,7 +21,6 @@
     public function index()
     {
 {% set belongsTo = Bake.aliasExtractor(modelObj, 'BelongsTo') %}
-
 {# --- 監査ユーザ関連がある場合に contain に足す（AppTableで自動付与している想定） --- #}
 {% set contain = belongsTo %}
 {% if modelObj.hasAssociation('CreatedByUser') and ('CreatedByUser' not in contain) %}
@@ -30,7 +29,6 @@
 {% if modelObj.hasAssociation('ModifiedByUser') and ('ModifiedByUser' not in contain) %}
 {% set contain = contain|merge(['ModifiedByUser']) %}
 {% endif %}
-
 {% if contain %}
         $query = $this->{{ currentModelName }}->find()
             ->contain({{ Bake.exportArray(contain)|raw }});

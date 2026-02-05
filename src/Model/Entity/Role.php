@@ -16,6 +16,8 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\DateTime $modified
  * @property string $modified_by
  *
+ * @property \App\Model\Entity\User $created_by_user
+ * @property \App\Model\Entity\User $modified_by_user
  * @property \App\Model\Entity\RolePermission[] $role_permissions
  * @property \App\Model\Entity\User[] $users
  */
@@ -31,7 +33,15 @@ class Role extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        '*' => true,
-        'id' => false,
+        'display_name' => true,
+        'description' => true,
+        'created' => true,
+        'created_by' => true,
+        'modified' => true,
+        'modified_by' => true,
+        'created_by_user' => true,
+        'modified_by_user' => true,
+        'role_permissions' => true,
+        'users' => true,
     ];
 }

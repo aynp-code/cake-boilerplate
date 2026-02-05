@@ -17,8 +17,6 @@ class RolesController extends AppController
      */
     public function index()
     {
-
-
         $query = $this->Roles->find()
             ->contain(['CreatedByUser', 'ModifiedByUser']);
         $roles = $this->paginate($query);
@@ -80,11 +78,6 @@ class RolesController extends AppController
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
 
-            // ✅ edit では未入力なら password を更新しない
-            if (array_key_exists('password', $data) && $data['password'] === '') {
-                unset($data['password']);
-            }
-
             $role = $this->Roles->patchEntity($role, $data);
             if ($this->Roles->save($role)) {
                 $this->Flash->success(__('The role has been saved.'));
@@ -94,8 +87,7 @@ class RolesController extends AppController
             $this->Flash->error(__('The role could not be saved. Please, try again.'));
         }
 
-
-                $this->set(compact('role'));
+        $this->set(compact('role'));
     }
 
     /**

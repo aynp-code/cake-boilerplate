@@ -19,13 +19,13 @@ class RolesFixture extends TestFixture
     {
         $this->records = [
             [
-                'id' => 'cd5c0c5a-7744-462c-9d37-70d7b33323eb',
+                'id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'display_name' => 'Lorem ipsum dolor sit amet',
                 'description' => 'Lorem ipsum dolor sit amet',
-                'created' => '2026-02-05 01:34:14',
-                'created_by' => '7c837bd5-467f-43e4-81a3-cd5c5fa7dc69',
-                'modified' => '2026-02-05 01:34:14',
-                'modified_by' => '95c72933-6a61-4bb7-8253-5e06f4ff0af1',
+                'created' => '2026-02-05 14:19:57',
+                'created_by' => '43ac863a-db3b-4ed8-93d5-3e7ecfecbf14',
+                'modified' => '2026-02-05 14:19:57',
+                'modified_by' => 'e29e19c0-0512-442a-9d4e-d1cc07b052e2',
             ],
         ];
         parent::init();

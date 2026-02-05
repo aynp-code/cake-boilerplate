@@ -19,17 +19,17 @@ class RolePermissionsFixture extends TestFixture
     {
         $this->records = [
             [
-                'id' => '80177e89-fd74-4c9b-bdc3-b99679ec7354',
-                'role_id' => '50bc1d92-dbd2-413a-b1c2-ea07cc24b5a8',
+                'id' => '7e322e99-4f53-4ac3-b41e-c522f4cbfd58',
+                'role_id' => 'd48b871a-c8ea-4340-8ba4-6b6d4f29506e',
                 'plugin' => 'Lorem ipsum dolor sit amet',
                 'prefix' => 'Lorem ipsum dolor sit amet',
                 'controller' => 'Lorem ipsum dolor sit amet',
                 'action' => 'Lorem ipsum dolor sit amet',
                 'allowed' => 1,
-                'created' => '2026-02-05 02:17:28',
-                'created_by' => 'bfcc6876-fc83-4153-a6b2-ef935446930d',
-                'modified' => '2026-02-05 02:17:28',
-                'modified_by' => '4a331188-1a0a-4de7-9f0c-a2002f8ee58b',
+                'created' => '2026-02-05 14:20:37',
+                'created_by' => '898c13d6-cde2-4eac-b8c8-70550772696b',
+                'modified' => '2026-02-05 14:20:37',
+                'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
         ];
         parent::init();

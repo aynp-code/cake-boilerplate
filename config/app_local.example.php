@@ -26,6 +26,7 @@ return [
     */
     'App' => [
         'defaultLocale' => 'ja_JP',
+        'defaultTimezone' => 'Asia/Tokyo',
     ],
     
     /*

@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Model\Entity;
 
 use Cake\ORM\Entity;
-use Authentication\PasswordHasher\DefaultPasswordHasher;
 
 /**
  * User Entity
@@ -16,11 +15,13 @@ use Authentication\PasswordHasher\DefaultPasswordHasher;
  * @property string $email
  * @property string $role_id
  * @property bool $is_active
- * @property \Cake\I18n\DateTime|null $created
- * @property string|null $created_by
- * @property \Cake\I18n\DateTime|null $modified
- * @property string|null $modified_by
+ * @property \Cake\I18n\DateTime $created
+ * @property string $created_by
+ * @property \Cake\I18n\DateTime $modified
+ * @property string $modified_by
  *
+ * @property \App\Model\Entity\User $created_by_user
+ * @property \App\Model\Entity\User $modified_by_user
  * @property \App\Model\Entity\Role $role
  */
 class User extends Entity
@@ -35,8 +36,19 @@ class User extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        '*' => true,
-        'id' => false,
+        'username' => true,
+        'password' => true,
+        'display_name' => true,
+        'email' => true,
+        'role_id' => true,
+        'is_active' => true,
+        'created' => true,
+        'created_by' => true,
+        'modified' => true,
+        'modified_by' => true,
+        'created_by_user' => true,
+        'modified_by_user' => true,
+        'role' => true,
     ];
 
     /**
@@ -53,6 +65,6 @@ class User extends Entity
         if ($password === null || $password === '') {
             return $password;
         }
-        return (new DefaultPasswordHasher())->hash($password);
+        return (new \Authentication\PasswordHasher\DefaultPasswordHasher())->hash($password);
     }
 }

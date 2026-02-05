@@ -53,6 +53,17 @@ class UsersTableTest extends TestCase
     }
 
     /**
+     * Test restrictDeleteAssociations method
+     *
+     * @return void
+     * @link \App\Model\Table\UsersTable::restrictDeleteAssociations()
+     */
+    public function testRestrictDeleteAssociations(): void
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
      * Test validationDefault method
      *
      * @return void
