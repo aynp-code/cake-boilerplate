@@ -51,7 +51,7 @@ $menu = [
     'RolePermissions' => [
         'label' => __('Role Permissions'),
         'badge' => ['text' => __('New'), 'color' => 'danger'],
-        'uri' => ['controller' => 'RolePermissions', 'action' => 'index', 'plugin' => false],
+        'uri' => ['controller' => 'RolePermissions', 'action' => 'matrix', 'plugin' => false],
         'icon' => 'fas fa-user-tag text-danger',
         'show' => function () {
             // logic condition to show item, return a bool

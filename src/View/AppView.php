@@ -29,6 +29,7 @@ class AppView extends View
 {
 
     use CakeLteTrait;
+
     public string $layout = 'CakeLte.default';
 
     /**
@@ -42,6 +43,10 @@ class AppView extends View
      */
     public function initialize(): void
     {
+        $this->helpers = [
+            'Html' => ['className' => \App\View\Helper\HtmlHelper::class],
+            'Form' => ['className' => \App\View\Helper\FormHelper::class],
+        ];
         parent::initialize();
         $this->initializeCakeLte();
     }

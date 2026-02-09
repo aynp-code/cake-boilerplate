@@ -35,12 +35,14 @@ class CurrentUserMiddleware implements MiddlewareInterface
             // role_id は identity が持つ属性から取得（Identityの実装に合わせる）
             if (method_exists($identity, 'get')) {
                 $roleId = $identity->get('role_id');
+                $displayName = $identity->get('display_name');
             }
         }
 
         // id(uuid)をどこからでも読めるように置く（リクエスト中限定）
         Configure::write('Auth.User.id', $userId);
         Configure::write('Auth.User.role_id', $roleId);
+        Configure::write('Auth.User.display_name', $displayName ?? null);
 
         try {
             return $handler->handle($request);

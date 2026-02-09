@@ -21,7 +21,7 @@ if ($this->helpers()->has('Identity')) {
         <?php if ($user?->username) : ?>
             <div class="d-block"><?= h($user->username) ?></div>
         <?php else : ?>
-            <a href="#" class="d-block">Alexander Pierce</a>
+            <a href="#" class="d-block"><?= Cake\Core\Configure::read('Auth.User.display_name') ?></a>
         <?php endif; ?>
 
         <?php if ($user?->role) : ?>
