@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use Cake\Cache\Cache;
-use Cake\Core\Configure;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\Utility\Inflector;
 
@@ -121,7 +120,9 @@ class RolePermissionChecker
      * - null/'' => null
      * - array => "Admin/Api" のように連結
      * - snake_case 等 => CamelCase
-     * - Configure('Acl.prefixAliases') があれば最終的に置換
+     *
+     * ※ Acl.prefixAliases のような「別名変換」は採用しない
+     *   （role名 "01.admin" と prefix "Admin" は無関係、誤変換の原因になるため）
      */
     private function normalizePrefix(mixed $prefix): ?string
     {
@@ -143,18 +144,7 @@ class RolePermissionChecker
         $parts = array_filter(explode('/', $prefix), fn($p) => $p !== '');
         $parts = array_map(fn($p) => Inflector::camelize($p), $parts);
         $normalized = implode('/', $parts);
-        $normalized = $normalized === '' ? null : $normalized;
 
-        if ($normalized === null) {
-            return null;
-        }
-
-        // DB表現を固定したい場合の別名マップ（任意）
-        $aliases = Configure::read('Acl.prefixAliases', []);
-        if (is_array($aliases) && isset($aliases[$normalized]) && is_string($aliases[$normalized])) {
-            return $aliases[$normalized];
-        }
-
-        return $normalized;
+        return $normalized === '' ? null : $normalized;
     }
 }

@@ -11,13 +11,6 @@ use ReflectionClass;
 
 class ControllerActionCatalog
 {
-    private RoutePermissionTargetNormalizer $normalizer;
-
-    public function __construct(?RoutePermissionTargetNormalizer $normalizer = null)
-    {
-        $this->normalizer = $normalizer ?? new RoutePermissionTargetNormalizer();
-    }
-
     /**
      * 収集したアクション行の配列を返す
      *
@@ -47,25 +40,19 @@ class ControllerActionCatalog
                 continue;
             }
 
-            // 1) フォルダ構成から “namespace用prefix” を推定（CamelCase + '/'）
-            [$nsPrefix, $controller] = $this->inferNamespacePrefixAndController($controllerRoot, $filepath);
-
-            // 2) namespace用prefix で FQCN を組み立て（aliasは適用しない）
-            $fqcn = $this->inferFqcn($nsPrefix, $controller);
+            [$prefix, $controller] = $this->inferPrefixAndController($controllerRoot, $filepath);
+            $fqcn = $this->inferFqcn($prefix, $controller);
 
             if (!class_exists($fqcn)) {
                 continue;
             }
 
-            // 3) 権限照合用prefix（DBに入るprefix）は normalizer に集約（alias適用はこちら）
-            $permPrefix = $this->normalizer->normalizePrefix($nsPrefix);
-
             foreach ($this->extractActions($fqcn) as $action) {
                 $rows[] = [
                     'plugin' => null,
-                    'prefix' => $permPrefix,       // null or 'Admin' or 'Api/V1' or alias後（例: '01.admin'）
-                    'controller' => $controller,   // 'Users'
-                    'action' => $action,           // 'index'
+                    'prefix' => $prefix,          // null or 'Admin' or 'Api/V1'
+                    'controller' => $controller,  // 'Users'
+                    'action' => $action,          // 'index'
                 ];
             }
         }
@@ -82,14 +69,12 @@ class ControllerActionCatalog
     }
 
     /**
-     * ファイルパスから “namespace用prefix” と controller 名を推定
+     * ファイルパスから prefix と controller 名を推定
      * - src/Controller/UsersController.php => [null, 'Users']
      * - src/Controller/Admin/UsersController.php => ['Admin', 'Users']
      * - src/Controller/Api/V1/UsersController.php => ['Api/V1', 'Users']
-     *
-     * ※ここでは alias は適用しない（FQCN が壊れるため）
      */
-    private function inferNamespacePrefixAndController(string $controllerRoot, string $filepath): array
+    private function inferPrefixAndController(string $controllerRoot, string $filepath): array
     {
         $relative = str_replace($controllerRoot . DS, '', $filepath);
         $parts = explode(DS, $relative);
@@ -99,8 +84,13 @@ class ControllerActionCatalog
 
         $prefix = null;
         if (!empty($parts)) {
-            // フォルダ名を CamelCase に揃える（Cakeのprefix慣習）
-            $normalizedParts = array_map(static fn(string $p): string => Inflector::camelize($p), $parts);
+            // フォルダ名を Cake の prefix 想定（CamelCase）に正規化
+            // 例: admin_panel -> AdminPanel
+            $normalizedParts = array_map(
+                fn(string $p): string => Inflector::camelize($p),
+                $parts
+            );
+
             $prefix = implode('/', $normalizedParts);
         }
 
@@ -108,16 +98,15 @@ class ControllerActionCatalog
     }
 
     /**
-     * namespace用prefix/controller から FQCN を組み立て（alias適用しない）
+     * prefix/controller から FQCN を組み立て
      */
-    private function inferFqcn(?string $namespacePrefix, string $controller): string
+    private function inferFqcn(?string $prefix, string $controller): string
     {
         $ns = 'App\\Controller';
 
-        if ($namespacePrefix) {
-            // 念のため安全化（namespaceに不正文字が入らないように）
-            $safePrefix = preg_replace('/[^A-Za-z0-9\/]/', '', $namespacePrefix) ?? $namespacePrefix;
-            $ns .= '\\' . str_replace('/', '\\', $safePrefix);
+        if ($prefix) {
+            // 'Api/V1' => 'Api\V1'
+            $ns .= '\\' . str_replace('/', '\\', $prefix);
         }
 
         return $ns . '\\' . $controller . 'Controller';

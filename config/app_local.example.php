@@ -91,6 +91,12 @@ return [
                 ],
             ],
         ],
+        'test' => [
+            'host' => 'test_db',
+            'username' => 'test_user',
+            'password' => 'test_password',
+            'database' => 'test_database',
+        ],
     ],
 
     /*

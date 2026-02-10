@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use Cake\Core\Configure;
 use Cake\Utility\Inflector;
 
 /**
@@ -11,8 +10,10 @@ use Cake\Utility\Inflector;
  * “DBと照合できる形” に正規化する責務を1箇所に集約する。
  *
  * - prefix は string/array/null を受け、CamelCase + '/' 連結に統一
- * - prefixAliases があれば DB 表現に寄せる（例: Admin => 01.admin）
  * - plugin は '' を null に寄せる
+ *
+ * ※ Acl.prefixAliases のような「prefix別名変換」は採用しない
+ *   （role名 "01.admin" と prefix "Admin" は無関係、誤変換の原因になるため）
  */
 class RoutePermissionTargetNormalizer
 {
@@ -30,6 +31,7 @@ class RoutePermissionTargetNormalizer
             return null;
         }
 
+        // prefix が配列（ネストprefix）なら / で連結
         if (is_array($prefix)) {
             $prefix = implode('/', array_map('strval', $prefix));
         }
@@ -43,17 +45,8 @@ class RoutePermissionTargetNormalizer
         $parts = array_filter(explode('/', $prefix), fn($p) => $p !== '');
         $parts = array_map(fn($p) => Inflector::camelize($p), $parts);
         $prefix = implode('/', $parts);
-        $prefix = $prefix === '' ? null : $prefix;
 
-        // 別名（DB表現を固定したい場合）
-        if ($prefix !== null) {
-            $aliases = Configure::read('Acl.prefixAliases', []);
-            if (is_array($aliases) && isset($aliases[$prefix]) && is_string($aliases[$prefix])) {
-                $prefix = $aliases[$prefix];
-            }
-        }
-
-        return $prefix;
+        return $prefix === '' ? null : $prefix;
     }
 
     private function normalizeNullableString(mixed $v): ?string
