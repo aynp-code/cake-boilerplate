@@ -418,6 +418,14 @@ return [
      */
     'Session' => [
         'defaults' => 'php',
+        'timeout' => 240,
+        'ini' => [
+            'session.cookie_httponly' => true,
+            'session.cookie_secure' => !Cake\Core\Configure::read('debug'),
+            'session.cookie_samesite' => 'Lax',
+            'session.use_strict_mode' => true,
+            // ...
+        ],
     ],
 
     /**

@@ -3,14 +3,18 @@ declare(strict_types=1);
 
 namespace App\Model\Behavior;
 
+use ArrayObject;
 use Cake\Core\Configure;
+use Cake\Datasource\EntityInterface;
 use Cake\Event\EventInterface;
 use Cake\ORM\Behavior;
-use Cake\Datasource\EntityInterface;
-use ArrayObject;
 
 /**
  * UserTracking behavior
+ *
+ * created_by / modified_by を自動補完する。
+ * - beforeMarshal: validation 前に data を補完（重要）
+ * - beforeSave: Entity 直保存などの保険
  */
 class UserTrackingBehavior extends Behavior
 {
@@ -19,15 +23,17 @@ class UserTrackingBehavior extends Behavior
     public function implementedEvents(): array
     {
         return [
-            // patchEntity の前に data 配列を書き換え → validation 前に値が入る
             'Model.beforeMarshal' => 'beforeMarshal',
-            // 念のため Entity 経由の保存にも備える
             'Model.beforeSave' => 'beforeSave',
         ];
     }
 
     /**
      * beforeMarshal: バリデーション前に送信データを補完する
+     *
+     * CakePHP の beforeMarshal は `$data` が ArrayObject として渡る想定だが、
+     * 実装差異や型の取り扱いで崩れると補完が効かず必須バリデーションで落ちるため、
+     * ここは堅く書く。
      *
      * @param \Cake\Event\EventInterface $event
      * @param \ArrayObject $data
@@ -36,16 +42,27 @@ class UserTrackingBehavior extends Behavior
     public function beforeMarshal(EventInterface $event, ArrayObject $data, ArrayObject $options): void
     {
         $userId = Configure::read('Auth.User.id');
-        if (!$userId) {
+
+        // 未ログイン / CLI 等
+        if (!is_string($userId) || $userId === '') {
             return;
         }
 
-        // 新規作成時のみ created_by を補完（フォームに無くてもOK）
-        if ((!isset($data['created_by']) || $data['created_by'] === '') && $this->_table->hasField('created_by')) {
-            $data['created_by'] = $userId;
+        // newRecord 判定（取れる場合だけ使う。取れない場合は created_by 未指定なら入れる方針）
+        $isNew = null;
+        if (isset($options['newRecord'])) {
+            $isNew = (bool)$options['newRecord'];
         }
 
-        // 常に modified_by をセット（フォームに無くてもDBに入る）
+        // created_by：新規時だけ（フォームに無くてもOK）
+        if ($this->_table->hasField('created_by')) {
+            $has = isset($data['created_by']) && $data['created_by'] !== '';
+            if (!$has && ($isNew === null || $isNew === true)) {
+                $data['created_by'] = $userId;
+            }
+        }
+
+        // modified_by：常にセット
         if ($this->_table->hasField('modified_by')) {
             $data['modified_by'] = $userId;
         }
@@ -53,11 +70,15 @@ class UserTrackingBehavior extends Behavior
 
     /**
      * beforeSave: 予備措置（Entityが直接作られたケース）
+     *
+     * @param \Cake\Event\EventInterface $event
+     * @param \Cake\Datasource\EntityInterface $entity
+     * @param \ArrayObject $options
      */
-    public function beforeSave(EventInterface $event, EntityInterface $entity, \ArrayObject $options): void
+    public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
     {
         $userId = Configure::read('Auth.User.id');
-        if (!$userId) {
+        if (!is_string($userId) || $userId === '') {
             return;
         }
 

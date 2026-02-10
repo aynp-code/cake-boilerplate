@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use Cake\Utility\Inflector;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RegexIterator;
@@ -10,23 +11,26 @@ use ReflectionClass;
 
 class ControllerActionCatalog
 {
+    private RoutePermissionTargetNormalizer $normalizer;
+
+    public function __construct(?RoutePermissionTargetNormalizer $normalizer = null)
+    {
+        $this->normalizer = $normalizer ?? new RoutePermissionTargetNormalizer();
+    }
+
     /**
      * 収集したアクション行の配列を返す
      *
      * 返却形式（RolePermissions の縦軸想定）:
      * [
-     *   ['plugin' => null, 'prefix' => 'Api', 'controller' => 'Users', 'action' => 'index'],
+     *   ['plugin' => null, 'prefix' => 'Admin', 'controller' => 'Users', 'action' => 'index'],
      *   ...
      * ]
-     *
-     * - plugin: 今は null 固定（将来プラグインにも拡張可能）
-     * - prefix: src/Controller 配下のサブフォルダを prefix として扱う（例: Api/Admin）
      */
     public function collect(): array
     {
         $controllerRoot = ROOT . DS . 'src' . DS . 'Controller';
 
-        // Controllerファイルを再帰的に列挙（*Controller.php）
         $it = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($controllerRoot, RecursiveDirectoryIterator::SKIP_DOTS)
         );
@@ -37,27 +41,31 @@ class ControllerActionCatalog
         foreach ($files as $match) {
             $filepath = $match[0];
 
-            // AppController / ErrorController は除外（好みで追加）
+            // AppController / ErrorController は除外
             $base = basename($filepath);
             if (in_array($base, ['AppController.php', 'ErrorController.php'], true)) {
                 continue;
             }
 
-            [$prefix, $controller] = $this->inferPrefixAndController($controllerRoot, $filepath);
-            $fqcn = $this->inferFqcn($prefix, $controller);
+            // 1) フォルダ構成から “namespace用prefix” を推定（CamelCase + '/'）
+            [$nsPrefix, $controller] = $this->inferNamespacePrefixAndController($controllerRoot, $filepath);
+
+            // 2) namespace用prefix で FQCN を組み立て（aliasは適用しない）
+            $fqcn = $this->inferFqcn($nsPrefix, $controller);
 
             if (!class_exists($fqcn)) {
-                // composer dump-autoload 不要な設計が理想だが、存在しなければスキップ
-                //（必要ならログ出しに変更）
                 continue;
             }
+
+            // 3) 権限照合用prefix（DBに入るprefix）は normalizer に集約（alias適用はこちら）
+            $permPrefix = $this->normalizer->normalizePrefix($nsPrefix);
 
             foreach ($this->extractActions($fqcn) as $action) {
                 $rows[] = [
                     'plugin' => null,
-                    'prefix' => $prefix,          // null or 'Api' etc
-                    'controller' => $controller,  // 'Users'
-                    'action' => $action,          // 'index'
+                    'prefix' => $permPrefix,       // null or 'Admin' or 'Api/V1' or alias後（例: '01.admin'）
+                    'controller' => $controller,   // 'Users'
+                    'action' => $action,           // 'index'
                 ];
             }
         }
@@ -74,40 +82,42 @@ class ControllerActionCatalog
     }
 
     /**
-     * ファイルパスから prefix と controller 名を推定
+     * ファイルパスから “namespace用prefix” と controller 名を推定
      * - src/Controller/UsersController.php => [null, 'Users']
-     * - src/Controller/Api/UsersController.php => ['Api', 'Users']
+     * - src/Controller/Admin/UsersController.php => ['Admin', 'Users']
+     * - src/Controller/Api/V1/UsersController.php => ['Api/V1', 'Users']
+     *
+     * ※ここでは alias は適用しない（FQCN が壊れるため）
      */
-    private function inferPrefixAndController(string $controllerRoot, string $filepath): array
+    private function inferNamespacePrefixAndController(string $controllerRoot, string $filepath): array
     {
-        $relative = str_replace($controllerRoot . DS, '', $filepath); // e.g. Api/UsersController.php
+        $relative = str_replace($controllerRoot . DS, '', $filepath);
         $parts = explode(DS, $relative);
 
         $filename = array_pop($parts); // UsersController.php
         $controller = preg_replace('/Controller\.php$/i', '', $filename);
 
-        // 残りが prefix（サブフォルダ階層）: Api/V1 のような階層にも対応
-        // Cakeのprefixは通常 CamelCase だが、ここではフォルダ名をそのまま Camelize せず使う（統一したいなら後で変える）
         $prefix = null;
         if (!empty($parts)) {
-            // Api/V1 => 'Api/V1' をprefixとして保持する案もあるが、Cakeのprefix paramは配列になることもある
-            // 今回は "Api" のような1階層運用を想定し、複数階層は 'Api/V1' として保持
-            $prefix = implode('/', $parts);
+            // フォルダ名を CamelCase に揃える（Cakeのprefix慣習）
+            $normalizedParts = array_map(static fn(string $p): string => Inflector::camelize($p), $parts);
+            $prefix = implode('/', $normalizedParts);
         }
 
         return [$prefix, $controller];
     }
 
     /**
-     * prefix/controller から FQCN を組み立て
+     * namespace用prefix/controller から FQCN を組み立て（alias適用しない）
      */
-    private function inferFqcn(?string $prefix, string $controller): string
+    private function inferFqcn(?string $namespacePrefix, string $controller): string
     {
-        // namespace は App\Controller\[Prefix\]FooController
         $ns = 'App\\Controller';
-        if ($prefix) {
-            // 'Api/V1' => 'Api\V1'
-            $ns .= '\\' . str_replace('/', '\\', $prefix);
+
+        if ($namespacePrefix) {
+            // 念のため安全化（namespaceに不正文字が入らないように）
+            $safePrefix = preg_replace('/[^A-Za-z0-9\/]/', '', $namespacePrefix) ?? $namespacePrefix;
+            $ns .= '\\' . str_replace('/', '\\', $safePrefix);
         }
 
         return $ns . '\\' . $controller . 'Controller';
@@ -115,8 +125,6 @@ class ControllerActionCatalog
 
     /**
      * Controllerクラスから action 一覧を抽出
-     *
-     * public メソッドのうち、Cakeのアクションとして不適切なものを除外
      */
     private function extractActions(string $controllerFqcn): array
     {
@@ -136,14 +144,12 @@ class ControllerActionCatalog
         $actions = [];
 
         foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
-            // 自クラスで宣言されていないもの（親のpublic）は除外
             if ($m->getDeclaringClass()->getName() !== $controllerFqcn) {
                 continue;
             }
 
             $name = $m->getName();
 
-            // 除外
             if (in_array($name, $exclude, true)) {
                 continue;
             }
@@ -151,7 +157,6 @@ class ControllerActionCatalog
                 continue;
             }
 
-            // Cakeの慣習上、actionは lowerCamel が多いが、ここではそのまま返す
             $actions[] = $name;
         }
 

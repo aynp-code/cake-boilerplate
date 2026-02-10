@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Service\RolePermissionChecker;
+use App\Service\RoutePermissionTargetNormalizer;
 use Cake\Controller\Controller;
 use Cake\Event\EventInterface;
 use Cake\Http\Exception\ForbiddenException;
@@ -24,31 +25,23 @@ use Cake\Http\Exception\ForbiddenException;
 /**
  * Application Controller
  *
- * Add your application-wide methods in the class below, your controllers
- * will inherit them.
- *
  * @link https://book.cakephp.org/5/en/controllers.html#the-app-controller
  */
 class AppController extends Controller
 {
     protected RolePermissionChecker $permissionChecker;
+    protected RoutePermissionTargetNormalizer $targetNormalizer;
 
-    /**
-     * Initialization hook method.
-     *
-     * Use this method to add common initialization code like loading components.
-     *
-     * e.g. `$this->loadComponent('FormProtection');`
-     *
-     * @return void
-     */
     public function initialize(): void
     {
         parent::initialize();
 
         $this->loadComponent('Flash');
         $this->loadComponent('Authentication.Authentication');
+
+        // 簡易DI（Controller内に散らばらないようにする）
         $this->permissionChecker = new RolePermissionChecker();
+        $this->targetNormalizer = new RoutePermissionTargetNormalizer();
     }
 
     public function beforeFilter(EventInterface $event)
@@ -57,8 +50,14 @@ class AppController extends Controller
 
         $controller = (string)$this->request->getParam('controller');
         $action     = (string)$this->request->getParam('action');
-        $plugin     = $this->request->getParam('plugin'); // nullが多い
-        $prefix     = $this->request->getParam('prefix'); // nullが多い
+
+        $plugin = $this->targetNormalizer->normalizePlugin($this->request->getParam('plugin'));
+        $prefix = $this->targetNormalizer->normalizePrefix($this->request->getParam('prefix'));
+
+        // 例外系は素通し（403でエラー画面すら出ない事故を防ぐ）
+        if ($controller === 'Error') {
+            return;
+        }
 
         // login/logout は常に許可（無限リダイレクト防止）
         if ($controller === 'Users' && in_array($action, ['login', 'logout'], true)) {
@@ -67,16 +66,19 @@ class AppController extends Controller
 
         $identity = $this->request->getAttribute('identity');
         if (!$identity) {
-            // 未認証は Authentication が redirect する想定
-            return;
+            return; // 未認証は Authentication が redirect する想定
         }
 
-        $roleId = $identity->get('role_id');
-        if (!$roleId) {
+        $roleId = null;
+        if (method_exists($identity, 'get')) {
+            $roleId = $identity->get('role_id');
+        }
+
+        if (!is_string($roleId) || $roleId === '') {
             throw new ForbiddenException('Role is not assigned.');
         }
 
-        $allowed = $this->permissionChecker->can((string)$roleId, [
+        $allowed = $this->permissionChecker->can($roleId, [
             'plugin' => $plugin,
             'prefix' => $prefix,
             'controller' => $controller,
@@ -88,15 +90,11 @@ class AppController extends Controller
         }
     }
 
-    /*
-    * ビュー描画前のフック処理です。
-    *
-    * 全てのアクションで CakeLte のデフォルトレイアウトを使用するため、
-    * レンダリング前にレイアウトを明示的に設定します。
-    */
-    public function beforeRender(\Cake\Event\EventInterface $event)
+    public function beforeRender(EventInterface $event)
     {
         parent::beforeRender($event);
+
+        // CakeLte を全アクションで使う
         $this->viewBuilder()->setLayout('CakeLte.default');
     }
 }

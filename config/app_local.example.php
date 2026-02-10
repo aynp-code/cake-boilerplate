@@ -163,5 +163,13 @@ return [
             'prefix' => 'cake_routes_',
             'duration' => '+1 days',
         ],
+        '_cake_permissions' => [
+            'className' => \Cake\Cache\Engine\RedisEngine::class,
+            'server' => 'redis_host',
+            'port' => 6379,
+            'database' => 0,
+            'prefix' => 'cake_permissions_',
+            'duration' => '+1 year',
+        ],
     ],
 ];

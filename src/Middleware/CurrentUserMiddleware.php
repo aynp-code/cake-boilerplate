@@ -11,45 +11,70 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * CurrentUser middleware
+ *
+ * Authentication が request に付与する identity から、
+ * リクエスト中だけ参照できる CurrentUser 情報を Configure に置く。
  */
 class CurrentUserMiddleware implements MiddlewareInterface
 {
-    /**
-     * Process method.
-     *
-     * @param \Psr\Http\Message\ServerRequestInterface $request The request.
-     * @param \Psr\Http\Server\RequestHandlerInterface $handler The request handler.
-     * @return \Psr\Http\Message\ResponseInterface A response.
-     */
+    private const KEY_ID = 'Auth.User.id';
+    private const KEY_ROLE_ID = 'Auth.User.role_id';
+    private const KEY_DISPLAY_NAME = 'Auth.User.display_name';
+
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // Authentication が付与する identity を取得
         $identity = $request->getAttribute('identity');
-        $userId = null;
-        $roleId = null;
 
-        if ($identity) {
-            // getIdentifier() は通常 id（主キー）を返す
-            $userId = $identity->getIdentifier();
-
-            // role_id は identity が持つ属性から取得（Identityの実装に合わせる）
-            if (method_exists($identity, 'get')) {
-                $roleId = $identity->get('role_id');
-                $displayName = $identity->get('display_name');
-            }
+        // 未認証/CLI等で identity が無い場合は、書き込まずにそのまま流す
+        if ($identity === null) {
+            return $handler->handle($request);
         }
 
-        // id(uuid)をどこからでも読めるように置く（リクエスト中限定）
-        Configure::write('Auth.User.id', $userId);
-        Configure::write('Auth.User.role_id', $roleId);
-        Configure::write('Auth.User.display_name', $displayName ?? null);
+        // 取得（可能な範囲で）
+        $userId = null;
+        $roleId = null;
+        $displayName = null;
+
+        try {
+            // getIdentifier() は通常 id（主キー）
+            if (method_exists($identity, 'getIdentifier')) {
+                $v = $identity->getIdentifier();
+                if (is_scalar($v) || (is_object($v) && method_exists($v, '__toString'))) {
+                    $userId = (string)$v;
+                }
+            }
+
+            // IdentityInterface 実装なら get() がある想定（なければ無視）
+            if (method_exists($identity, 'get')) {
+                $r = $identity->get('role_id');
+                if (is_scalar($r) || (is_object($r) && method_exists($r, '__toString'))) {
+                    $roleId = (string)$r;
+                }
+
+                $d = $identity->get('display_name');
+                if (is_scalar($d) || (is_object($d) && method_exists($d, '__toString'))) {
+                    $displayName = (string)$d;
+                }
+            }
+        } catch (\Throwable) {
+            // ここで落として認証済みリクエスト全体を壊さない
+            $userId = null;
+            $roleId = null;
+            $displayName = null;
+        }
+
+        // リクエスト中だけ参照できるようにセット
+        Configure::write(self::KEY_ID, $userId);
+        Configure::write(self::KEY_ROLE_ID, $roleId);
+        Configure::write(self::KEY_DISPLAY_NAME, $displayName);
 
         try {
             return $handler->handle($request);
         } finally {
-            // 念のため掃除（長寿命プロセス対策）
-            Configure::delete('Auth.User.id');
-            Configure::delete('Auth.User.role_id');
+            // 長寿命プロセス対策：必ず掃除
+            Configure::delete(self::KEY_ID);
+            Configure::delete(self::KEY_ROLE_ID);
+            Configure::delete(self::KEY_DISPLAY_NAME);
         }
     }
 }

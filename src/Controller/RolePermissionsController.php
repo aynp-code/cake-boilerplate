@@ -12,6 +12,16 @@ use App\Service\RolePermissionMatrixService;
  */
 class RolePermissionsController extends AppController
 {
+    private RolePermissionMatrixService $matrixService;
+
+    public function initialize(): void
+    {
+        parent::initialize();
+
+        // Controller内にnewが散らばらないように寄せる（簡易DI）
+        $this->matrixService = new RolePermissionMatrixService();
+    }
+
     /**
      * Index method
      *
@@ -19,13 +29,16 @@ class RolePermissionsController extends AppController
      */
     public function index()
     {
+        // ✅ 監査ユーザ（CreatedByUser/ModifiedByUser）は AppTable 側で contain を拡張して共通化
+        $contain = $this->RolePermissions->withAuditUsersContain(['Roles']);
+
         $query = $this->RolePermissions->find()
-            ->contain(['CreatedByUser', 'ModifiedByUser', 'Roles']);
+            ->contain($contain);
+
         $rolePermissions = $this->paginate($query);
 
         $this->set(compact('rolePermissions'));
     }
-
 
     /**
      * View method
@@ -37,7 +50,7 @@ class RolePermissionsController extends AppController
     public function view($id = null)
     {
         // ✅ 監査ユーザ（CreatedByUser/ModifiedByUser）は AppTable 側で contain を拡張して共通化
-        $contain = $this->RolePermissions->withAuditUsersContain(['CreatedByUser', 'ModifiedByUser', 'Roles']);
+        $contain = $this->RolePermissions->withAuditUsersContain(['Roles']);
 
         $rolePermission = $this->RolePermissions->get($id, contain: $contain);
         $this->set(compact('rolePermission'));
@@ -51,15 +64,19 @@ class RolePermissionsController extends AppController
     public function add()
     {
         $rolePermission = $this->RolePermissions->newEmptyEntity();
+
         if ($this->request->is('post')) {
-            $rolePermission = $this->RolePermissions->patchEntity($rolePermission, $this->request->getData(), [
-                'validate' => 'create',
-            ]);
+            $rolePermission = $this->RolePermissions->patchEntity(
+                $rolePermission,
+                $this->request->getData(),
+                ['validate' => 'create']
+            );
+
             if ($this->RolePermissions->save($rolePermission)) {
                 $this->Flash->success(__('The role permission has been saved.'));
-
                 return $this->redirect(['action' => 'index']);
             }
+
             $this->Flash->error(__('The role permission could not be saved. Please, try again.'));
         }
 
@@ -77,16 +94,17 @@ class RolePermissionsController extends AppController
     public function edit($id = null)
     {
         $rolePermission = $this->RolePermissions->get($id, contain: []);
-        $rolePermission->set('password', '');
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $data = $this->request->getData();
 
-            $rolePermission = $this->RolePermissions->patchEntity($rolePermission, $data);
+        // ※ RolePermissions に password は存在しない想定なので、ここで触らない
+
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $rolePermission = $this->RolePermissions->patchEntity($rolePermission, $this->request->getData());
+
             if ($this->RolePermissions->save($rolePermission)) {
                 $this->Flash->success(__('The role permission has been saved.'));
-
                 return $this->redirect(['action' => 'index']);
             }
+
             $this->Flash->error(__('The role permission could not be saved. Please, try again.'));
         }
 
@@ -104,7 +122,9 @@ class RolePermissionsController extends AppController
     public function delete($id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
+
         $rolePermission = $this->RolePermissions->get($id);
+
         if ($this->RolePermissions->delete($rolePermission)) {
             $this->Flash->success(__('The role permission has been deleted.'));
         } else {
@@ -116,15 +136,15 @@ class RolePermissionsController extends AppController
 
     public function matrix()
     {
-        $svc = new RolePermissionMatrixService();
-
         if ($this->request->is('post')) {
-            $svc->save((array)$this->request->getData('perm'));
+            $perm = $this->request->getData('perm') ?? [];
+            $this->matrixService->save((array)$perm);
+
             $this->Flash->success(__('Permissions updated.'));
             return $this->redirect(['action' => 'matrix']);
         }
 
-        $vm = $svc->buildViewModel();
+        $vm = $this->matrixService->buildViewModel();
         $this->set($vm);
     }
-}   
+}
