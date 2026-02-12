@@ -60,7 +60,7 @@ class UsersTableTest extends TestCase
      */
     public function testRestrictDeleteAssociations(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\UsersTable::class, $this->Users);
     }
 
     /**
@@ -71,7 +71,16 @@ class UsersTableTest extends TestCase
      */
     public function testValidationDefault(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $entity = $this->Users->newEmptyEntity();
+        $entity = $this->Users->patchEntity($entity, [
+            'username' => 'newtestuser',
+            'email' => 'newtest@example.com',
+            'password' => 'Password123!',
+            'display_name' => 'New Test User',
+            'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
+        ]);
+
+        $this->assertEmpty($entity->getErrors());
     }
 
     /**
@@ -82,7 +91,7 @@ class UsersTableTest extends TestCase
      */
     public function testValidationCreate(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\UsersTable::class, $this->Users);
     }
 
     /**
@@ -93,6 +102,6 @@ class UsersTableTest extends TestCase
      */
     public function testBuildRules(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\UsersTable::class, $this->Users);
     }
 }

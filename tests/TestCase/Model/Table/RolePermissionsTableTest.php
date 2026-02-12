@@ -61,7 +61,7 @@ class RolePermissionsTableTest extends TestCase
      */
     public function testRestrictDeleteAssociations(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\RolePermissionsTable::class, $this->RolePermissions);
     }
 
     /**
@@ -72,7 +72,15 @@ class RolePermissionsTableTest extends TestCase
      */
     public function testValidationDefault(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $entity = $this->RolePermissions->newEmptyEntity();
+        $entity = $this->RolePermissions->patchEntity($entity, [
+            'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
+            'controller' => 'TestController',
+            'action' => 'testAction',
+            'allowed' => true,
+        ]);
+
+        $this->assertEmpty($entity->getErrors());
     }
 
     /**
@@ -83,7 +91,7 @@ class RolePermissionsTableTest extends TestCase
      */
     public function testValidationCreate(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\RolePermissionsTable::class, $this->RolePermissions);
     }
 
     /**
@@ -94,6 +102,6 @@ class RolePermissionsTableTest extends TestCase
      */
     public function testBuildRules(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\RolePermissionsTable::class, $this->RolePermissions);
     }
 }

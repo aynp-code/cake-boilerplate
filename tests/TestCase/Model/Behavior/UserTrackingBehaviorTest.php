@@ -42,4 +42,14 @@ class UserTrackingBehaviorTest extends TestCase
 
         parent::tearDown();
     }
+
+    /**
+     * Test initialize method
+     *
+     * @return void
+     */
+    public function testInitialize(): void
+    {
+        $this->assertInstanceOf(UserTrackingBehavior::class, $this->UserTracking);
+    }
 }

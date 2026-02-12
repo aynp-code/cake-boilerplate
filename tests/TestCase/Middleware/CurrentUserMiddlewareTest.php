@@ -22,6 +22,10 @@ class CurrentUserMiddlewareTest extends TestCase
     {
         $request = new ServerRequest();
         $request = $request->withAttribute('identity', new class {
+            public function getIdentifier()
+            {
+                return 'user-1';
+            }
             public function get($key)
             {
                 return match ($key) {

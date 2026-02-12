@@ -28,6 +28,25 @@ class RolePermissionsControllerTest extends TestCase
     ];
 
     /**
+     * setUp method
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // テストユーザーとしてログイン
+        $this->session([
+            'Auth' => [
+                'id' => 'a64e238c-86dd-4d28-afca-b407993cdb24',
+                'username' => 'test_user',
+                'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
+            ]
+        ]);
+    }
+
+    /**
      * Test index method
      *
      * @return void
@@ -35,7 +54,8 @@ class RolePermissionsControllerTest extends TestCase
      */
     public function testIndex(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->get('/role-permissions');
+        $this->assertResponseOk();
     }
 
     /**
@@ -46,7 +66,8 @@ class RolePermissionsControllerTest extends TestCase
      */
     public function testView(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->get('/role-permissions/view/7e322e99-4f53-4ac3-b41e-c522f4cbfd58');
+        $this->assertResponseOk();
     }
 
     /**
@@ -57,7 +78,8 @@ class RolePermissionsControllerTest extends TestCase
      */
     public function testAdd(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->get('/role-permissions/add');
+        $this->assertResponseOk();
     }
 
     /**
@@ -68,7 +90,8 @@ class RolePermissionsControllerTest extends TestCase
      */
     public function testEdit(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->get('/role-permissions/edit/7e322e99-4f53-4ac3-b41e-c522f4cbfd58');
+        $this->assertResponseOk();
     }
 
     /**
@@ -79,6 +102,9 @@ class RolePermissionsControllerTest extends TestCase
      */
     public function testDelete(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->enableCsrfToken();
+        $this->post('/role-permissions/delete/7e322e99-4f53-4ac3-b41e-c522f4cbfd58');
+        // 削除後はリダイレクトされる
+        $this->assertResponseSuccess();
     }
 }

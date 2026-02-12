@@ -24,7 +24,27 @@ class UsersControllerTest extends TestCase
     protected array $fixtures = [
         'app.Users',
         'app.Roles',
+        'app.RolePermissions',
     ];
+
+    /**
+     * setUp method
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // テストユーザーとしてログイン
+        $this->session([
+            'Auth' => [
+                'id' => 'a64e238c-86dd-4d28-afca-b407993cdb24',
+                'username' => 'test_user',
+                'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
+            ]
+        ]);
+    }
 
     /**
      * Test index method
@@ -34,7 +54,8 @@ class UsersControllerTest extends TestCase
      */
     public function testIndex(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->get('/users');
+        $this->assertResponseOk();
     }
 
     /**
@@ -45,7 +66,8 @@ class UsersControllerTest extends TestCase
      */
     public function testView(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->get('/users/view/a64e238c-86dd-4d28-afca-b407993cdb24');
+        $this->assertResponseOk();
     }
 
     /**
@@ -56,7 +78,8 @@ class UsersControllerTest extends TestCase
      */
     public function testAdd(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->get('/users/add');
+        $this->assertResponseOk();
     }
 
     /**
@@ -67,7 +90,8 @@ class UsersControllerTest extends TestCase
      */
     public function testEdit(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->get('/users/edit/a64e238c-86dd-4d28-afca-b407993cdb24');
+        $this->assertResponseOk();
     }
 
     /**
@@ -78,6 +102,8 @@ class UsersControllerTest extends TestCase
      */
     public function testDelete(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->enableCsrfToken();
+        $this->post('/users/delete/a64e238c-86dd-4d28-afca-b407993cdb24');
+        $this->assertResponseSuccess();
     }
 }

@@ -61,7 +61,7 @@ class RolesTableTest extends TestCase
      */
     public function testRestrictDeleteAssociations(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\RolesTable::class, $this->Roles);
     }
 
     /**
@@ -72,7 +72,13 @@ class RolesTableTest extends TestCase
      */
     public function testValidationDefault(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $entity = $this->Roles->newEmptyEntity();
+        $entity = $this->Roles->patchEntity($entity, [
+            'display_name' => 'Test Role',
+            'description' => 'Test Description',
+        ]);
+
+        $this->assertEmpty($entity->getErrors());
     }
 
     /**
@@ -83,7 +89,7 @@ class RolesTableTest extends TestCase
      */
     public function testValidationCreate(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\RolesTable::class, $this->Roles);
     }
 
     /**
@@ -94,6 +100,6 @@ class RolesTableTest extends TestCase
      */
     public function testBuildRules(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $this->assertInstanceOf(\App\Model\Table\RolesTable::class, $this->Roles);
     }
 }

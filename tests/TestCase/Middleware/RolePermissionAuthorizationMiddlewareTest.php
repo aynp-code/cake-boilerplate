@@ -5,6 +5,7 @@ namespace App\Test\TestCase\Middleware;
 
 use App\Middleware\RolePermissionAuthorizationMiddleware;
 use App\Service\RolePermissionCheckerInterface;
+use App\Service\RoutePermissionTargetNormalizer;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
@@ -164,7 +165,7 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
             ['controller' => 'Users', 'actions' => ['index']],
         ];
 
-        $middleware = new RolePermissionAuthorizationMiddleware($checker, null, $skip);
+        $middleware = new RolePermissionAuthorizationMiddleware($checker, new RoutePermissionTargetNormalizer(), $skip);
         $response = $middleware->process($request, $this->makeHandler());
 
         $this->assertInstanceOf(Response::class, $response);
