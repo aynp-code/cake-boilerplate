@@ -16,6 +16,7 @@ use Cake\Event\EventManagerInterface;
 use Cake\Http\BaseApplication;
 use Cake\Http\Middleware\BodyParserMiddleware;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
+use App\Middleware\RolePermissionAuthorizationMiddleware;
 use Cake\Http\MiddlewareQueue;
 use Cake\I18n\I18n;
 use Cake\ORM\Locator\TableLocator;
@@ -49,6 +50,8 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
             // identity から Configure(Auth.User.*) をセット（リクエスト中限定）
             ->add(new CurrentUserMiddleware())
+
+            ->add(new RolePermissionAuthorizationMiddleware())
 
             ->add(new BodyParserMiddleware())
 
