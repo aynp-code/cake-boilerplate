@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use App\Service\RolePermissionChecker;
+use App\Service\RolePermissionCheckerInterface;
 use App\Service\RoutePermissionTargetNormalizer;
 use Cake\Http\Exception\ForbiddenException;
 use Psr\Http\Message\ResponseInterface;
@@ -13,17 +14,18 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
 {
-    private RoutePermissionTargetNormalizer $normalizer;
-
     /**
-     * @param array<int, array{controller:string, actions?:array<int,string>}> $skip
+     * @var array<int, array{controller:string, actions?:array<int,string>}>
      */
+    private array $skip;
+
     public function __construct(
-        private readonly RolePermissionChecker $checker = new RolePermissionChecker(),
-        ?RoutePermissionTargetNormalizer $normalizer = null,
-        private readonly array $skip = []
+        private readonly RolePermissionCheckerInterface $checker = new RolePermissionChecker(),
+        private readonly RoutePermissionTargetNormalizer $normalizer = new RoutePermissionTargetNormalizer(),
+        array $skip = [],
     ) {
-        $this->normalizer = $normalizer ?? new RoutePermissionTargetNormalizer();
+        // 型を確実に array に固定（null/未定義事故を潰す）
+        $this->skip = $skip;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -68,7 +70,7 @@ class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
             }
         }
 
-        // 未認証は AuthenticationComponent 側が redirect する想定なので、ここでは何もしない（従来踏襲）
+        // 未認証は Authentication 側が redirect する想定なので、ここでは何もしない（従来踏襲）
         $identity = $request->getAttribute('identity');
         if (!$identity) {
             return $handler->handle($request);

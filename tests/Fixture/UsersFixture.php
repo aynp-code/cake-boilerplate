@@ -24,7 +24,7 @@ class UsersFixture extends TestFixture
                 'password' => 'Lorem ipsum dolor sit amet',
                 'display_name' => 'Lorem ipsum dolor sit amet',
                 'email' => 'Lorem ipsum dolor sit amet',
-                'role_id' => '84f16100-fb81-46f1-8eb5-44bd1c78ea95',
+                'role_id' => '3052638e-e46d-4d74-b7aa-56d32cb2231c',
                 'is_active' => 1,
                 'created' => '2026-02-05 14:16:12',
                 'created_by' => 'fef4c630-fb39-4e19-b87e-753bb035226d',

@@ -4,28 +4,48 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Middleware;
 
 use App\Middleware\CurrentUserMiddleware;
+use Cake\Core\Configure;
+use Cake\Http\Response;
+use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
+use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * App\Middleware\CurrentUserMiddleware Test Case
- */
 class CurrentUserMiddlewareTest extends TestCase
 {
-    /**
-     * Test subject
-     *
-     * @var \App\Middleware\CurrentUserMiddleware
-     */
-    protected $CurrentUser;
-
-    /**
-     * Test process method
-     *
-     * @return void
-     * @link \App\Middleware\CurrentUserMiddleware::process()
-     */
-    public function testProcess(): void
+    public function tearDown(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        parent::tearDown();
+        Configure::delete('Auth');
+    }
+
+    public function testIdentityIsWrittenAndCleared(): void
+    {
+        $request = new ServerRequest();
+        $request = $request->withAttribute('identity', new class {
+            public function get($key)
+            {
+                return match ($key) {
+                    'id' => 'user-1',
+                    'role_id' => 'role-1',
+                    default => null,
+                };
+            }
+        });
+
+        $middleware = new CurrentUserMiddleware();
+
+        $handler = new class implements RequestHandlerInterface {
+            public function handle(\Psr\Http\Message\ServerRequestInterface $request): Response
+            {
+                TestCase::assertSame('user-1', Configure::read('Auth.User.id'));
+                TestCase::assertSame('role-1', Configure::read('Auth.User.role_id'));
+                return new Response();
+            }
+        };
+
+        $middleware->process($request, $handler);
+
+        $this->assertNull(Configure::read('Auth.User.id'));
+        $this->assertNull(Configure::read('Auth.User.role_id'));
     }
 }

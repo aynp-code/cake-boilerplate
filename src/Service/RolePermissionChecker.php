@@ -7,7 +7,7 @@ use Cake\Cache\Cache;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\Utility\Inflector;
 
-class RolePermissionChecker
+class RolePermissionChecker implements RolePermissionCheckerInterface
 {
     use LocatorAwareTrait;
 

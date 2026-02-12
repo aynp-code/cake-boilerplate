@@ -20,7 +20,7 @@ class RolePermissionsFixture extends TestFixture
         $this->records = [
             [
                 'id' => '7e322e99-4f53-4ac3-b41e-c522f4cbfd58',
-                'role_id' => 'd48b871a-c8ea-4340-8ba4-6b6d4f29506e',
+                'role_id' => '3052638e-e46d-4d74-b7aa-56d32cb2231c',
                 'plugin' => 'Lorem ipsum dolor sit amet',
                 'prefix' => 'Lorem ipsum dolor sit amet',
                 'controller' => 'Lorem ipsum dolor sit amet',
