@@ -78,6 +78,8 @@ class RolePermissionsTableTest extends TestCase
             'controller' => 'TestController',
             'action' => 'testAction',
             'allowed' => true,
+            'created_by' => '898c13d6-cde2-4eac-b8c8-70550772696b',
+            'modified_by' => '898c13d6-cde2-4eac-b8c8-70550772696b',
         ]);
 
         $this->assertEmpty($entity->getErrors());

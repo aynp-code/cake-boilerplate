@@ -76,6 +76,8 @@ class RolesTableTest extends TestCase
         $entity = $this->Roles->patchEntity($entity, [
             'display_name' => 'Test Role',
             'description' => 'Test Description',
+            'created_by' => \Cake\Utility\Text::uuid(),
+            'modified_by' => \Cake\Utility\Text::uuid(),
         ]);
 
         $this->assertEmpty($entity->getErrors());

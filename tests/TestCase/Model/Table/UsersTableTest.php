@@ -78,6 +78,8 @@ class UsersTableTest extends TestCase
             'password' => 'Password123!',
             'display_name' => 'New Test User',
             'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
+            'created_by' => '898c13d6-cde2-4eac-b8c8-70550772696b',
+            'modified_by' => '898c13d6-cde2-4eac-b8c8-70550772696b',
         ]);
 
         $this->assertEmpty($entity->getErrors());

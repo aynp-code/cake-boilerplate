@@ -19,6 +19,8 @@ namespace App\Test\TestCase;
 use App\Application;
 use Cake\Core\Configure;
 use Cake\Error\Middleware\ErrorHandlerMiddleware;
+use Cake\Http\Middleware\BodyParserMiddleware;
+use Cake\Http\Middleware\CsrfProtectionMiddleware;
 use Cake\Http\MiddlewareQueue;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
@@ -72,14 +74,53 @@ class ApplicationTest extends TestCase
     public function testMiddleware()
     {
         $app = new Application(dirname(__DIR__, 2) . '/config');
-        $middleware = new MiddlewareQueue();
+        $middleware = $app->middleware(new MiddlewareQueue());
 
-        $middleware = $app->middleware($middleware);
+        // MiddlewareQueue is iterable. Collect into a list so we can assert
+        // presence and relative order without depending on exact indexes,
+        // as projects may insert additional middleware (eg. Authentication).
+        $stack = [];
+        foreach ($middleware as $m) {
+            $stack[] = $m;
+        }
 
-        $this->assertInstanceOf(ErrorHandlerMiddleware::class, $middleware->current());
-        $middleware->seek(1);
-        $this->assertInstanceOf(AssetMiddleware::class, $middleware->current());
-        $middleware->seek(2);
-        $this->assertInstanceOf(RoutingMiddleware::class, $middleware->current());
+        $this->assertNotEmpty($stack);
+
+        $classes = array_map(static fn ($m) => get_class($m), $stack);
+
+        $errorIndex = array_search(ErrorHandlerMiddleware::class, $classes, true);
+        $assetIndex = array_search(AssetMiddleware::class, $classes, true);
+        $routingIndex = array_search(RoutingMiddleware::class, $classes, true);
+
+        $this->assertNotFalse($errorIndex, 'ErrorHandlerMiddleware should be in the middleware queue.');
+        $this->assertNotFalse($assetIndex, 'AssetMiddleware should be in the middleware queue.');
+        $this->assertNotFalse($routingIndex, 'RoutingMiddleware should be in the middleware queue.');
+
+        $this->assertLessThan($assetIndex, $errorIndex, 'ErrorHandler should run before Asset.');
+        $this->assertLessThan($routingIndex, $assetIndex, 'Asset should run before Routing.');
+
+        $bodyIndex = array_search(BodyParserMiddleware::class, $classes, true);
+        if ($bodyIndex !== false) {
+            $this->assertGreaterThan($routingIndex, $bodyIndex, 'BodyParser should run after Routing.');
+        }
+
+        $csrfIndex = array_search(CsrfProtectionMiddleware::class, $classes, true);
+        $this->assertNotFalse($csrfIndex, 'CsrfProtectionMiddleware should be in the middleware queue.');
+        $this->assertGreaterThan($routingIndex, $csrfIndex, 'CSRF should run after Routing.');
+        if ($bodyIndex !== false) {
+            $this->assertLessThan($csrfIndex, $bodyIndex, 'BodyParser should run before CSRF.');
+        }
+
+        // Authentication is optional. If the plugin is installed, ensure the
+        // middleware is in the queue and runs before CSRF.
+        if (class_exists(\Authentication\Middleware\AuthenticationMiddleware::class)) {
+            $authIndex = array_search(\Authentication\Middleware\AuthenticationMiddleware::class, $classes, true);
+            $this->assertNotFalse(
+                $authIndex,
+                'AuthenticationMiddleware should be in the middleware queue when installed.'
+            );
+            $this->assertGreaterThan($routingIndex, $authIndex, 'Authentication should run after Routing.');
+            $this->assertGreaterThan($authIndex, $csrfIndex, 'CSRF should run after Authentication.');
+        }
     }
 }

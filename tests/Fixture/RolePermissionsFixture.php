@@ -34,7 +34,7 @@ class RolePermissionsFixture extends TestFixture
             ],
             // Users controller permissions
             [
-                'id' => '9g544gbb-6174-5ce5-d63g-e744g6ecgh70',
+                'id' => '9f5440bb-6174-5ce5-d630-e74406ec0b70',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -47,7 +47,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'ah655hcc-7285-6df6-e74h-f855h7fdhi81',
+                'id' => 'af6550cc-7285-6df6-e740-f85507fd0a81',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -60,7 +60,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'bi766idd-8396-7eg7-f85i-g966i8geij92',
+                'id' => 'bf7660dd-8396-7ef7-f850-f96608fe0b92',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -73,7 +73,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'cj877jee-94a7-8fh8-g96j-ha77j9hfjka3',
+                'id' => 'cf8770ee-94a7-8ff8-f960-fa77090f0a03',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -86,7 +86,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'dk988kff-a5b8-9gi9-ha7k-ib88kaigklb4',
+                'id' => 'df9880ff-a5b8-9ff9-fa70-fb880a10b1b4',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -100,7 +100,7 @@ class RolePermissionsFixture extends TestFixture
             ],
             // Roles controller permissions
             [
-                'id' => 'el099lgg-b6c9-ahi-ib8l-jc99lbjhlmc5',
+                'id' => 'ef0990ff-b6c9-a0f1-1b80-fc990b10b1c5',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -113,7 +113,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'fm1aalh-c7da-bkj-jc9m-kda-amckimnd6',
+                'id' => 'ff1aa0b0-c7da-b0b1-0c9a-0da0a0c0b0d6',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -126,7 +126,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'gn2bbmii-d8eb-clkk-kdan-lebbnmdljnoe7',
+                'id' => '0f2bb0f1-d8eb-c1ff-fda0-fe0b0d10b10e',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -139,7 +139,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'ho3ccnjj-e9fc-dmll-lebo-mfcconekmopf8',
+                'id' => '0f3cc0f1-e9fc-d0f1-1eb0-0fc0a0b0f0f8',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -152,7 +152,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'ip4ddokk-fagd-enm-mfcp-ngddpofllnqpg9',
+                'id' => '0f4dd0ff-f0ad-e0f1-0fcp-0fdd00f11a09',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -166,7 +166,7 @@ class RolePermissionsFixture extends TestFixture
             ],
             // RolePermissions controller permissions
             [
-                'id' => 'jq5eepll-gbhe-fonm-ngdq-oheerpgmmoqrha',
+                'id' => '3a82986c-9de0-42de-a201-fa500d53f3dd',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -179,7 +179,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'kr6ffqmm-hcif-gpon-oher-piffqrhmnsrsib',
+                'id' => 'e07cf069-106c-4eab-8151-6f31eaefd030',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -192,7 +192,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'ls7ggrnn-idjg-hqpo-pifs-qjggssintotsic',
+                'id' => '83b8834d-73eb-413e-a181-bfd48f1f9406',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -205,7 +205,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'mt8hhsoo-jekh-irqp-qjgt-rkhhttjjoupuid',
+                'id' => 'ca9e037d-3440-4695-a562-56d9f85f9c84',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
@@ -218,7 +218,7 @@ class RolePermissionsFixture extends TestFixture
                 'modified_by' => '2a469635-f97b-474a-9f04-933e539562f5',
             ],
             [
-                'id' => 'nu9iitpp-kfli-jsrq-rkhu-sliuukkpvqjvje',
+                'id' => 'b44cf167-dbee-4fc6-b460-2574e04681bc',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'plugin' => null,
                 'prefix' => null,
