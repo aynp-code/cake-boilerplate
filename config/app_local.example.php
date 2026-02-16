@@ -119,6 +119,13 @@ return [
         ],
     ],
 
+    'Session' => [
+        'defaults' => 'cache',
+        'handler' => [
+            'config' => 'session',
+        ],
+    ],
+
     /*
     * キャッシュ設定
     *
@@ -139,11 +146,19 @@ return [
     'Cache' => [
         'default' => [
             'className' => \Cake\Cache\Engine\RedisEngine::class,
-            'server' => 'redis_host',
+            'server' => 'cake_redis',
             'port' => 6379,
             'database' => 0,
             'prefix' => 'cake_',
             'duration' => '+1 hours',
+        ],
+        'session' => [
+            'className' => \Cake\Cache\Engine\RedisEngine::class,
+            'server' => 'cake_redis',
+            'port' => 6379,
+            'database' => 0,
+            'prefix' => 'cake_sess_',
+            'duration' => 1440, // 秒
         ],
         '_cake_model_' => [
             'className' => \Cake\Cache\Engine\RedisEngine::class,
