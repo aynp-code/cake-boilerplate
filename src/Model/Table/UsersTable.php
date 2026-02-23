@@ -100,6 +100,12 @@ class UsersTable extends AppTable
             ->add('email', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
 
         $validator
+            ->scalar('kintone_username')
+            ->maxLength('kintone_username', 255)
+            ->allowEmptyString('kintone_username')
+            ->add('kintone_username', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
+
+        $validator
             ->uuid('role_id')
             ->notEmptyString('role_id');
 
@@ -158,6 +164,7 @@ class UsersTable extends AppTable
     {
         $rules->add($rules->isUnique(['username']), ['errorField' => 'username']);
         $rules->add($rules->isUnique(['email']), ['errorField' => 'email']);
+        $rules->add($rules->isUnique(['kintone_username'], ['allowMultipleNulls' => true]), ['errorField' => 'kintone_username']);
         $rules->add($rules->existsIn(['role_id'], 'Roles'), ['errorField' => 'role_id']);
 
         return $rules;

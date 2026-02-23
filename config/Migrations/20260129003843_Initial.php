@@ -40,10 +40,11 @@ class Initial extends BaseMigration
         ]);
         $table
             ->addColumn('id', 'uuid')
-            ->addColumn('username', 'string', ['limit' => 255, 'null' => false])
-            ->addColumn('password', 'string', ['limit' => 255, 'null' => false])
-            ->addColumn('display_name', 'string', ['limit' => 255, 'null' => false])
+            ->addColumn('username', 'string', ['limit' => 255, 'null' => false, 'comment' => 'ログインユーザー名'])
+            ->addColumn('password', 'string', ['limit' => 255, 'null' => false, 'comment' => 'ログインパスワード'])
+            ->addColumn('display_name', 'string', ['limit' => 255, 'null' => false, 'comment' => '表示名'])
             ->addColumn('email', 'string', ['limit' => 255, 'null' => false])
+            ->addColumn('kintone_username', 'string', ['limit' => 255, 'null' => true, 'default' => null, 'comment' => 'kintone連携用のユーザー名'])
 
             // ロール（管理者・一般など）
             ->addColumn('role_id', 'uuid', ['null' => false])
@@ -60,6 +61,7 @@ class Initial extends BaseMigration
             // ユニーク制約
             ->addIndex(['username'], ['unique' => true, 'name' => 'UQ_USERS_USERNAME'])
             ->addIndex(['email'], ['unique' => true, 'name' => 'UQ_USERS_EMAIL'])
+            ->addIndex(['kintone_username'], ['unique' => true, 'name' => 'UQ_USERS_KINTONE_USERNAME'])
             ->create();
 
         $table = $this->table('role_permissions', [

@@ -69,6 +69,13 @@ $this->Breadcrumbs->add([
             
 
 
+        
+                            
+                                <?= $this->Form->control('kintone_username', ['label' => __('Kintone Username'), 'required' => false]) ?>
+            
+            
+
+
                                 <?= $this->Form->control('role_id', ['options' => $roles, 'class' => 'form-control']) ?>
         
     

@@ -4,18 +4,17 @@ set -euo pipefail
 ############################################
 # ここを編集（環境設定）
 ############################################
-SUBDOMAIN="XXXXXXX"              # 例: "example"（https://example.cybozu.com）
-CLIENT_ID="XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-CLIENT_SECRET="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+SUBDOMAIN="ayunoppa"              # 例: "example"（https://example.cybozu.com）
+CLIENT_ID="l.1.k1jktxfal4grthat7848otcp2vezd076"
+CLIENT_SECRET="z0mqkjzdzs39isf07s76sa7krultmohvg88ucc1ktbbtgy46lr3pgfu71buh98xz"
 REDIRECT_URI="https://localhost:8443/auth/cybozu/callback"  # OAuthクライアントに登録したものと完全一致
-APP_ID="7"                            # kintoneアプリID
+APP_ID="8"                            # kintoneアプリID
 STATE="state1"                          # 任意（固定でもOK）
 SCOPE="k:app_record:read k:app_record:write"
 
 # 追加したいフィールドをここに全部書く（フィールドコード: value）
 RECORD_JSON='{
-  "company": { "value": "株式会社テスト" },
-  "name": { "value": "テスト太郎" }
+  "login_id": { "value": "321995" }
 }'
 
 ############################################

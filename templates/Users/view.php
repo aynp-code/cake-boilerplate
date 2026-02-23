@@ -43,6 +43,12 @@ $this->Breadcrumbs->add([
             </tr>
     
 
+                    <tr>
+                <th><?= __('Kintone Username') ?></th>
+                <td><?= h($user->kintone_username) ?></td>
+            </tr>
+    
+
                             <tr>
                 <th><?= __('Role') ?></th>
                 <td><?= $user->has('role')

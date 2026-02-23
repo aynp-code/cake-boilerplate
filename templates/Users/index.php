@@ -40,6 +40,7 @@ $this->Breadcrumbs->add([
                     <th><?= $this->Paginator->sort('username') ?></th>
                     <th><?= $this->Paginator->sort('display_name') ?></th>
                     <th><?= $this->Paginator->sort('email') ?></th>
+                    <th><?= $this->Paginator->sort('kintone_username', __('Kintone Username')) ?></th>
                     <th><?= $this->Paginator->sort('role_id') ?></th>
                     <th><?= $this->Paginator->sort('is_active') ?></th>
                     <th><?= $this->Paginator->sort('created') ?></th>
@@ -91,6 +92,7 @@ $this->Breadcrumbs->add([
                         <td><?= h($user->username) ?></td>
                         <td><?= h($user->display_name) ?></td>
                         <td><?= h($user->email) ?></td>
+                        <td><?= h($user->kintone_username) ?></td>
                         <td><?= $user->has('role') ? $this->Html->link($user->role->display_name, ['controller' => 'Roles', 'action' => 'view', $user->role->id]) : '' ?></td>
                         <td><?= ($user->is_active) ? __('Yes') : __('No') ?></td>
                         <td><?= h($user->created) ?></td>
