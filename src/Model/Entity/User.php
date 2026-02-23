@@ -14,6 +14,7 @@ use Cake\ORM\Entity;
  * @property string $display_name
  * @property string $email
  * @property string|null $kintone_username
+ * @property bool $is_kintone_linked
  * @property string $role_id
  * @property bool $is_active
  * @property \Cake\I18n\DateTime $created
@@ -42,6 +43,7 @@ class User extends Entity
         'display_name' => true,
         'email' => true,
         'kintone_username' => true,
+        'is_kintone_linked' => true,
         'role_id' => true,
         'is_active' => true,
         'created' => true,
@@ -65,7 +67,8 @@ class User extends Entity
     protected function _setPassword($password)
     {
         if ($password === null || $password === '') {
-            return $password;
+            // 空の場合は既存の値を維持（edit時に未入力でも上書きしない）
+            return $this->_fields['password'] ?? null;
         }
         return (new \Authentication\PasswordHasher\DefaultPasswordHasher())->hash($password);
     }

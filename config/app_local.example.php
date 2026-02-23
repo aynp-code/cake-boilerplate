@@ -127,6 +127,24 @@ return [
     ],
 
     /*
+    * Kintone OAuth 設定
+    *
+    * - subdomain    : cybozu.com のサブドメイン（例: "example" → https://example.cybozu.com）
+    * - client_id    : kintone OAuth クライアント ID
+    * - client_secret: kintone OAuth クライアントシークレット
+    * - redirect_uri : OAuthクライアントに登録したコールバック URL（完全一致が必要）
+    *                  例: https://your-app.example.com/kintone/callback
+    * - app_id       : 連携確認に使う kintone アプリ ID（レコードを一時的に追加できるアプリ）
+    */
+    'Kintone' => [
+        'subdomain'     => env('KINTONE_SUBDOMAIN', ''),
+        'client_id'     => env('KINTONE_CLIENT_ID', ''),
+        'client_secret' => env('KINTONE_CLIENT_SECRET', ''),
+        'redirect_uri'  => env('KINTONE_REDIRECT_URI', ''),
+        'app_id'        => env('KINTONE_APP_ID', ''),
+    ],
+
+    /*
     * キャッシュ設定
     *
     * Redis をキャッシュエンジンとして使用する設定です。

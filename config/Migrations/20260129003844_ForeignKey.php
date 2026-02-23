@@ -25,5 +25,14 @@ final class ForeignKey extends BaseMigration
                 'constraint' => 'FK_ROLE_PERMISSIONS_ROLES',
             ])
             ->update();
+
+        // FK: cybozu_auths.user_id → users.id
+        $this->table('cybozu_auths')
+            ->addForeignKey('user_id', 'users', 'id', [
+                'constraint' => 'FK_CYBOZU_AUTHS_USERS',
+                'update'     => 'CASCADE',
+                'delete'     => 'CASCADE', // ユーザ削除時に連動削除
+            ])
+            ->update();
     }
 }

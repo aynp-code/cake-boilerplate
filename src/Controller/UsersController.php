@@ -46,7 +46,8 @@ class UsersController extends AppController
         $contain = $this->Users->withAuditUsersContain(['CreatedByUser', 'ModifiedByUser', 'Roles']);
 
         $user = $this->Users->get($id, contain: $contain);
-        $this->set(compact('user'));
+        $currentUserId = $this->Authentication->getIdentity()?->getIdentifier();
+        $this->set(compact('user', 'currentUserId'));
     }
 
     /**

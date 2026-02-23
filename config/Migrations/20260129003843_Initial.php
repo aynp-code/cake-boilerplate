@@ -45,6 +45,7 @@ class Initial extends BaseMigration
             ->addColumn('display_name', 'string', ['limit' => 255, 'null' => false, 'comment' => '表示名'])
             ->addColumn('email', 'string', ['limit' => 255, 'null' => false])
             ->addColumn('kintone_username', 'string', ['limit' => 255, 'null' => true, 'default' => null, 'comment' => 'kintone連携用のユーザー名'])
+            ->addColumn('is_kintone_linked', 'boolean', ['default' => false, 'null' => false, 'comment' => 'kintone連携完了フラグ'])
 
             // ロール（管理者・一般など）
             ->addColumn('role_id', 'uuid', ['null' => false])
@@ -95,6 +96,36 @@ class Initial extends BaseMigration
                 ['unique' => true, 'name' => 'UQ_ROLE_PERMISSIONS_RULE']
             )
             ->addIndex(['role_id'], ['name' => 'IDX_ROLE_PERMISSIONS_ROLE'])
+            ->create();
+
+        $table = $this->table('cybozu_auths', [
+            'id' => false,
+            'primary_key' => ['id'],
+        ]);
+        $table
+            ->addColumn('id', 'uuid')
+
+            // users と 1:1 対応
+            ->addColumn('user_id', 'uuid', ['null' => false])
+
+            // トークン（Security::encrypt() で暗号化した文字列を格納するため text）
+            ->addColumn('access_token', 'text', ['null' => false])
+            ->addColumn('refresh_token', 'text', ['null' => false])
+
+            // access_token の有効期限（kintone は通常 3600秒）
+            ->addColumn('expires_at', 'datetime', ['null' => false])
+
+            // 取得スコープ（記録用）
+            ->addColumn('scope', 'string', ['limit' => 512, 'null' => true, 'default' => null])
+
+            // 監査用
+            ->addColumn('created', 'datetime', ['null' => false])
+            ->addColumn('created_by', 'uuid', ['null' => false])
+            ->addColumn('modified', 'datetime', ['null' => false])
+            ->addColumn('modified_by', 'uuid', ['null' => false])
+
+            // user_id はユニーク（1ユーザ = 1レコード）
+            ->addIndex(['user_id'], ['unique' => true, 'name' => 'UQ_CYBOZU_AUTHS_USER_ID'])
             ->create();
     }
 }

@@ -2,6 +2,7 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\User $user
+ * @var string|null $currentUserId
  */
 ?>
 
@@ -46,6 +47,38 @@ $this->Breadcrumbs->add([
                     <tr>
                 <th><?= __('Kintone Username') ?></th>
                 <td><?= h($user->kintone_username) ?></td>
+            </tr>
+    
+
+                    <tr>
+                <th><?= __('Kintone Linked') ?></th>
+                <td>
+                    <?php if ($user->is_kintone_linked) : ?>
+                        <span class="badge badge-success mr-2"><i class="fas fa-check-circle mr-1"></i><?= __('Linked') ?></span>
+                        <?php if ($currentUserId === $user->id) : ?>
+                            <?= $this->Form->postLink(
+                                '<i class="fas fa-unlink mr-1"></i>' . __('Revoke'),
+                                ['controller' => 'Kintone', 'action' => 'revoke'],
+                                [
+                                    'class'   => 'btn btn-sm btn-outline-danger',
+                                    'escape'  => false,
+                                    'confirm' => __('Revoke Kintone link? You will need to re-authenticate.'),
+                                ]
+                            ) ?>
+                        <?php endif; ?>
+                    <?php elseif (!empty($user->kintone_username)) : ?>
+                        <span class="badge badge-warning mr-2"><i class="fas fa-unlink mr-1"></i><?= __('Not linked') ?></span>
+                        <?php if ($currentUserId === $user->id) : ?>
+                            <?= $this->Html->link(
+                                '<i class="fas fa-link mr-1"></i>' . __('Connect Kintone'),
+                                ['controller' => 'Kintone', 'action' => 'connect'],
+                                ['class' => 'btn btn-sm btn-primary', 'escape' => false]
+                            ) ?>
+                        <?php endif; ?>
+                    <?php else : ?>
+                        <span class="badge badge-secondary"><?= __('No kintone_username set') ?></span>
+                    <?php endif; ?>
+                </td>
             </tr>
     
 

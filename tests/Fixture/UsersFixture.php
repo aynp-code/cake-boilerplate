@@ -25,6 +25,7 @@ class UsersFixture extends TestFixture
                 'display_name' => 'Lorem ipsum dolor sit amet',
                 'email' => 'Lorem ipsum dolor sit amet',
                 'kintone_username' => null,
+                'is_kintone_linked' => 0,
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
                 'is_active' => 1,
                 'created' => '2026-02-05 14:16:12',

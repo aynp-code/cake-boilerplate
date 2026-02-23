@@ -63,6 +63,11 @@ class UsersTable extends AppTable
             'foreignKey' => 'role_id',
             'joinType' => 'INNER',
         ]);
+
+        $this->hasOne('CybozuAuths', [
+            'foreignKey' => 'user_id',
+            'dependent'  => true, // ユーザ削除時に連動削除
+        ]);
     }
 
     
@@ -104,6 +109,10 @@ class UsersTable extends AppTable
             ->maxLength('kintone_username', 255)
             ->allowEmptyString('kintone_username')
             ->add('kintone_username', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
+
+        $validator
+            ->boolean('is_kintone_linked')
+            ->allowEmptyString ('is_kintone_linked');
 
         $validator
             ->uuid('role_id')

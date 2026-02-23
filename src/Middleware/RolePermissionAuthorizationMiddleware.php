@@ -59,6 +59,11 @@ class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
 
+        // 例外：Kintone OAuth は認証済みユーザなら常に許可
+        if ($controller === 'Kintone' && in_array($action, ['connect', 'callback', 'revoke'], true)) {
+            return $handler->handle($request);
+        }
+
         // 追加のスキップ設定（必要なら）
         foreach ($this->skip as $rule) {
             if (($rule['controller'] ?? null) !== $controller) {
