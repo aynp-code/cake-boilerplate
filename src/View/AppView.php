@@ -43,11 +43,12 @@ class AppView extends View
      */
     public function initialize(): void
     {
-        $this->helpers = [
-            'Html' => ['className' => \App\View\Helper\HtmlHelper::class],
-            'Form' => ['className' => \App\View\Helper\FormHelper::class],
-        ];
+        $this->helpers['Html'] = ['className' => \App\View\Helper\HtmlHelper::class];
+        $this->helpers['Form'] = ['className' => \App\View\Helper\FormHelper::class];
+        $this->helpers['Breadcrumbs'] = ['className' => \App\View\Helper\BreadcrumbsHelper::class];
+
         parent::initialize();
         $this->initializeCakeLte();
+        
     }
 }

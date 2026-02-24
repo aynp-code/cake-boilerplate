@@ -13,11 +13,7 @@ $this->Breadcrumbs->addMany([
 ]);
 ?>
 
-{# ① まず通常通りフィールド抽出 #}
 {%- set fields = Bake.filterFields(fields, schema, modelObject, indexColumns, ['binary', 'text']) %}
-
-{# ② primaryKey（＝ID）を一覧表示から除外 #}
-{%- set fields = fields|filter(f => f not in primaryKey) %}
 
 
 <div class="card card-primary card-outline">
@@ -34,61 +30,20 @@ $this->Breadcrumbs->addMany([
             <?= $this->Html->link(__('New {{ singularHumanName }}'), ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
         </div>
     </div>
-
+    <!-- /.card-header -->
     <div class="card-body table-responsive p-0">
         <table class="table table-hover text-nowrap">
             <thead>
                 <tr>
-                    {# ③ Actions を一番左へ #}
-                    <th class="actions"><?= __('Actions') ?></th>
-
 {% for field in fields %}
                     <th><?= $this->Paginator->sort('{{ field }}') ?></th>
 {% endfor %}
+                    <th class="actions"><?= __('Actions') ?></th>
                 </tr>
             </thead>
-
             <tbody>
                 <?php foreach (${{ pluralVar }} as ${{ singularVar }}) : ?>
                     <tr>
-                        {# ④ Actions を一番左へ（行側も） #}
-{% set pk = '$' ~ singularVar ~ '->' ~ primaryKey[0] %}
-                        <td class="actions text-nowrap">
-                            <?= $this->Html->link(
-                                '<i class="fas fa-eye"></i>',
-                                ['action' => 'view', {{ pk|raw }}],
-                                [
-                                    'class' => 'btn btn-xs btn-outline-info',
-                                    'escape' => false,
-                                    'title' => __('View'),
-                                    'data-toggle' => 'tooltip',
-                                ]
-                            ) ?>
-
-                            <?= $this->Html->link(
-                                '<i class="fas fa-edit"></i>',
-                                ['action' => 'edit', {{ pk|raw }}],
-                                [
-                                    'class' => 'btn btn-xs btn-outline-primary ml-1',
-                                    'escape' => false,
-                                    'title' => __('Edit'),
-                                    'data-toggle' => 'tooltip',
-                                ]
-                            ) ?>
-
-                            <?= $this->Form->postLink(
-                                '<i class="fas fa-trash"></i>',
-                                ['action' => 'delete', {{ pk|raw }}],
-                                [
-                                    'class' => 'btn btn-xs btn-outline-danger ml-1',
-                                    'escape' => false,
-                                    'confirm' => __('Are you sure you want to delete # {0}?', {{ pk|raw }}),
-                                    'title' => __('Delete'),
-                                    'data-toggle' => 'tooltip',
-                                ]
-                            ) ?>
-                        </td>
-
 {% for field in fields %}
 {% set isKey = false %}
 {% if associations.BelongsTo %}
@@ -110,12 +65,18 @@ $this->Breadcrumbs->addMany([
 {% endif %}
 {% endif %}
 {% endfor %}
+{% set pk = '$' ~ singularVar ~ '->' ~ primaryKey[0] %}
+                        <td class="actions">
+                            <?= $this->Html->link(__('View'), ['action' => 'view', {{ pk|raw }}], ['class' => 'btn btn-xs btn-outline-primary', 'escape' => false]) ?>
+                            <?= $this->Html->link(__('Edit'), ['action' => 'edit', {{ pk|raw }}], ['class' => 'btn btn-xs btn-outline-primary', 'escape' => false]) ?>
+                            <?= $this->Form->postLink(__('Delete'), ['action' => 'delete', {{ pk|raw }}], ['class' => 'btn btn-xs btn-outline-danger', 'escape' => false, 'confirm' => __('Are you sure you want to delete # {0}?', {{ pk|raw }})]) ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
-
+    <!-- /.card-body -->
     <div class="card-footer d-flex flex-column flex-md-row">
         <div class="text-muted">
             <?= $this->Paginator->counter(__('Page {{ '{{' }}page{{ '}}' }} of {{ '{{' }}pages{{ '}}' }}, showing {{ '{{' }}current{{ '}}' }} record(s) out of {{ '{{' }}count{{ '}}' }} total')) ?>
@@ -128,4 +89,5 @@ $this->Breadcrumbs->addMany([
             <?= $this->Paginator->last('<i class="fas fa-angle-double-right"></i>', ['escape' => false]) ?>
         </ul>
     </div>
+    <!-- /.card-footer -->
 </div>

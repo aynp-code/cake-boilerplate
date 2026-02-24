@@ -7,7 +7,7 @@
 
 <?php
 $this->assign('title', __('Add Role'));
-$this->Breadcrumbs->add([
+$this->Breadcrumbs->addMany([
     ['title' => __('Home'), 'url' => '/'],
     ['title' => __('List Roles'), 'url' => ['action' => 'index']],
     ['title' => __('Add')],

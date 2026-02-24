@@ -16,7 +16,7 @@
 {% set fields = Bake.filterFields(fields, schema, modelObject) %}
 <?php
 $this->assign('title', __('{{ action|humanize }} {{ singularHumanName }}'));
-$this->Breadcrumbs->add([
+$this->Breadcrumbs->addMany([
     ['title' => __('Home'), 'url' => '/'],
     ['title' => __('List {{ pluralHumanName }}'), 'url' => ['action' => 'index']],
 {% if 'add' not in action %}

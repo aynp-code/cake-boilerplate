@@ -7,7 +7,7 @@
 
 <?php
 $this->assign('title', __('Role Permission'));
-$this->Breadcrumbs->add([
+$this->Breadcrumbs->addMany([
     ['title' => __('Home'), 'url' => '/'],
     ['title' => __('List Role Permissions'), 'url' => ['action' => 'index']],
     ['title' => __('View')],
