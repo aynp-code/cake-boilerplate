@@ -137,11 +137,15 @@ return [
     * - app_id       : 連携確認に使う kintone アプリ ID（cybozu アカウント確認用）（レコードを一時的に追加できるアプリ）
     */
     'Cybozu' => [
-        'subdomain'     => env('KINTONE_SUBDOMAIN', ''),
-        'client_id'     => env('KINTONE_CLIENT_ID', ''),
-        'client_secret' => env('KINTONE_CLIENT_SECRET', ''),
-        'redirect_uri'  => env('KINTONE_REDIRECT_URI', ''),
-        'app_id'        => env('KINTONE_APP_ID', ''),
+        'subdomain' => env('KINTONE_SUBDOMAIN', ''),
+        'oauth' => [
+            'client_id'     => env('KINTONE_CLIENT_ID', ''),
+            'client_secret' => env('KINTONE_CLIENT_SECRET', ''),
+            'redirect_uri'  => env('KINTONE_REDIRECT_URI', ''),
+        ],
+        'apps' => [
+            'whoami' => env('KINTONE_WHOAMI_APP_ID', ''),
+        ],
     ],
 
     /*

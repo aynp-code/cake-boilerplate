@@ -46,19 +46,19 @@ class CybozuOAuthService
 
         if (
             empty($config['subdomain'])
-            || empty($config['client_id'])
-            || empty($config['client_secret'])
-            || empty($config['redirect_uri'])
-            || empty($config['app_id'])
+            || empty($config['oauth']['client_id'])
+            || empty($config['oauth']['client_secret'])
+            || empty($config['oauth']['redirect_uri'])
+            || empty($config['apps']['whoami'])
         ) {
-            throw new RuntimeException('Cybozu configuration is incomplete. Check app_local.php Kintone section.');
+            throw new RuntimeException('Cybozu configuration is incomplete. Check app_local.php Cybozu section.');
         }
 
         $this->subdomain    = $config['subdomain'];
-        $this->clientId     = $config['client_id'];
-        $this->clientSecret = $config['client_secret'];
-        $this->redirectUri  = $config['redirect_uri'];
-        $this->appId        = $config['app_id'];
+        $this->clientId     = $config['oauth']['client_id'];
+        $this->clientSecret = $config['oauth']['client_secret'];
+        $this->redirectUri  = $config['oauth']['redirect_uri'];
+        $this->appId        = $config['apps']['whoami'];
     }
 
     // =========================================================================
