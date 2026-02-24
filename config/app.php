@@ -469,4 +469,14 @@ return [
         'errorLevel' => null,
         'fixtureStrategy' => null,
     ],
+
+    /**
+     * Bake configuration.
+     *
+     * Set the default theme to BoilerplateTheme so that `bin/cake bake`
+     * uses the custom templates without needing the `-t BoilerplateTheme` option.
+     */
+    'Bake' => [
+        'theme' => 'BoilerplateTheme',
+    ],
 ];

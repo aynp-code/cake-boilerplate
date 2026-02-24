@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace BakeTheme\Controller;
+namespace BoilerplateTheme\Controller;
 
 use App\Controller\AppController as BaseController;
 

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace BakeTheme;
+namespace BoilerplateTheme;
 
 use Cake\Console\CommandCollection;
 use Cake\Core\BasePlugin;
@@ -11,9 +11,9 @@ use Cake\Http\MiddlewareQueue;
 use Cake\Routing\RouteBuilder;
 
 /**
- * Plugin for BakeTheme
+ * Plugin for BoilerplateTheme
  */
-class BakeThemePlugin extends BasePlugin
+class BoilerplateThemePlugin extends BasePlugin
 {
     /**
      * Load all the plugin configuration and bootstrap logic.
@@ -42,8 +42,8 @@ class BakeThemePlugin extends BasePlugin
     {
         // remove this method hook if you don't need it
         $routes->plugin(
-            'BakeTheme',
-            ['path' => '/bake-theme'],
+            'BoilerplateTheme',
+            ['path' => '/boilerplate-theme'],
             function (RouteBuilder $builder) {
                 // Add custom routes here
 
