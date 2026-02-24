@@ -99,7 +99,10 @@ class KintoneController extends AppController
         }
 
         /** @var \App\Model\Entity\User $currentUser */
-        $currentUser = $this->Authentication->getIdentity()->getOriginalData();
+        $identityId = (string)$this->Authentication->getIdentity()->getIdentifier();
+        /** @var \App\Model\Table\UsersTable $Users */
+        $Users = $this->fetchTable('Users');
+        $currentUser = $Users->get($identityId);
 
         try {
             $service = new KintoneOAuthService();
@@ -133,10 +136,7 @@ class KintoneController extends AppController
             $service->saveToken((string)$currentUser->id, $tokenData);
 
             // users.is_kintone_linked = true
-            /** @var \App\Model\Table\UsersTable $Users */
-            $Users = $this->fetchTable('Users');
-            $user  = $Users->get($currentUser->id);
-            $user  = $Users->patchEntity($user, ['is_kintone_linked' => true]);
+            $user = $Users->patchEntity($currentUser, ['is_kintone_linked' => true]);
 
             if (!$Users->save($user)) {
                 throw new RuntimeException('Failed to update is_kintone_linked.');
