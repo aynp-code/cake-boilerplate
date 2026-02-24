@@ -12,7 +12,7 @@ use Cake\ORM\TableRegistry;
 use RuntimeException;
 
 /**
- * Kintone OAuth 連携サービス
+ * Cybozu OAuth 連携サービス
  *
  * ## トークンライフサイクル
  *
@@ -25,12 +25,12 @@ use RuntimeException;
  *
  * ## OAuth フロー（初回 or 再認可）
  *
- *  buildAuthorizationUrl($state)  → ブラウザを kintone 認可画面へ
+ *  buildAuthorizationUrl($state)  → ブラウザを cybozu 認可画面へ
  *  fetchToken($code)              → code → access_token / refresh_token
- *  resolveKintoneLoginCode($at)   → レコード追加 → $creator.code 取得 → レコード削除
+ *  resolveLoginCode($at)   → レコード追加 → $creator.code 取得 → レコード削除
  *  saveToken($userId, $tokenData) → cybozu_auths に保存（upsert）
  */
-class KintoneOAuthService
+class CybozuOAuthService
 {
     private string $subdomain;
     private string $clientId;
@@ -42,7 +42,7 @@ class KintoneOAuthService
 
     public function __construct()
     {
-        $config = Configure::read('Kintone');
+        $config = Configure::read('Cybozu');
 
         if (
             empty($config['subdomain'])
@@ -51,7 +51,7 @@ class KintoneOAuthService
             || empty($config['redirect_uri'])
             || empty($config['app_id'])
         ) {
-            throw new RuntimeException('Kintone configuration is incomplete. Check app_local.php Kintone section.');
+            throw new RuntimeException('Cybozu configuration is incomplete. Check app_local.php Kintone section.');
         }
 
         $this->subdomain    = $config['subdomain'];
@@ -92,7 +92,7 @@ class KintoneOAuthService
             $auth = $this->refreshToken($auth);
             return $auth->access_token;
         } catch (RuntimeException $e) {
-            Log::warning("Kintone token refresh failed for user {$userId}: " . $e->getMessage(), ['scope' => 'kintone']);
+            Log::warning("Cybozu token refresh failed for user {$userId}: " . $e->getMessage(), ['scope' => 'cybozu']);
             return null; // 呼び出し元が再 OAuth へ誘導
         }
     }
@@ -180,7 +180,7 @@ class KintoneOAuthService
      * @return string  kintone ログインコード
      * @throws RuntimeException
      */
-    public function resolveKintoneLoginCode(string $accessToken, string $username): string
+    public function resolveLoginCode(string $accessToken, string $username): string
     {
         $recordId = $this->addRecord($accessToken, $username);
 
@@ -190,7 +190,7 @@ class KintoneOAuthService
             try {
                 $this->deleteRecord($accessToken, $recordId);
             } catch (\Throwable $e) {
-                Log::warning('Kintone deleteRecord failed: ' . $e->getMessage(), ['scope' => 'kintone']);
+                Log::warning('Kintone deleteRecord failed: ' . $e->getMessage(), ['scope' => 'cybozu']);
             }
         }
 
@@ -235,7 +235,7 @@ class KintoneOAuthService
             throw new RuntimeException('Failed to save refreshed token.');
         }
 
-        Log::info("Kintone token refreshed for cybozu_auth id={$auth->id}", ['scope' => 'kintone']);
+        Log::info("Cybozu token refreshed for cybozu_auth id={$auth->id}", ['scope' => 'cybozu']);
 
         return $auth;
     }
@@ -254,9 +254,9 @@ class KintoneOAuthService
         ]);
 
         if (isset($response['error'])) {
-            Log::error('Kintone token error: ' . json_encode($response), ['scope' => 'kintone']);
+            Log::error('Cybozu token error: ' . json_encode($response), ['scope' => 'cybozu']);
             throw new RuntimeException(
-                "Kintone token error: {$response['error']} - " . ($response['error_description'] ?? '')
+                "Cybozu token error: {$response['error']} - " . ($response['error_description'] ?? '')
             );
         }
 
@@ -293,7 +293,7 @@ class KintoneOAuthService
         ]);
 
         if (isset($response['message']) || isset($response['errors'])) {
-            Log::error('Kintone add record error: ' . json_encode($response), ['scope' => 'kintone']);
+            Log::error('Kintone add record error: ' . json_encode($response), ['scope' => 'cybozu']);
             throw new RuntimeException('Failed to add kintone record: ' . ($response['message'] ?? json_encode($response)));
         }
 

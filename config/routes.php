@@ -58,11 +58,11 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'home']);
 
         /*
-         * Kintone OAuth routes
+         * Cybozu OAuth routes
          */
-        $builder->connect('/auth/cybozu/connect', ['controller' => 'Kintone', 'action' => 'connect']);
-        $builder->connect('/auth/cybozu/callback', ['controller' => 'Kintone', 'action' => 'callback']);
-        $builder->connect('/auth/cybozu/revoke', ['controller' => 'Kintone', 'action' => 'revoke']);
+        $builder->connect('/auth/cybozu/connect', ['controller' => 'Cybozu', 'action' => 'connect']);
+        $builder->connect('/auth/cybozu/callback', ['controller' => 'Cybozu', 'action' => 'callback']);
+        $builder->connect('/auth/cybozu/revoke', ['controller' => 'Cybozu', 'action' => 'revoke']);
 
         /*
          * ...and connect the rest of 'Pages' controller's URLs.

@@ -40,8 +40,6 @@ $this->Breadcrumbs->add([
                     <th><?= $this->Paginator->sort('username') ?></th>
                     <th><?= $this->Paginator->sort('display_name') ?></th>
                     <th><?= $this->Paginator->sort('email') ?></th>
-                    <th><?= $this->Paginator->sort('kintone_username', __('Kintone Username')) ?></th>
-                    <th><?= $this->Paginator->sort('is_kintone_linked', __('Kintone')) ?></th>
                     <th><?= $this->Paginator->sort('role_id') ?></th>
                     <th><?= $this->Paginator->sort('is_active') ?></th>
                     <th><?= $this->Paginator->sort('created') ?></th>
@@ -93,18 +91,7 @@ $this->Breadcrumbs->add([
                         <td><?= h($user->username) ?></td>
                         <td><?= h($user->display_name) ?></td>
                         <td><?= h($user->email) ?></td>
-                        <td><?= h($user->kintone_username) ?></td>
-                        <td>
-                            <?php if ($user->is_kintone_linked) : ?>
-                                <span class="badge badge-success"><i class="fas fa-check-circle"></i></span>
-                            <?php elseif (!empty($user->kintone_username)) : ?>
-                                <span class="badge badge-warning"><i class="fas fa-unlink"></i></span>
-                            <?php else : ?>
-                                <span class="text-muted">-</span>
-                            <?php endif; ?>
-                        </td>
-                        <td><?= $user->has('role') ? $this->Html->link($user->role->display_name, ['controller' => 'Roles', 'action' => 'view', $user->role->id]) : '' ?></td>
-                        <td><?= ($user->is_active) ? __('Yes') : __('No') ?></td>
+                        <td><?= $user->has('role') ? $this->Html->link($user->role->display_name, ['controller' => 'Roles', 'action' => 'view', $user->role->id]) : '' ?></td>                        <td><?= ($user->is_active) ? __('Yes') : __('No') ?></td>
                         <td><?= h($user->created) ?></td>
                         <td><?= $user->has('created_by_user') ? $this->Html->link($user->created_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]) : '' ?></td>
                         <td><?= h($user->modified) ?></td>

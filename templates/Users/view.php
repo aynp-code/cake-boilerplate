@@ -58,7 +58,7 @@ $this->Breadcrumbs->add([
                         <?php if ($currentUserId === $user->id) : ?>
                             <?= $this->Form->postLink(
                                 '<i class="fas fa-unlink mr-1"></i>' . __('Revoke'),
-                                ['controller' => 'Kintone', 'action' => 'revoke'],
+                                ['controller' => 'Cybozu', 'action' => 'revoke'],
                                 [
                                     'class'   => 'btn btn-sm btn-outline-danger',
                                     'escape'  => false,
@@ -71,7 +71,7 @@ $this->Breadcrumbs->add([
                         <?php if ($currentUserId === $user->id) : ?>
                             <?= $this->Html->link(
                                 '<i class="fas fa-link mr-1"></i>' . __('Connect Kintone'),
-                                ['controller' => 'Kintone', 'action' => 'connect'],
+                                ['controller' => 'Cybozu', 'action' => 'connect'],
                                 ['class' => 'btn btn-sm btn-primary', 'escape' => false]
                             ) ?>
                         <?php endif; ?>
@@ -165,4 +165,3 @@ $this->Breadcrumbs->add([
         </div>
     </div>
 </div>
-
