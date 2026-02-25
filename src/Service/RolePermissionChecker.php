@@ -5,7 +5,6 @@ namespace App\Service;
 
 use Cake\Cache\Cache;
 use Cake\ORM\Locator\LocatorAwareTrait;
-use Cake\Utility\Inflector;
 
 class RolePermissionChecker implements RolePermissionCheckerInterface
 {
@@ -18,19 +17,26 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
     private array $memo = [];
 
     /**
-     * @param string $roleId
+     * normalizePrefix / normalizePlugin の重複実装を RoutePermissionTargetNormalizer に委譲。
+     */
+    public function __construct(
+        private readonly RoutePermissionTargetNormalizer $normalizer = new RoutePermissionTargetNormalizer(),
+    ) {
+    }
+
+    /**
      * @param array{plugin?:?string,prefix?:mixed,controller:string,action:string} $target
      */
     public function can(string $roleId, array $target): bool
     {
         $map = $this->getRolePermissionMap($roleId);
 
-        $plugin = $this->normalizeNullableString($target['plugin'] ?? null) ?? '';
-        $prefix = $this->normalizePrefix($target['prefix'] ?? null) ?? '';
+        $plugin     = $this->normalizer->normalizePlugin($target['plugin'] ?? null) ?? '';
+        $prefix     = $this->normalizer->normalizePrefix($target['prefix'] ?? null) ?? '';
         $controller = (string)$target['controller'];
-        $action = (string)$target['action'];
+        $action     = (string)$target['action'];
 
-        // 具体→汎用（ワイルドカード）
+        // 具体 → 汎用（ワイルドカード）の順にチェック
         $candidates = [
             [$controller, $action],
             ['*', $action],
@@ -41,7 +47,7 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
         foreach ($candidates as [$c, $a]) {
             $k = $this->key($plugin, $prefix, (string)$c, (string)$a);
             if (isset($map[$k])) {
-                return true; // map には true しか入れない設計
+                return true;
             }
         }
 
@@ -49,16 +55,13 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
     }
 
     /**
-     * Redis(=Cake Cache) から role の許可マップを取る。
-     * 無ければDBから作って保存。
-     *
-     * ※ map は「allowed=true だけを保持」する。存在しない=拒否。
+     * role の許可マップをキャッシュ or DB から取得する。
+     * map には allowed=true のエントリのみ保持（存在しない = 拒否）。
      *
      * @return array<string, bool>
      */
     public function getRolePermissionMap(string $roleId): array
     {
-        // 1リクエスト内メモ（同じroleIdで何度も Cache を叩かない）
         if (isset($this->memo[$roleId])) {
             return $this->memo[$roleId];
         }
@@ -71,7 +74,6 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
             return $this->memo[$roleId] = $cached;
         }
 
-        // DBから構築（DB側も正規化済み文字列を持つ前提）
         $RolePermissions = $this->fetchTable('RolePermissions');
         $rows = $RolePermissions->find()
             ->select(['plugin', 'prefix', 'controller', 'action'])
@@ -80,15 +82,14 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
 
         $map = [];
         foreach ($rows as $r) {
-            $plugin = $this->normalizeNullableString($r->plugin ?? null) ?? '';
-            $prefix = $this->normalizePrefix($r->prefix ?? null) ?? '';
+            $plugin     = $this->normalizer->normalizePlugin($r->plugin ?? null) ?? '';
+            $prefix     = $this->normalizer->normalizePrefix($r->prefix ?? null) ?? '';
             $controller = (string)$r->controller;
-            $action = (string)$r->action;
+            $action     = (string)$r->action;
 
             $map[$this->key($plugin, $prefix, $controller, $action)] = true;
         }
 
-        // cache write が失敗しても認可自体は動かす（落とさない）
         Cache::write($cacheKey, $map, self::CACHE_CONFIG);
 
         return $this->memo[$roleId] = $map;
@@ -103,48 +104,5 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
     private function key(string $plugin, string $prefix, string $controller, string $action): string
     {
         return "{$plugin}|{$prefix}|{$controller}|{$action}";
-    }
-
-    private function normalizeNullableString(mixed $v): ?string
-    {
-        if (!is_string($v)) {
-            return null;
-        }
-        $v = trim($v);
-        return $v === '' ? null : $v;
-    }
-
-    /**
-     * prefix の表現ゆれを吸収して、DB/Catalog と同じ文字列に寄せる。
-     *
-     * - null/'' => null
-     * - array => "Admin/Api" のように連結
-     * - snake_case 等 => CamelCase
-     *
-     * ※ Acl.prefixAliases のような「別名変換」は採用しない
-     *   （role名 "01.admin" と prefix "Admin" は無関係、誤変換の原因になるため）
-     */
-    private function normalizePrefix(mixed $prefix): ?string
-    {
-        if ($prefix === null) {
-            return null;
-        }
-
-        // prefix が配列（ネストprefix）なら / で連結
-        if (is_array($prefix)) {
-            $prefix = implode('/', array_map('strval', $prefix));
-        }
-
-        $prefix = $this->normalizeNullableString($prefix);
-        if ($prefix === null) {
-            return null;
-        }
-
-        // "admin_panel/inner" などを "AdminPanel/Inner" に寄せる
-        $parts = array_filter(explode('/', $prefix), fn($p) => $p !== '');
-        $parts = array_map(fn($p) => Inflector::camelize($p), $parts);
-        $normalized = implode('/', $parts);
-
-        return $normalized === '' ? null : $normalized;
     }
 }

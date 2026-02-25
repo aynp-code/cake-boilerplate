@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App;
 
 use App\Middleware\CurrentUserMiddleware;
+use App\Service\CybozuOAuthService;
+use App\Service\KintoneWhoAmIService;
 use Authentication\AuthenticationService;
 use Authentication\AuthenticationServiceInterface;
 use Authentication\AuthenticationServiceProviderInterface;
@@ -51,7 +53,12 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             // identity から Configure(Auth.User.*) をセット（リクエスト中限定）
             ->add(new CurrentUserMiddleware())
 
-            ->add(new RolePermissionAuthorizationMiddleware())
+            ->add(new RolePermissionAuthorizationMiddleware(skip: [
+                // login / logout は未認証でもアクセス可能
+                ['controller' => 'Users', 'actions' => ['login', 'logout']],
+                // Cybozu OAuth は認証済みユーザなら常に許可
+                ['controller' => 'Cybozu', 'actions' => ['connect', 'callback', 'revoke']],
+            ]))
 
             ->add(new BodyParserMiddleware())
 
@@ -66,7 +73,37 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
     public function services(ContainerInterface $container): void
     {
-        // $container->delegate(new \Cake\ORM\Locator\TableContainer());
+        // CybozuOAuthService: 設定値をコンストラクタ引数として注入
+        $container->add(CybozuOAuthService::class, function () {
+            $config = Configure::read('Cybozu');
+
+            if (
+                empty($config['subdomain'])
+                || empty($config['oauth']['client_id'])
+                || empty($config['oauth']['client_secret'])
+                || empty($config['oauth']['redirect_uri'])
+            ) {
+                throw new \RuntimeException('Cybozu configuration is incomplete. Check app_local.php Cybozu section.');
+            }
+
+            return new CybozuOAuthService(
+                subdomain:    $config['subdomain'],
+                clientId:     $config['oauth']['client_id'],
+                clientSecret: $config['oauth']['client_secret'],
+                redirectUri:  $config['oauth']['redirect_uri'],
+            );
+        });
+
+        // KintoneWhoAmIService: whoami アプリ ID を注入
+        $container->add(KintoneWhoAmIService::class, function () {
+            $appId = (int)Configure::read('Cybozu.apps.whoami');
+
+            if ($appId === 0) {
+                throw new \RuntimeException('Cybozu.apps.whoami is not configured. Check app_local.php.');
+            }
+
+            return new KintoneWhoAmIService(appId: $appId);
+        });
     }
 
     public function events(EventManagerInterface $eventManager): EventManagerInterface

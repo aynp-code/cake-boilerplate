@@ -5,14 +5,22 @@ namespace App\Service;
 
 use App\Model\Entity\CybozuAuth;
 use App\Model\Table\CybozuAuthsTable;
-use Cake\Core\Configure;
 use Cake\I18n\DateTime;
 use Cake\Log\Log;
 use Cake\ORM\TableRegistry;
 use RuntimeException;
 
 /**
- * Cybozu OAuth 連携サービス
+ * Cybozu OAuth トークン管理サービス
+ *
+ * ## 責務
+ *   - access_token / refresh_token のライフサイクル管理（取得・保存・更新・削除）
+ *   - 認可 URL の生成
+ *   - 認可コードをトークンに交換する OAuth フロー
+ *
+ * ## 責務外（分離済み）
+ *   - kintone REST API の呼び出し → KintoneApiClient
+ *   - whoami アプリを使った本人確認 → KintoneWhoAmIService
  *
  * ## トークンライフサイクル
  *
@@ -22,47 +30,27 @@ use RuntimeException;
  *        → 期限切れ              → refreshToken() で更新して返す
  *        → refresh も失敗        → null（呼び出し元が再 OAuth へ誘導）
  *    → レコードがない            → null（呼び出し元が /auth/cybozu/connect へ誘導）
- *
- * ## OAuth フロー（初回 or 再認可）
- *
- *  buildAuthorizationUrl($state)  → ブラウザを cybozu 認可画面へ
- *  fetchToken($code)              → code → access_token / refresh_token
- *  resolveLoginCode($at)   → レコード追加 → $creator.code 取得 → レコード削除
- *  saveToken($userId, $tokenData) → cybozu_auths に保存（upsert）
  */
 class CybozuOAuthService
 {
-    private string $subdomain;
-    private string $clientId;
-    private string $clientSecret;
-    private string $redirectUri;
-    private string $appId;
-
     private const SCOPE = 'k:app_record:read k:app_record:write';
 
-    public function __construct()
-    {
-        $config = Configure::read('Cybozu');
-
-        if (
-            empty($config['subdomain'])
-            || empty($config['oauth']['client_id'])
-            || empty($config['oauth']['client_secret'])
-            || empty($config['oauth']['redirect_uri'])
-            || empty($config['apps']['whoami'])
-        ) {
-            throw new RuntimeException('Cybozu configuration is incomplete. Check app_local.php Cybozu section.');
-        }
-
-        $this->subdomain    = $config['subdomain'];
-        $this->clientId     = $config['oauth']['client_id'];
-        $this->clientSecret = $config['oauth']['client_secret'];
-        $this->redirectUri  = $config['oauth']['redirect_uri'];
-        $this->appId        = $config['apps']['whoami'];
+    /**
+     * @param string $subdomain      例: 'example'（https://example.cybozu.com の場合）
+     * @param string $clientId       OAuth クライアント ID
+     * @param string $clientSecret   OAuth クライアントシークレット
+     * @param string $redirectUri    コールバック URL
+     */
+    public function __construct(
+        private readonly string $subdomain,
+        private readonly string $clientId,
+        private readonly string $clientSecret,
+        private readonly string $redirectUri,
+    ) {
     }
 
     // =========================================================================
-    // トークン取得・管理（呼び出し元が最初に使うメソッド）
+    // トークン取得・管理
     // =========================================================================
 
     /**
@@ -80,20 +68,21 @@ class CybozuOAuthService
         $auth = $this->authsTable()->findByUserId($userId);
 
         if ($auth === null) {
-            return null; // 未連携
+            return null;
         }
 
         if ($auth->isAccessTokenValid()) {
             return $auth->access_token;
         }
 
-        // access_token 期限切れ → refresh を試みる
         try {
             $auth = $this->refreshToken($auth);
+
             return $auth->access_token;
-        } catch (RuntimeException $e) {
+        } catch (\Throwable $e) {
             Log::warning("Cybozu token refresh failed for user {$userId}: " . $e->getMessage(), ['scope' => 'cybozu']);
-            return null; // 呼び出し元が再 OAuth へ誘導
+
+            return null;
         }
     }
 
@@ -118,9 +107,6 @@ class CybozuOAuthService
 
     /**
      * cybozu_auths のレコードを削除する（連携解除）。
-     *
-     * @param string $userId
-     * @return void
      */
     public function revokeToken(string $userId): void
     {
@@ -128,6 +114,14 @@ class CybozuOAuthService
         if ($auth !== null) {
             $this->authsTable()->delete($auth);
         }
+    }
+
+    /**
+     * サブドメインを返す（KintoneApiClient を直接生成したい場合に使用）
+     */
+    public function getSubdomain(): string
+    {
+        return $this->subdomain;
     }
 
     // =========================================================================
@@ -138,7 +132,6 @@ class CybozuOAuthService
      * 認可 URL を生成する。
      *
      * @param string $state  CSRF 対策用ランダム文字列（呼び出し元でセッションに保存）
-     * @return string
      */
     public function buildAuthorizationUrl(string $state): string
     {
@@ -173,32 +166,25 @@ class CybozuOAuthService
     }
 
     /**
-     * アクセストークンを使ってレコードを追加し、$creator.code を返す。
-     * 確認後はレコードを削除してクリーンアップします。
+     * 有効なアクセストークンから KintoneApiClient を生成して返す。
      *
-     * @param string $accessToken
-     * @return string  kintone ログインコード
-     * @throws RuntimeException
+     * 今後のkintoneアプリ追加では以下のパターンで使用する:
+     *
+     *   $client = $cybozuOAuthService->makeKintoneClient($userId);
+     *   $myAppService = new MyKintoneAppService($appId);
+     *   $result = $myAppService->doSomething($client, ...);
+     *
+     * @throws RuntimeException トークンが取得できない場合
      */
-    public function resolveLoginCode(string $accessToken, string $username): string
+    public function makeKintoneClient(string $userId): KintoneApiClientInterface
     {
-        $recordId = $this->addRecord($accessToken, $username);
+        $token = $this->getValidToken($userId);
 
-        try {
-            $creatorCode = $this->getCreatorCode($accessToken, $recordId);
-        } finally {
-            try {
-                $this->deleteRecord($accessToken, $recordId);
-            } catch (\Throwable $e) {
-                Log::warning('Kintone deleteRecord failed: ' . $e->getMessage(), ['scope' => 'cybozu']);
-            }
+        if ($token === null) {
+            throw new RuntimeException("No valid Cybozu token for user {$userId}.");
         }
 
-        if ($creatorCode === '') {
-            throw new RuntimeException('Could not resolve $creator.code from kintone record.');
-        }
-
-        return $creatorCode;
+        return new KintoneApiClient($this->subdomain, $token);
     }
 
     // =========================================================================
@@ -208,8 +194,9 @@ class CybozuOAuthService
     /**
      * refresh_token で access_token を更新し、DB を上書きして返す。
      *
-     * @param CybozuAuth $auth
-     * @return CybozuAuth  更新済みエンティティ
+     * cybozu のリフレッシュレスポンスには refresh_token が含まれない場合があるため、
+     * 空の場合は既存の refresh_token を保持する。
+     *
      * @throws RuntimeException  refresh 失敗時
      */
     private function refreshToken(CybozuAuth $auth): CybozuAuth
@@ -221,18 +208,20 @@ class CybozuOAuthService
         ]);
 
         $tokenData = $this->doTokenRequest($url, $body);
-
         $expiresAt = DateTime::now()->modify("+{$tokenData['expires_in']} seconds");
 
         $auth = $this->authsTable()->patchEntity($auth, [
             'access_token'  => $tokenData['access_token'],
-            'refresh_token' => $tokenData['refresh_token'],
+            // refresh_token はレスポンスに含まれない場合があるため、空なら既存の値を保持する
+            'refresh_token' => $tokenData['refresh_token'] !== '' ? $tokenData['refresh_token'] : $auth->refresh_token,
             'expires_at'    => $expiresAt,
             'scope'         => $tokenData['scope'] ?? $auth->scope,
         ]);
 
         if (!$this->authsTable()->save($auth)) {
-            throw new RuntimeException('Failed to save refreshed token.');
+            throw new RuntimeException(
+                'Failed to save refreshed token: ' . json_encode($auth->getErrors(), JSON_UNESCAPED_UNICODE)
+            );
         }
 
         Log::info("Cybozu token refreshed for cybozu_auth id={$auth->id}", ['scope' => 'cybozu']);
@@ -241,17 +230,38 @@ class CybozuOAuthService
     }
 
     /**
-     * token エンドポイントを叩いて token データを返す共通処理。
+     * token エンドポイントへリクエストし、token データを返す共通処理。
      *
      * @return array{access_token:string, refresh_token:string, expires_in:int, scope:string}
      * @throws RuntimeException
      */
     private function doTokenRequest(string $url, string $body): array
     {
-        $response = $this->httpRequest('POST', $url, $body, [
-            'Content-Type'  => 'application/x-www-form-urlencoded',
-            'Authorization' => 'Basic ' . base64_encode("{$this->clientId}:{$this->clientSecret}"),
-        ]);
+        $opts = [
+            'http' => [
+                'method'        => 'POST',
+                'header'        => implode("\r\n", [
+                    'Content-Type: application/x-www-form-urlencoded',
+                    'Authorization: Basic ' . base64_encode("{$this->clientId}:{$this->clientSecret}"),
+                ]),
+                'content'       => $body,
+                'ignore_errors' => true,
+                'timeout'       => 15,
+            ],
+        ];
+
+        $context = stream_context_create($opts);
+        $raw     = @file_get_contents($url, false, $context);
+
+        if ($raw === false) {
+            throw new RuntimeException("Cybozu token request failed: POST {$url}");
+        }
+
+        $response = json_decode($raw ?: '{}', true);
+
+        if (!is_array($response)) {
+            throw new RuntimeException('Cybozu token response is not valid JSON.');
+        }
 
         if (isset($response['error'])) {
             Log::error('Cybozu token error: ' . json_encode($response), ['scope' => 'cybozu']);
@@ -270,138 +280,6 @@ class CybozuOAuthService
             'expires_in'    => (int)($response['expires_in'] ?? 3600),
             'scope'         => (string)($response['scope'] ?? ''),
         ];
-    }
-
-    // =========================================================================
-    // private: kintone Record API
-    // =========================================================================
-
-    private function addRecord(string $accessToken, string $username): string
-    {
-        $url = "https://{$this->subdomain}.cybozu.com/k/v1/record.json";
-
-        $body = (string)json_encode([
-            'app'    => (int)$this->appId,
-            'record' => [
-                'login_id' => ['value' => $username],
-            ],
-        ]);
-
-        $response = $this->httpRequest('POST', $url, $body, [
-            'Content-Type'  => 'application/json',
-            'Authorization' => "Bearer {$accessToken}",
-        ]);
-
-        if (isset($response['message']) || isset($response['errors'])) {
-            Log::error('Kintone add record error: ' . json_encode($response), ['scope' => 'cybozu']);
-            throw new RuntimeException('Failed to add kintone record: ' . ($response['message'] ?? json_encode($response)));
-        }
-
-        $recordId = (string)($response['id'] ?? '');
-        if ($recordId === '') {
-            throw new RuntimeException('record id not found in add-record response.');
-        }
-
-        return $recordId;
-    }
-
-    private function getCreatorCode(string $accessToken, string $recordId): string
-    {
-        $url = "https://{$this->subdomain}.cybozu.com/k/v1/record.json?" . http_build_query([
-            'app' => (int)$this->appId,
-            'id'  => (int)$recordId,
-        ]);
-
-        $response = $this->httpRequest('GET', $url, null, [
-            'Authorization' => "Bearer {$accessToken}",
-        ]);
-
-        if (isset($response['message'])) {
-            throw new RuntimeException('Failed to get kintone record: ' . $response['message']);
-        }
-
-        $record = $response['record'] ?? [];
-
-        // kintone は CREATOR 型フィールドを {"type":"CREATOR","value":{"code":"xxx","name":"yyy"}} で返す
-        // フィールドコードが日本語（"作成者"）の場合も含め、type=CREATOR のフィールドを探す
-        foreach ($record as $fieldCode => $field) {
-            if (($field['type'] ?? '') === 'CREATOR') {
-                $code = (string)($field['value']['code'] ?? '');
-                if ($code !== '') {
-                    return $code;
-                }
-            }
-        }
-
-        throw new RuntimeException(
-            'CREATOR field not found in kintone record. Available fields: ' . implode(', ', array_keys($record))
-        );
-    }
-
-    private function deleteRecord(string $accessToken, string $recordId): void
-    {
-        // kintone DELETE API は JSON ボディで app・ids[] を渡す
-        // クエリ文字列方式だと ids[0] がエンコードされて正しく送れない
-        $url  = "https://{$this->subdomain}.cybozu.com/k/v1/records.json";
-        $body = (string)json_encode([
-            'app' => (int)$this->appId,
-            'ids' => [(int)$recordId],
-        ]);
-
-        $this->httpRequest('DELETE', $url, $body, [
-            'Content-Type'  => 'application/json',
-            'Authorization' => "Bearer {$accessToken}",
-        ]);
-    }
-
-    // =========================================================================
-    // private: HTTP
-    // =========================================================================
-
-    /**
-     * @param array<string, string> $headers
-     * @return array<string, mixed>
-     */
-    private function httpRequest(string $method, string $url, ?string $body, array $headers): array
-    {
-        $opts = [
-            'http' => [
-                'method'        => $method,
-                'header'        => $this->buildHeaderString($headers),
-                'ignore_errors' => true,
-                'timeout'       => 15,
-            ],
-        ];
-
-        if ($body !== null) {
-            $opts['http']['content'] = $body;
-        }
-
-        $context = stream_context_create($opts);
-        $raw     = @file_get_contents($url, false, $context);
-
-        if ($raw === false) {
-            throw new RuntimeException("HTTP request failed: {$method} {$url}");
-        }
-
-        if ($raw === '') {
-            return [];
-        }
-
-        $decoded = json_decode($raw, true);
-        return is_array($decoded) ? $decoded : [];
-    }
-
-    /**
-     * @param array<string, string> $headers
-     */
-    private function buildHeaderString(array $headers): string
-    {
-        $lines = [];
-        foreach ($headers as $name => $value) {
-            $lines[] = "{$name}: {$value}";
-        }
-        return implode("\r\n", $lines);
     }
 
     // =========================================================================

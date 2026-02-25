@@ -15,22 +15,32 @@ use Psr\Http\Server\RequestHandlerInterface;
 class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
 {
     /**
+     * スキップルールの型定義:
+     * [
+     *   ['controller' => 'Users', 'actions' => ['login', 'logout']],
+     *   ['controller' => 'Cybozu'],  // actions 省略 = 全アクション
+     * ]
+     *
      * @var array<int, array{controller:string, actions?:array<int,string>}>
      */
     private array $skip;
 
+    /**
+     * @param array<int, array{controller:string, actions?:array<int,string>}> $skip
+     *   スキップするコントローラ／アクションのルール。
+     *   Application::middleware() から設定として渡すことで OCP に準拠し、
+     *   ミドルウェア本体を修正せずに例外を追加できる。
+     */
     public function __construct(
         private readonly RolePermissionCheckerInterface $checker = new RolePermissionChecker(),
         private readonly RoutePermissionTargetNormalizer $normalizer = new RoutePermissionTargetNormalizer(),
         array $skip = [],
     ) {
-        // 型を確実に array に固定（null/未定義事故を潰す）
         $this->skip = $skip;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // Cake\Http\ServerRequest なら getParam() がある
         if (!method_exists($request, 'getParam')) {
             return $handler->handle($request);
         }
@@ -49,22 +59,11 @@ class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
 
-        // 例外：Error は素通し（従来踏襲）
         if ($controller === 'Error') {
             return $handler->handle($request);
         }
 
-        // 例外：login/logout は常に許可（従来踏襲）
-        if ($controller === 'Users' && in_array($action, ['login', 'logout'], true)) {
-            return $handler->handle($request);
-        }
-
-        // 例外：Cybozu OAuth は認証済みユーザなら常に許可
-        if ($controller === 'Cybozu' && in_array($action, ['connect', 'callback', 'revoke'], true)) {
-            return $handler->handle($request);
-        }
-
-        // 追加のスキップ設定（必要なら）
+        // スキップルールを評価（ハードコードを廃止し、全てここで処理する）
         foreach ($this->skip as $rule) {
             if (($rule['controller'] ?? null) !== $controller) {
                 continue;
@@ -75,7 +74,6 @@ class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
             }
         }
 
-        // 未認証は Authentication 側が redirect する想定なので、ここでは何もしない（従来踏襲）
         $identity = $request->getAttribute('identity');
         if (!$identity) {
             return $handler->handle($request);
@@ -91,10 +89,10 @@ class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
         }
 
         $allowed = $this->checker->can($roleId, [
-            'plugin' => $this->normalizer->normalizePlugin($request->getParam('plugin')),
-            'prefix' => $this->normalizer->normalizePrefix($request->getParam('prefix')),
+            'plugin'     => $this->normalizer->normalizePlugin($request->getParam('plugin')),
+            'prefix'     => $this->normalizer->normalizePrefix($request->getParam('prefix')),
             'controller' => $controller,
-            'action' => $action,
+            'action'     => $action,
         ]);
 
         if (!$allowed) {

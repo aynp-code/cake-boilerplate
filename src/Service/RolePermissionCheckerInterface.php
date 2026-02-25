@@ -6,7 +6,17 @@ namespace App\Service;
 interface RolePermissionCheckerInterface
 {
     /**
-     * @param array{plugin:?string,prefix:?string,controller:string,action:string} $target
+     * 指定ロールが対象アクションを実行できるか判定する。
+     *
+     * @param array{plugin?:?string,prefix?:?string,controller:string,action:string} $target
      */
     public function can(string $roleId, array $target): bool;
+
+    /**
+     * 指定ロールの権限キャッシュを無効化する。
+     *
+     * ロールの権限が変更された際に呼び出す。
+     * テストや将来の実装でもこのメソッドをモック可能にするためインターフェースに含める。
+     */
+    public function invalidateRole(string $roleId): void;
 }

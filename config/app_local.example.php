@@ -76,6 +76,7 @@ return [
             'username' => 'master_user',
             'password' => 'master_password',
             'database' => 'master_database',
+            'defaultTimezone' => 'Asia/Tokyo',
             'roles' => [
                 'master' => [
                     'host' => 'master_db',
@@ -96,6 +97,7 @@ return [
             'username' => 'test_user',
             'password' => 'test_password',
             'database' => 'test_database',
+            'defaultTimezone' => 'Asia/Tokyo',
         ],
     ],
 

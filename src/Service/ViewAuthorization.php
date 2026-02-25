@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use Cake\Core\Configure;
+use App\Middleware\CurrentUserMiddleware;
 use Cake\Http\ServerRequest;
 use Cake\Routing\Router;
 use Laminas\Diactoros\Uri;
@@ -20,29 +20,32 @@ class ViewAuthorization
     }
 
     /**
-     * mixed $url を受けて「判定できるものだけ」権限チェックする
+     * mixed $url を受けて「判定できるものだけ」権限チェックする。
+     *
+     * role_id の取得元を Configure から Request Attribute に変更。
      */
     public function canUrl(ServerRequest $request, mixed $url): bool
     {
-        $roleId = Configure::read('Auth.User.role_id');
+        // Configure::read ではなく Request Attribute から取得
+        $currentUser = $request->getAttribute(CurrentUserMiddleware::ATTRIBUTE);
+        $roleId = $currentUser['role_id'] ?? null;
+
         if (!is_string($roleId) || $roleId === '') {
             return false;
         }
 
-        // 配列URL（Cakeの通常ルート指定）
         if (is_array($url)) {
             $target = $this->normalizeArrayUrl($request, $url);
             if ($target === null) {
-                return true; // 判定不能ならUIを壊さない
+                return true;
             }
+
             return $this->checker->can($roleId, $target);
         }
 
-        // 文字列URL
         if (is_string($url)) {
             $s = trim($url);
 
-            // UI用途のリンクは常に許可
             if ($s === '' || $s === '#' || str_starts_with($s, 'javascript:')) {
                 return true;
             }
@@ -53,13 +56,13 @@ class ViewAuthorization
                 return true;
             }
 
-            // 内部パスのみ解析
             if (str_starts_with($s, '/')) {
-                $path = preg_split('/[?#]/', $s, 2)[0] ?? $s;
+                $path   = preg_split('/[?#]/', $s, 2)[0] ?? $s;
                 $target = $this->normalizePathUrl($request, $path);
                 if ($target === null) {
                     return true;
                 }
+
                 return $this->checker->can($roleId, $target);
             }
 
@@ -74,10 +77,10 @@ class ViewAuthorization
      */
     private function normalizeArrayUrl(ServerRequest $request, array $url): ?array
     {
-        // named route
         if (isset($url['_name']) && is_string($url['_name'])) {
             try {
                 $path = Router::reverse($url);
+
                 return $this->normalizePathUrl($request, $path);
             } catch (\Throwable) {
                 return null;
@@ -85,38 +88,38 @@ class ViewAuthorization
         }
 
         $controller = $url['controller'] ?? $request->getParam('controller');
-        $action = $url['action'] ?? 'index';
+        $action     = $url['action'] ?? 'index';
 
         if (!is_string($controller) || !is_string($action) || $controller === '' || $action === '') {
             return null;
         }
 
         return [
-            'plugin' => $this->normalizer->normalizePlugin($url['plugin'] ?? $request->getParam('plugin')),
-            'prefix' => $this->normalizer->normalizePrefix($url['prefix'] ?? $request->getParam('prefix')),
+            'plugin'     => $this->normalizer->normalizePlugin($url['plugin'] ?? $request->getParam('plugin')),
+            'prefix'     => $this->normalizer->normalizePrefix($url['prefix'] ?? $request->getParam('prefix')),
             'controller' => $controller,
-            'action' => $action,
+            'action'     => $action,
         ];
     }
 
     private function normalizePathUrl(ServerRequest $request, string $path): ?array
     {
         try {
-            $req2 = $request->withUri(new Uri($path));
+            $req2   = $request->withUri(new Uri($path));
             $params = Router::parseRequest($req2);
 
             $controller = $params['controller'] ?? null;
-            $action = $params['action'] ?? null;
+            $action     = $params['action'] ?? null;
 
             if (!is_string($controller) || !is_string($action) || $controller === '' || $action === '') {
                 return null;
             }
 
             return [
-                'plugin' => $this->normalizer->normalizePlugin($params['plugin'] ?? null),
-                'prefix' => $this->normalizer->normalizePrefix($params['prefix'] ?? null),
+                'plugin'     => $this->normalizer->normalizePlugin($params['plugin'] ?? null),
+                'prefix'     => $this->normalizer->normalizePrefix($params['prefix'] ?? null),
                 'controller' => $controller,
-                'action' => $action,
+                'action'     => $action,
             ];
         } catch (\Throwable) {
             return null;
