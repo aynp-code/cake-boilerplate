@@ -1,36 +1,11 @@
 <?php
 $menu = [
-    'mainHeader' => [
-        'label' => __('MAIN'),
+    'settingsHeader' => [
+        'label' => __('SETTINGS'),
         'type' => $this->MenuLte::ITEM_TYPE_HEADER, // or 'header'
-    ],
-    'startPages' => [
-        'label' => __('Start Pages'),
-        'icon' => 'fas fa-tachometer-alt',
-        'dropdown' => [
-            'activePage' => [
-                'label' => __('Active Page'),
-                'uri' => ['controller' => 'Pages', 'action' => 'display', 'home', 'plugin' => false],
-            ],
-            'inactivePage' => [
-                'label' => __('Inactive Page'),
-                'uri' => '#',
-            ],
-        ],
-    ],
-    'simpleLink' => [
-        'label' => __('Simple Link'),
-        'badge' => ['text' => __('New'), 'color' => 'danger'],
-        'uri' => ['controller' => 'Pages', 'action' => 'display', 'home', 'plugin' => false],
-        'icon' => 'fas fa-th text-danger',
-        'show' => function () {
-            // logic condition to show item, return a bool
-            return true;
-        }
     ],
     'Users' => [
         'label' => __('Users'),
-        'badge' => ['text' => __('New'), 'color' => 'danger'],
         'uri' => ['controller' => 'Users', 'action' => 'index', 'plugin' => false],
         'icon' => 'fas fa-users text-danger',
         'show' => function () {
@@ -40,9 +15,8 @@ $menu = [
     ],
     'Roles' => [
         'label' => __('Roles'),
-        'badge' => ['text' => __('New'), 'color' => 'danger'],
         'uri' => ['controller' => 'Roles', 'action' => 'index', 'plugin' => false],
-        'icon' => 'fas fa-user-tag text-danger',
+        'icon' => 'fas fa-users-cog text-danger',
         'show' => function () {
             // logic condition to show item, return a bool
             return true;
@@ -50,9 +24,32 @@ $menu = [
     ],
     'RolePermissions' => [
         'label' => __('Role Permissions'),
-        'badge' => ['text' => __('New'), 'color' => 'danger'],
-        'uri' => ['controller' => 'RolePermissions', 'action' => 'matrix', 'plugin' => false],
-        'icon' => 'fas fa-user-tag text-danger',
+        'icon' => 'fas fa-users-cog text-danger',
+        'show' => function () {
+            // logic condition to show item, return a bool
+            return true;
+        },
+        'dropdown' => [
+            'matrixView' => [
+                'label' => __('Matrix View'),
+                'uri' => ['controller' => 'RolePermissions', 'action' => 'matrix', 'plugin' => false],
+                'icon' => 'fas fa-tag',
+            ],
+            'listView' => [
+                'label' => __('List View'),
+                'uri' => ['controller' => 'RolePermissions', 'action' => 'index', 'plugin' => false],
+                'icon' => 'fas fa-tag',
+            ],
+        ],
+    ],
+    'servicesHeader' => [
+        'label' => __('SERVICES'),
+        'type' => $this->MenuLte::ITEM_TYPE_HEADER, // or 'header'
+    ],
+    'KintoneSample' => [
+        'label' => __('Kintone Samples'),
+        'uri' => ['controller' => 'SampleKintone', 'action' => 'index', 'plugin' => false],
+        'icon' => 'fas fa-database text-danger',
         'show' => function () {
             // logic condition to show item, return a bool
             return true;

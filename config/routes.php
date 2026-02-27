@@ -64,6 +64,13 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/auth/cybozu/callback', ['controller' => 'Cybozu', 'action' => 'callback']);
         $builder->connect('/auth/cybozu/revoke', ['controller' => 'Cybozu', 'action' => 'revoke']);
 
+         /*
+         * SampleKintone routes     ← ここに追記
+         */
+        $builder->resources('SampleKintone', [
+            'path' => 'sample-kintone',
+        ]);
+
         /*
          * ...and connect the rest of 'Pages' controller's URLs.
          */
