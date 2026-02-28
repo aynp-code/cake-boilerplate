@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Exception\KintoneNotLinkedException;
 use App\Service\CybozuOAuthService;
 use App\Service\KintoneApiClientInterface;
 use App\Service\Kintone\SampleKintoneService;
@@ -16,13 +17,14 @@ use RuntimeException;
  *
  * - CybozuOAuthService をアクション引数で受け取り makeKintoneClient() でクライアントを生成する
  * - SampleKintoneService はトークンを知らない（クライアントを受け取るだけ）
- * - kintone 未連携・通信エラーは Flash エラーで通知し index へリダイレクト
+ * - 未連携エラー（KintoneNotLinkedException）は escape => false で Flash 表示し、連携ページへ誘導
+ * - 通常の kintone API エラー（RuntimeException）は escape あり で Flash 表示
  *
  * ## 新しい kintone アプリのコントローラを作る場合
  *
  * このファイルをコピーして以下を変更してください。
  *   1. クラス名
- *   2. use している AppService のクラス名
+ *   2. use している Service のクラス名
  *   3. 各アクション内の new SampleKintoneService() の部分
  *   4. normalizePostData() のフィールド定義
  */
@@ -45,14 +47,15 @@ class SampleKintoneController extends AppController
         try {
             $client  = $this->makeClient($cybozuService);
             $records = $service->findAll($client, 'order by $id desc');
+        } catch (KintoneNotLinkedException $e) {
+            $this->Flash->error($e->getMessage(), ['escape' => false]);
+            $records = [];
         } catch (RuntimeException $e) {
             $this->Flash->error($e->getMessage());
             $records = [];
         }
 
-        $serviceTypes = SampleKintoneService::SERVICE_TYPES;
-
-        $this->set(compact('records', 'serviceTypes'));
+        $this->set(compact('records'));
     }
 
     /**
@@ -67,10 +70,13 @@ class SampleKintoneController extends AppController
         try {
             $client = $this->makeClient($cybozuService);
             $record = $service->find($client, $id);
+        } catch (KintoneNotLinkedException $e) {
+            $this->Flash->error($e->getMessage(), ['escape' => false]);
+            $this->redirect(['action' => 'index']);
+            return;
         } catch (RuntimeException $e) {
             $this->Flash->error($e->getMessage());
             $this->redirect(['action' => 'index']);
-
             return;
         }
 
@@ -95,8 +101,9 @@ class SampleKintoneController extends AppController
                 $recordId = $service->create($client, $this->normalizePostData());
                 $this->Flash->success(__('登録しました。（kintone レコード ID: {0}）', $recordId));
                 $this->redirect(['action' => 'index']);
-
                 return;
+            } catch (KintoneNotLinkedException $e) {
+                $this->Flash->error($e->getMessage(), ['escape' => false]);
             } catch (RuntimeException $e) {
                 $this->Flash->error(__('登録に失敗しました: {0}', $e->getMessage()));
             }
@@ -120,10 +127,13 @@ class SampleKintoneController extends AppController
         try {
             $client = $this->makeClient($cybozuService);
             $record = $service->find($client, $id);
+        } catch (KintoneNotLinkedException $e) {
+            $this->Flash->error($e->getMessage(), ['escape' => false]);
+            $this->redirect(['action' => 'index']);
+            return;
         } catch (RuntimeException $e) {
             $this->Flash->error($e->getMessage());
             $this->redirect(['action' => 'index']);
-
             return;
         }
 
@@ -132,7 +142,10 @@ class SampleKintoneController extends AppController
                 $service->update($client, $id, $this->normalizePostData());
                 $this->Flash->success(__('更新しました。'));
                 $this->redirect(['action' => 'index']);
-
+                return;
+            } catch (KintoneNotLinkedException $e) {
+                $this->Flash->error($e->getMessage(), ['escape' => false]);
+                $this->redirect(['action' => 'index']);
                 return;
             } catch (RuntimeException $e) {
                 $this->Flash->error(__('更新に失敗しました: {0}', $e->getMessage()));
@@ -157,6 +170,8 @@ class SampleKintoneController extends AppController
             $client = $this->makeClient($cybozuService);
             $service->delete($client, $id);
             $this->Flash->success(__('削除しました。'));
+        } catch (KintoneNotLinkedException $e) {
+            $this->Flash->error($e->getMessage(), ['escape' => false]);
         } catch (RuntimeException $e) {
             $this->Flash->error(__('削除に失敗しました: {0}', $e->getMessage()));
         }
@@ -171,9 +186,11 @@ class SampleKintoneController extends AppController
     /**
      * kintone クライアントを生成する。
      *
-     * 未連携の場合は connect ページへの誘導メッセージを添えて例外を投げる。
+     * 未連携の場合は KintoneNotLinkedException をスローする。
+     * この例外はコントローラ側で escape => false で Flash 表示する。
      *
-     * @throws RuntimeException
+     * @throws KintoneNotLinkedException  未連携の場合
+     * @throws RuntimeException           その他のエラー
      */
     private function makeClient(CybozuOAuthService $cybozuService): KintoneApiClientInterface
     {
@@ -182,7 +199,7 @@ class SampleKintoneController extends AppController
         try {
             return $cybozuService->makeKintoneClient($userId);
         } catch (RuntimeException) {
-            throw new RuntimeException(
+            throw new KintoneNotLinkedException(
                 'kintone と連携されていません。' .
                 '<a href="/auth/cybozu/connect">こちら</a>から連携してください。'
             );
