@@ -2,43 +2,129 @@
 /**
  * @var \App\View\AppView $this
  * @var array<string, mixed> $record
- * @var array<int, string> $serviceTypes
+ * @var array<int, string> $approvalOptions
+ * @var array<int, string> $categoryOptions
+ * @var array<int, string> $tagOptions
  */
-$this->assign('title', __('Edit Sample Kintone'));
+$this->assign('title', 'Sample Kintone 編集');
 $this->Breadcrumbs->addMany([
-    ['title' => __('Home'), 'url' => '/'],
-    ['title' => __('List Sample Kintone'), 'url' => ['action' => 'index']],
-    ['title' => __('View'), 'url' => ['action' => 'view', $record['id']]],
-    ['title' => __('Edit')],
+    ['title' => 'Home', 'url' => '/'],
+    ['title' => 'Sample Kintone 一覧', 'url' => ['action' => 'index']],
+    ['title' => '詳細', 'url' => ['action' => 'view', $record['id']]],
+    ['title' => '編集'],
 ]);
 ?>
 
 <div class="card card-primary card-outline">
     <?= $this->Form->create(null, ['url' => ['action' => 'edit', $record['id']]]) ?>
+
     <div class="card-body">
-        <?= $this->Form->control('service_type', [
+
+        <?php // ① 承認（ドロップダウン・必須） ?>
+        <?= $this->Form->control('approval', [
             'type'    => 'select',
-            'label'   => 'サービス種別',
-            'options' => array_combine($serviceTypes, $serviceTypes),
-            'value'   => $record['service_type'],
+            'label'   => '承認',
+            'options' => array_combine($approvalOptions, $approvalOptions),
+            'empty'   => '-- 選択してください --',
+            'required' => true,
+            'class'   => 'form-control',
         ]) ?>
-        <?= $this->Form->control('model_number', ['label' => '型番',   'value' => $record['model_number']]) ?>
-        <?= $this->Form->control('product_name', ['label' => '商品名', 'value' => $record['product_name']]) ?>
-        <?= $this->Form->control('price', ['type' => 'number', 'label' => '価格', 'value' => $record['price'], 'min' => 0]) ?>
-        <?= $this->Form->control('notes', ['type' => 'textarea', 'label' => '特記事項', 'value' => $record['notes'], 'rows' => 4]) ?>
+
+        <?php // ② 種別（ラジオボタン） ?>
+        <?= $this->Form->control('category', [
+            'type'    => 'radio',
+            'label'   => '種別',
+            'required' => true,
+            'options' => array_combine($categoryOptions, $categoryOptions),
+        ]) ?>
+
+        <?php // ③ タグ（チェックボックス・複数選択） ?>
+        <?= $this->Form->control('tags', [
+            'type'     => 'select',
+            'multiple' => 'checkbox',
+            'label'    => 'タグ',
+            'options'  => array_combine($tagOptions, $tagOptions),
+        ]) ?>
+
+        <?php // ④ 発売日（日付・必須） ?>
+        <?= $this->Form->control('release_date', [
+            'type'  => 'date',
+            'label' => '発売日 *',
+            'required' => true,
+        ]) ?>
+
+        <?php // ⑤ 商品URL（リンク） ?>
+        <?= $this->Form->control('product_url', [
+            'type'        => 'url',
+            'label'       => '商品URL',
+            'placeholder' => 'https://example.com',
+        ]) ?>
+
+        <?php // ⑥ 型番（重複禁止のため更新不可・表示のみ） ?>
+        <div class="form-group">
+            <label>型番</label>
+            <input type="text" class="form-control" value="<?= h($record['model_number']) ?>" disabled>
+            <small class="form-text text-muted">型番は登録後に変更できません。</small>
+        </div>
+
+        <?php // ⑦ 商品名（文字列1行） ?>
+        <?= $this->Form->control('product_name', [
+            'required' => true,
+            'label' => '商品名',
+        ]) ?>
+
+        <?php // ⑧ 価格（数値・必須） ?>
+        <?= $this->Form->control('price', [
+            'type'  => 'number',
+            'label' => '価格 *',
+            'required' => true,
+            'min'   => 0,
+            'step'  => 1,
+        ]) ?>
+
+        <?php // ⑨ 特記事項（文字列複数行） ?>
+        <?= $this->Form->control('notes', [
+            'type'  => 'textarea',
+            'label' => '特記事項',
+            'rows'  => 4,
+        ]) ?>
+
+        <?php // ⑩ 添付ファイル（表示のみ・kintone側で管理） ?>
+        <div class="form-group">
+            <label>添付ファイル</label>
+            <?php if (!empty($record['attachments'])) : ?>
+                <ul class="list-unstyled mb-0">
+                    <?php foreach ($record['attachments'] as $file) : ?>
+                        <li>
+                            <i class="fas fa-paperclip mr-1"></i>
+                            <?= h($file['name'] ?? '') ?>
+                            <?php if (!empty($file['size'])) : ?>
+                                <small class="text-muted ml-1">(<?= number_format((int)$file['size'] / 1024, 1) ?> KB)</small>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else : ?>
+                <p class="form-control-plaintext text-muted">添付ファイルなし</p>
+            <?php endif; ?>
+            <small class="form-text text-muted">添付ファイルの追加・削除は kintone 画面から行ってください。</small>
+        </div>
+
     </div>
+
     <div class="card-footer d-flex">
         <div class="mr-auto">
             <?= $this->Form->postLink(
-                __('Delete'),
+                '削除',
                 ['action' => 'delete', $record['id']],
-                ['confirm' => __('Are you sure you want to delete # {0}?', $record['id']), 'class' => 'btn btn-danger']
+                ['confirm' => 'ID: ' . $record['id'] . ' を削除しますか？', 'class' => 'btn btn-danger']
             ) ?>
         </div>
         <div class="ml-auto">
-            <?= $this->Html->tag('button', __('Save'), ['type' => 'submit', 'class' => 'btn btn-primary', 'escape' => false]) ?>
-            <?= $this->Html->link(__('Cancel'), ['action' => 'view', $record['id']], ['class' => 'btn btn-default']) ?>
+            <?= $this->Html->tag('button', '保存', ['type' => 'submit', 'class' => 'btn btn-primary', 'escape' => false]) ?>
+            <?= $this->Html->link('キャンセル', ['action' => 'view', $record['id']], ['class' => 'btn btn-default ml-1']) ?>
         </div>
     </div>
+
     <?= $this->Form->end() ?>
 </div>

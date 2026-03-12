@@ -26,7 +26,7 @@ use RuntimeException;
  *   1. クラス名
  *   2. use している Service のクラス名
  *   3. 各アクション内の new SampleKintoneService() の部分
- *   4. normalizePostData() のフィールド定義
+ *   4. normalizePostData() / normalizeUpdateData() のフィールド定義
  */
 class SampleKintoneController extends AppController
 {
@@ -91,7 +91,9 @@ class SampleKintoneController extends AppController
      */
     public function add(CybozuOAuthService $cybozuService): void
     {
-        $serviceTypes = SampleKintoneService::SERVICE_TYPES;
+        $approvalOptions = SampleKintoneService::APPROVAL_OPTIONS;
+        $categoryOptions = SampleKintoneService::CATEGORY_OPTIONS;
+        $tagOptions      = SampleKintoneService::TAG_OPTIONS;
 
         if ($this->request->is('post')) {
             $service = new SampleKintoneService();
@@ -109,7 +111,7 @@ class SampleKintoneController extends AppController
             }
         }
 
-        $this->set(compact('serviceTypes'));
+        $this->set(compact('approvalOptions', 'categoryOptions', 'tagOptions'));
     }
 
     /**
@@ -120,9 +122,11 @@ class SampleKintoneController extends AppController
      */
     public function edit(CybozuOAuthService $cybozuService, int $id): void
     {
-        $service      = new SampleKintoneService();
-        $serviceTypes = SampleKintoneService::SERVICE_TYPES;
-        $client       = null;
+        $service         = new SampleKintoneService();
+        $approvalOptions = SampleKintoneService::APPROVAL_OPTIONS;
+        $categoryOptions = SampleKintoneService::CATEGORY_OPTIONS;
+        $tagOptions      = SampleKintoneService::TAG_OPTIONS;
+        $client          = null;
 
         try {
             $client = $this->makeClient($cybozuService);
@@ -139,7 +143,7 @@ class SampleKintoneController extends AppController
 
         if ($this->request->is(['post', 'put', 'patch'])) {
             try {
-                $service->update($client, $id, $this->normalizePostData());
+                $service->update($client, $id, $this->normalizeUpdateData());
                 $this->Flash->success(__('更新しました。'));
                 $this->redirect(['action' => 'index']);
                 return;
@@ -152,7 +156,13 @@ class SampleKintoneController extends AppController
             }
         }
 
-        $this->set(compact('record', 'serviceTypes'));
+        // GETアクセス時はkintoneから取得した値をフォームにセットする
+        // これにより Form->control() が自動的に選択状態を復元できる
+        if (!$this->request->is(['post', 'put', 'patch'])) {
+            $this->request = $this->request->withParsedBody($record);
+        }
+
+        $this->set(compact('record', 'approvalOptions', 'categoryOptions', 'tagOptions'));
     }
 
     /**
@@ -207,7 +217,7 @@ class SampleKintoneController extends AppController
     }
 
     /**
-     * POST データをサービスに渡せる形に正規化する。
+     * 新規作成用 POST データ正規化（全フィールド）
      *
      * @return array<string, mixed>
      */
@@ -216,7 +226,11 @@ class SampleKintoneController extends AppController
         $data = $this->request->getData();
 
         return [
-            'service_type' => (string)($data['service_type'] ?? 'kintone'),
+            'approval'     => (string)($data['approval'] ?? ''),
+            'category'     => $this->extractRadio($data, 'category', '什器'),
+            'tags'         => $this->extractCheckbox($data, 'tags'),
+            'release_date' => (string)($data['release_date'] ?? ''),
+            'product_url'  => (string)($data['product_url'] ?? ''),
             'model_number' => (string)($data['model_number'] ?? ''),
             'product_name' => (string)($data['product_name'] ?? ''),
             'price'        => isset($data['price']) && $data['price'] !== ''
@@ -224,5 +238,83 @@ class SampleKintoneController extends AppController
                 : null,
             'notes'        => (string)($data['notes'] ?? ''),
         ];
+    }
+
+    /**
+     * 更新用 POST データ正規化（型番を除外）
+     *
+     * 型番は「値の重複禁止」フィールドのため、更新時に同じ値を送信すると
+     * kintone が重複エラーを返す。登録後は変更不可として更新データから除外する。
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeUpdateData(): array
+    {
+        $data = $this->request->getData();
+
+        return [
+            'approval'     => (string)($data['approval'] ?? ''),
+            'category'     => $this->extractRadio($data, 'category', '什器'),
+            'tags'         => $this->extractCheckbox($data, 'tags'),
+            'release_date' => (string)($data['release_date'] ?? ''),
+            'product_url'  => (string)($data['product_url'] ?? ''),
+            'product_name' => (string)($data['product_name'] ?? ''),
+            'price'        => isset($data['price']) && $data['price'] !== ''
+                ? (int)$data['price']
+                : null,
+            'notes'        => (string)($data['notes'] ?? ''),
+        ];
+    }
+
+    /**
+     * ラジオボタンの値を取り出す。
+     *
+     * Form->control(type=>'radio') は通常 $data[$name] に文字列で入るが、
+     * CakePHP のバージョンや設定によって $data[$name]['_ids'][0] に入る場合もある。
+     * どちらでも正しく取り出せるように吸収する。
+     *
+     * @param array<string, mixed> $data
+     */
+    private function extractRadio(array $data, string $name, string $default): string
+    {
+        $value = $data[$name] ?? null;
+
+        // 通常パターン: 文字列で直接入ってくる
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        // CakePHP が _ids 形式で送ってきた場合
+        if (is_array($value) && isset($value['_ids'][0])) {
+            return (string)$value['_ids'][0];
+        }
+
+        return $default;
+    }
+
+    /**
+     * チェックボックスの値を配列で取り出す。
+     *
+     * Form->control(multiple=>'checkbox') は $data[$name] に配列で入るか、
+     * $data[$name]['_ids'] に入る場合がある。どちらでも正しく取り出せるように吸収する。
+     *
+     * @param array<string, mixed> $data
+     * @return array<int, string>
+     */
+    private function extractCheckbox(array $data, string $name): array
+    {
+        $value = $data[$name] ?? [];
+
+        // 通常パターン: 配列で直接入ってくる（name="tags[]" の場合）
+        if (is_array($value) && !isset($value['_ids'])) {
+            return array_values(array_filter(array_map('strval', $value)));
+        }
+
+        // CakePHP が _ids 形式で送ってきた場合（multiple=>'checkbox'）
+        if (is_array($value) && isset($value['_ids']) && is_array($value['_ids'])) {
+            return array_values(array_filter(array_map('strval', $value['_ids'])));
+        }
+
+        return [];
     }
 }

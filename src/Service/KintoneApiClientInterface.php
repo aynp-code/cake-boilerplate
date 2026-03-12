@@ -22,7 +22,7 @@ interface KintoneApiClientInterface
     public function get(string $path, array $query = []): array;
 
     /**
-     * POSTリクエスト
+     * POSTリクエスト（レコード作成）
      *
      * @param string $path
      * @param array<string, mixed> $body
@@ -30,6 +30,16 @@ interface KintoneApiClientInterface
      * @throws \RuntimeException
      */
     public function post(string $path, array $body): array;
+
+    /**
+     * PUTリクエスト（レコード更新）
+     *
+     * @param string $path
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     * @throws \RuntimeException
+     */
+    public function put(string $path, array $body): array;
 
     /**
      * DELETEリクエスト

@@ -160,12 +160,15 @@ abstract class AbstractKintoneAppService
     /**
      * 更新
      *
+     * kintone のレコード更新は PUT メソッドを使う。
+     * POST で id を渡しても新規作成になるため注意。
+     *
      * @param array<string, mixed> $data  更新するフィールドのみ渡せばよい（部分更新）
      * @throws RuntimeException
      */
     public function update(KintoneApiClientInterface $client, int $recordId, array $data): void
     {
-        $client->post('/k/v1/record.json', [
+        $client->put('/k/v1/record.json', [
             'app'    => $this->appId(),
             'id'     => $recordId,
             'record' => $this->toKintoneFields($data),

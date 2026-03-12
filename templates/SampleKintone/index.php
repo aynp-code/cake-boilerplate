@@ -3,20 +3,18 @@
  * @var \App\View\AppView $this
  * @var array<int, array<string, mixed>> $records
  */
-$this->assign('title', __('Sample Kintone'));
+$this->assign('title', 'Sample Kintone');
 $this->Breadcrumbs->addMany([
-    ['title' => __('Home'), 'url' => '/'],
-    ['title' => __('List Sample Kintone')],
+    ['title' => 'Home', 'url' => '/'],
+    ['title' => 'Sample Kintone 一覧'],
 ]);
 ?>
 
 <div class="card card-primary card-outline">
     <div class="card-header d-flex flex-column flex-md-row">
-        <h2 class="card-title">
-            <!-- -->
-        </h2>
+        <h2 class="card-title"></h2>
         <div class="d-flex ml-auto">
-            <?= $this->Html->link(__('New'), ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
+            <?= $this->Html->link('新規登録', ['action' => 'add'], ['class' => 'btn btn-primary btn-sm ml-2']) ?>
         </div>
     </div>
 
@@ -24,13 +22,15 @@ $this->Breadcrumbs->addMany([
         <table class="table table-hover text-nowrap">
             <thead>
                 <tr>
-                    <th class="actions"><?= __('Actions') ?></th>
-                    <th><?= __('ID') ?></th>
-                    <th><?= __('サービス種別') ?></th>
-                    <th><?= __('型番') ?></th>
-                    <th><?= __('商品名') ?></th>
-                    <th><?= __('価格') ?></th>
-                    <th><?= __('特記事項') ?></th>
+                    <th class="actions">操作</th>
+                    <th>ID</th>
+                    <th>承認</th>
+                    <th>種別</th>
+                    <th>型番</th>
+                    <th>商品名</th>
+                    <th>価格</th>
+                    <th>発売日</th>
+                    <th>タグ</th>
                 </tr>
             </thead>
             <tbody>
@@ -43,7 +43,7 @@ $this->Breadcrumbs->addMany([
                                 [
                                     'class'       => 'btn btn-xs btn-outline-info',
                                     'escape'      => false,
-                                    'title'       => __('View'),
+                                    'title'       => '詳細',
                                     'data-toggle' => 'tooltip',
                                 ]
                             ) ?>
@@ -53,7 +53,7 @@ $this->Breadcrumbs->addMany([
                                 [
                                     'class'       => 'btn btn-xs btn-outline-primary ml-1',
                                     'escape'      => false,
-                                    'title'       => __('Edit'),
+                                    'title'       => '編集',
                                     'data-toggle' => 'tooltip',
                                 ]
                             ) ?>
@@ -63,20 +63,39 @@ $this->Breadcrumbs->addMany([
                                 [
                                     'class'       => 'btn btn-xs btn-outline-danger ml-1',
                                     'escape'      => false,
-                                    'confirm'     => __('Are you sure you want to delete # {0}?', $record['id']),
-                                    'title'       => __('Delete'),
+                                    'confirm'     => 'ID: ' . $record['id'] . ' を削除しますか？',
+                                    'title'       => '削除',
                                     'data-toggle' => 'tooltip',
                                 ]
                             ) ?>
                         </td>
                         <td><?= h($record['id']) ?></td>
-                        <td><?= h($record['service_type']) ?></td>
-                        <td><?= h($record['model_number']) ?></td>
-                        <td><?= h($record['product_name']) ?></td>
-                        <td><?= $record['price'] !== null ? number_format($record['price']) . ' 円' : '—' ?></td>
-                        <td class="text-truncate" style="max-width:200px;"><?= h($record['notes']) ?></td>
+                        <td>
+                            <?php if ($record['approval'] === '承認') : ?>
+                                <span class="badge badge-success">承認</span>
+                            <?php elseif ($record['approval'] === '未承認') : ?>
+                                <span class="badge badge-warning">未承認</span>
+                            <?php else : ?>
+                                <span class="text-muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td><?= h($record['category']) ?: '—' ?></td>
+                        <td><?= h($record['model_number']) ?: '—' ?></td>
+                        <td><?= h($record['product_name']) ?: '—' ?></td>
+                        <td><?= $record['price'] !== null ? '¥' . number_format($record['price']) : '—' ?></td>
+                        <td><?= h($record['release_date']) ?: '—' ?></td>
+                        <td>
+                            <?php foreach ($record['tags'] as $tag) : ?>
+                                <span class="badge badge-secondary mr-1"><?= h($tag) ?></span>
+                            <?php endforeach; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
+                <?php if (empty($records)) : ?>
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-3">データがありません</td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
