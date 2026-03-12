@@ -14,7 +14,7 @@ $this->Breadcrumbs->addMany([
 ?>
 
 <div class="card card-primary card-outline">
-    <?= $this->Form->create(null, ['url' => ['action' => 'add'], 'valueSources' => ['query', 'context']]) ?>
+    <?= $this->Form->create(null, ['url' => ['action' => 'add'], 'valueSources' => ['data', 'query', 'context']]) ?>
 
     <div class="card-body">
 

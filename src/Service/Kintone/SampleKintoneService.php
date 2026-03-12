@@ -14,7 +14,7 @@ namespace App\Service\Kintone;
  *  | 種別          | ラジオボタン      | 什器 / ソフトウェア / その他        |
  *  | タグ          | チェックボックス  | 複数選択、array で保持              |
  *  | 発売日        | 日付             | YYYY-MM-DD 形式、必須               |
- *  | 商品URL       | リンク           | value は {url, label} オブジェクト  |
+ *  | 商品URL       | リンク           | value は文字列                      |
  *  | 型番          | 文字列（1行）    | 必須、重複禁止、最大64文字          |
  *  | 商品名        | 文字列（1行）    |                                     |
  *  | 価格          | 数値             | 必須、¥前付き                       |
@@ -23,8 +23,13 @@ namespace App\Service\Kintone;
  *
  * ## 別のアプリへの応用
  *
- * このクラスをコピーして appId() とフィールドマッピングを書き換えるだけで
- * 新しいアプリのサービスが完成します。
+ * このクラスをコピーして以下を書き換えるだけで新しいアプリのサービスが完成します。
+ *   - appId()
+ *   - *_OPTIONS 定数
+ *   - toRecord() のフィールドマッピング
+ *   - toKintoneFields() のフィールドマッピング
+ *   - normalizePostData() / normalizeUpdateData() のキー定義
+ *
  * AbstractKintoneAppService / KintoneApiClient / CybozuOAuthService は一切触りません。
  */
 class SampleKintoneService extends AbstractKintoneAppService
@@ -141,5 +146,108 @@ class SampleKintoneService extends AbstractKintoneAppService
         // 添付ファイルはマルチパート送信が必要なため送信しない
 
         return $fields;
+    }
+
+    /**
+     * 新規作成用 POST データ正規化（全フィールド）
+     *
+     * コントローラから受け取った生のリクエストデータを
+     * create() に渡せる形に変換します。
+     *
+     * @param array<string, mixed> $requestData  $this->request->getData() の値
+     * @return array<string, mixed>
+     */
+    public function normalizePostData(array $requestData): array
+    {
+        return [
+            'approval'     => (string)($requestData['approval'] ?? ''),
+            'category'     => $this->extractRadio($requestData, 'category', '什器'),
+            'tags'         => $this->extractCheckbox($requestData, 'tags'),
+            'release_date' => (string)($requestData['release_date'] ?? ''),
+            'product_url'  => (string)($requestData['product_url'] ?? ''),
+            'model_number' => (string)($requestData['model_number'] ?? ''),
+            'product_name' => (string)($requestData['product_name'] ?? ''),
+            'price'        => isset($requestData['price']) && $requestData['price'] !== ''
+                ? (int)$requestData['price']
+                : null,
+            'notes'        => (string)($requestData['notes'] ?? ''),
+        ];
+    }
+
+    /**
+     * 更新用 POST データ正規化（型番を除外）
+     *
+     * 型番は「値の重複禁止」フィールドのため、更新時に同じ値を送信すると
+     * kintone が重複エラーを返す。登録後は変更不可として更新データから除外する。
+     *
+     * @param array<string, mixed> $requestData  $this->request->getData() の値
+     * @return array<string, mixed>
+     */
+    public function normalizeUpdateData(array $requestData): array
+    {
+        return [
+            'approval'     => (string)($requestData['approval'] ?? ''),
+            'category'     => $this->extractRadio($requestData, 'category', '什器'),
+            'tags'         => $this->extractCheckbox($requestData, 'tags'),
+            'release_date' => (string)($requestData['release_date'] ?? ''),
+            'product_url'  => (string)($requestData['product_url'] ?? ''),
+            'product_name' => (string)($requestData['product_name'] ?? ''),
+            'price'        => isset($requestData['price']) && $requestData['price'] !== ''
+                ? (int)$requestData['price']
+                : null,
+            'notes'        => (string)($requestData['notes'] ?? ''),
+        ];
+    }
+
+    // =========================================================================
+    // private ヘルパー
+    // =========================================================================
+
+    /**
+     * ラジオボタンの値を取り出す。
+     *
+     * Form->control(type=>'radio') は通常 $data[$name] に文字列で入るが、
+     * CakePHP のバージョンや設定によって $data[$name]['_ids'][0] に入る場合もある。
+     * どちらでも正しく取り出せるように吸収する。
+     *
+     * @param array<string, mixed> $data
+     */
+    private function extractRadio(array $data, string $name, string $default): string
+    {
+        $value = $data[$name] ?? null;
+
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        if (is_array($value) && isset($value['_ids'][0])) {
+            return (string)$value['_ids'][0];
+        }
+
+        return $default;
+    }
+
+    /**
+     * チェックボックスの値を配列で取り出す。
+     *
+     * Form->control(multiple=>'checkbox') は $data[$name] に配列で入るか、
+     * $data[$name]['_ids'] に入る場合がある。どちらでも正しく取り出せるように吸収する。
+     *
+     * @param array<string, mixed> $data
+     * @return array<int, string>
+     */
+    private function extractCheckbox(array $data, string $name): array
+    {
+        $value = $data[$name] ?? [];
+
+        if (is_array($value) && !isset($value['_ids'])) {
+            return array_values(array_filter(array_map('strval', $value)));
+        }
+
+        if (is_array($value) && isset($value['_ids']) && is_array($value['_ids'])) {
+            return array_values(array_filter(array_map('strval', $value['_ids'])));
+        }
+
+        return [];
     }
 }

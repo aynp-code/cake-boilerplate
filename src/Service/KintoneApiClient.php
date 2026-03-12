@@ -10,7 +10,7 @@ use RuntimeException;
  * kintone REST API クライアント
  *
  * Bearer トークンによる認証を担い、GET / POST / PUT / DELETE を提供する。
- * HTTP の詳細（stream_context）はこのクラスに閉じ込め、
+ * HTTP の詳細（curl）はこのクラスに閉じ込め、
  * 上位サービスは配列の入出力だけを意識する。
  */
 class KintoneApiClient implements KintoneApiClientInterface
@@ -41,7 +41,11 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function post(string $path, array $body): array
     {
-        return $this->request('POST', $this->buildUrl($path), (string)json_encode($body));
+        return $this->request(
+            'POST',
+            $this->buildUrl($path),
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     /**
@@ -50,7 +54,11 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function put(string $path, array $body): array
     {
-        return $this->request('PUT', $this->buildUrl($path), (string)json_encode($body));
+        return $this->request(
+            'PUT',
+            $this->buildUrl($path),
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     /**
@@ -58,7 +66,11 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function delete(string $path, array $body): void
     {
-        $this->request('DELETE', $this->buildUrl($path), (string)json_encode($body));
+        $this->request(
+            'DELETE',
+            $this->buildUrl($path),
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     // =========================================================================
@@ -105,9 +117,8 @@ class KintoneApiClient implements KintoneApiClientInterface
             curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         }
 
-        $raw      = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr  = curl_error($ch);
+        $raw     = curl_exec($ch);
+        $curlErr = curl_error($ch);
         curl_close($ch);
 
         if ($raw === false) {
