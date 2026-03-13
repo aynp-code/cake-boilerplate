@@ -34,6 +34,12 @@ use RuntimeException;
  *   // アップロード（複数可）
  *   $fileKeys = $service->uploadFiles($client, $uploadedFiles);
  *   // $data['attachments'] に fileKey の配列を渡すと toKintoneFields() で送信される
+ *
+ * ## フォーム入力値の正規化
+ *
+ * normalizePostData() / normalizeUpdateData() を子クラスで実装する際に
+ * extractRadio() / extractCheckbox() を $this-> で呼び出せる。
+ * CakePHP のフォーム送信形式の差異はここで吸収されるため、子クラスは意識しなくてよい。
  */
 abstract class AbstractKintoneAppService
 {
@@ -225,7 +231,7 @@ abstract class AbstractKintoneAppService
     }
 
     // =========================================================================
-    // protected ヘルパー
+    // protected ヘルパー（子クラスから使える）
     // =========================================================================
 
     /**
@@ -236,5 +242,57 @@ abstract class AbstractKintoneAppService
     protected function value(array $record, string $fieldCode, mixed $default = null): mixed
     {
         return $record[$fieldCode]['value'] ?? $default;
+    }
+
+    /**
+     * ラジオボタンの値を取り出す。
+     *
+     * CakePHP の Form->control(type=>'radio') は通常 $data[$name] に文字列で入るが、
+     * バージョンや設定によって $data[$name]['_ids'][0] に入る場合もある。
+     * どちらでも正しく取り出せるよう吸収する。
+     *
+     * normalizePostData() / normalizeUpdateData() の実装で使用する。
+     *
+     * @param array<string, mixed> $data
+     */
+    protected function extractRadio(array $data, string $name, string $default): string
+    {
+        $value = $data[$name] ?? null;
+
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        if (is_array($value) && isset($value['_ids'][0])) {
+            return (string)$value['_ids'][0];
+        }
+
+        return $default;
+    }
+
+    /**
+     * チェックボックスの値を配列で取り出す。
+     *
+     * CakePHP の Form->control(multiple=>'checkbox') は $data[$name] に配列で入るか、
+     * $data[$name]['_ids'] に入る場合がある。どちらでも正しく取り出せるよう吸収する。
+     *
+     * normalizePostData() / normalizeUpdateData() の実装で使用する。
+     *
+     * @param array<string, mixed> $data
+     * @return array<int, string>
+     */
+    protected function extractCheckbox(array $data, string $name): array
+    {
+        $value = $data[$name] ?? [];
+
+        if (is_array($value) && !isset($value['_ids'])) {
+            return array_values(array_filter(array_map('strval', $value)));
+        }
+
+        if (is_array($value) && isset($value['_ids']) && is_array($value['_ids'])) {
+            return array_values(array_filter(array_map('strval', $value['_ids'])));
+        }
+
+        return [];
     }
 }

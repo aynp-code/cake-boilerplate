@@ -9,9 +9,7 @@ use RuntimeException;
 /**
  * kintone REST API クライアント
  *
- * Bearer トークンによる認証を担い、GET / POST / PUT / DELETE を提供する。
- * HTTP の詳細（stream_context）はこのクラスに閉じ込め、
- * 上位サービスは配列の入出力だけを意識する。
+ * Bearer トークンによる認証を担い、GET / POST / PUT / DELETE / postFile を提供する。
  */
 class KintoneApiClient implements KintoneApiClientInterface
 {
@@ -41,7 +39,11 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function post(string $path, array $body): array
     {
-        return $this->request('POST', $this->buildUrl($path), (string)json_encode($body));
+        return $this->request(
+            'POST',
+            $this->buildUrl($path),
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     /**
@@ -50,7 +52,11 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function put(string $path, array $body): array
     {
-        return $this->request('PUT', $this->buildUrl($path), (string)json_encode($body));
+        return $this->request(
+            'PUT',
+            $this->buildUrl($path),
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     /**
@@ -58,10 +64,76 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function delete(string $path, array $body): void
     {
-        $this->request('DELETE', $this->buildUrl($path), (string)json_encode($body));
+        $this->request(
+            'DELETE',
+            $this->buildUrl($path),
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     /**
+     * ファイルアップロード（multipart/form-data）
+     *
+     * kintone の添付ファイルは JSON ではなく multipart で送る必要がある。
+     * 成功時は ['fileKey' => '...'] を返す。
+     *
+     * @return array{fileKey: string}
+     * @throws RuntimeException
+     */
+    public function postFile(string $filePath, string $fileName, string $mimeType): array
+    {
+        $url = $this->buildUrl('/k/v1/file.json');
+
+        $ch = curl_init($url);
+        if ($ch === false) {
+            throw new RuntimeException("curl_init failed: {$url}");
+        }
+
+        $curlFile = new \CURLFile($filePath, $mimeType, $fileName);
+
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => ['file' => $curlFile],
+            CURLOPT_HTTPHEADER     => [
+                "Authorization: Bearer {$this->accessToken}",
+                'X-Requested-With: XMLHttpRequest',
+                // Content-Type は curl が multipart/form-data を自動付与するため指定しない
+            ],
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+
+        $raw     = curl_exec($ch);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if ($raw === false) {
+            throw new RuntimeException("Kintone file upload failed: {$curlErr}");
+        }
+
+        $decoded = json_decode((string)$raw, true);
+
+        if (!is_array($decoded)) {
+            throw new RuntimeException('Kintone file upload: invalid response.');
+        }
+
+        if (isset($decoded['message'])) {
+            Log::error(
+                'Kintone file upload error: ' . json_encode($decoded, JSON_UNESCAPED_UNICODE),
+                ['scope' => 'cybozu']
+            );
+            throw new RuntimeException('Kintone file upload error: ' . $decoded['message']);
+        }
+
+        if (empty($decoded['fileKey'])) {
+            throw new RuntimeException('Kintone file upload: fileKey not found in response.');
+        }
+
+        return ['fileKey' => (string)$decoded['fileKey']];
+    }
+
+/**
      * ファイルダウンロード
      *
      * kintone からファイルのバイナリデータを取得する。
@@ -177,9 +249,8 @@ class KintoneApiClient implements KintoneApiClientInterface
             curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         }
 
-        $raw      = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr  = curl_error($ch);
+        $raw     = curl_exec($ch);
+        $curlErr = curl_error($ch);
         curl_close($ch);
 
         if ($raw === false) {

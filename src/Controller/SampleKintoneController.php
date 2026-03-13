@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Controller\Trait\KintoneClientTrait;
 use App\Exception\KintoneNotLinkedException;
 use App\Service\CybozuOAuthService;
-use App\Service\KintoneApiClientInterface;
 use App\Service\Kintone\SampleKintoneService;
 use Cake\Event\EventInterface;
 use RuntimeException;
@@ -15,8 +15,9 @@ use RuntimeException;
  *
  * ## 設計方針
  *
- * - CybozuOAuthService をアクション引数で受け取り makeKintoneClient() でクライアントを生成する
- * - SampleKintoneService はトークンを知らない（クライアントを受け取るだけ）
+ * - makeClient() は KintoneClientTrait が提供する（全kintoneコントローラで共通）
+ * - データ変換（normalize）は SampleKintoneService が担う
+ * - このコントローラは HTTP の入出力のみを担う
  * - 未連携エラー（KintoneNotLinkedException）は escape => false で Flash 表示し、連携ページへ誘導
  * - 通常の kintone API エラー（RuntimeException）は escape あり で Flash 表示
  *
@@ -26,10 +27,11 @@ use RuntimeException;
  *   1. クラス名
  *   2. use している Service のクラス名
  *   3. 各アクション内の new SampleKintoneService() の部分
- *   4. normalizePostData() / normalizeUpdateData() のフィールド定義
  */
 class SampleKintoneController extends AppController
 {
+    use KintoneClientTrait;
+
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
@@ -37,8 +39,6 @@ class SampleKintoneController extends AppController
 
     /**
      * 一覧
-     *
-     * GET /sample-kintone
      */
     public function index(CybozuOAuthService $cybozuService): void
     {
@@ -60,8 +60,6 @@ class SampleKintoneController extends AppController
 
     /**
      * 詳細
-     *
-     * GET /sample-kintone/view/{id}
      */
     public function view(CybozuOAuthService $cybozuService, int $id): void
     {
@@ -88,19 +86,33 @@ class SampleKintoneController extends AppController
      *
      * GET  /sample-kintone/add  → フォーム表示
      * POST /sample-kintone/add  → 登録実行
+     *
+     * 添付ファイルの流れ:
+     *   1. アップロードされたファイルを uploadFiles() で kintone に送信 → fileKey 取得
+     *   2. normalizePostData() に fileKey を渡してレコードデータを生成
+     *   3. create() でレコード登録（添付ファイルも含む）
      */
     public function add(CybozuOAuthService $cybozuService): void
     {
+        $service         = new SampleKintoneService();
         $approvalOptions = SampleKintoneService::APPROVAL_OPTIONS;
         $categoryOptions = SampleKintoneService::CATEGORY_OPTIONS;
         $tagOptions      = SampleKintoneService::TAG_OPTIONS;
 
         if ($this->request->is('post')) {
-            $service = new SampleKintoneService();
-
             try {
-                $client   = $this->makeClient($cybozuService);
-                $recordId = $service->create($client, $this->normalizePostData());
+                $client = $this->makeClient($cybozuService);
+
+                // ① 添付ファイルをアップロードして fileKey を取得
+                $uploadedFiles = $this->getUploadedFiles('attachments');
+                $fileKeys      = $service->uploadFiles($client, $uploadedFiles);
+
+                // ② レコード登録（fileKey を含む）
+                $recordId = $service->create(
+                    $client,
+                    $service->normalizePostData($this->request->getData(), $fileKeys)
+                );
+
                 $this->Flash->success(__('登録しました。（kintone レコード ID: {0}）', $recordId));
                 $this->redirect(['action' => 'index']);
                 return;
@@ -109,6 +121,9 @@ class SampleKintoneController extends AppController
             } catch (RuntimeException $e) {
                 $this->Flash->error(__('登録に失敗しました: {0}', $e->getMessage()));
             }
+
+            // 登録失敗時：送信値をフォームに残す
+            $this->request = $this->request->withParsedBody($this->request->getData());
         }
 
         $this->set(compact('approvalOptions', 'categoryOptions', 'tagOptions'));
@@ -117,8 +132,15 @@ class SampleKintoneController extends AppController
     /**
      * 編集
      *
-     * GET  /sample-kintone/edit/{id}  → フォーム表示（既存値をプリフィル）
+     * GET  /sample-kintone/edit/{id}  → フォーム表示
      * POST /sample-kintone/edit/{id}  → 更新実行
+     *
+     * 添付ファイルの流れ:
+     *   1. フォームの hidden[existing_file_keys][] で「残す既存ファイルの fileKey」を受け取る
+     *      （削除したいファイルは hidden を削除してあるため送信されない）
+     *   2. 新規アップロードファイルを uploadFiles() で kintone に送信 → fileKey 取得
+     *   3. normalizeUpdateData() で 既存(残す分) + 新規 をマージ
+     *   4. update() でレコード更新（添付ファイルフィールドを上書き）
      */
     public function edit(CybozuOAuthService $cybozuService, int $id): void
     {
@@ -126,7 +148,6 @@ class SampleKintoneController extends AppController
         $approvalOptions = SampleKintoneService::APPROVAL_OPTIONS;
         $categoryOptions = SampleKintoneService::CATEGORY_OPTIONS;
         $tagOptions      = SampleKintoneService::TAG_OPTIONS;
-        $client          = null;
 
         try {
             $client = $this->makeClient($cybozuService);
@@ -143,7 +164,17 @@ class SampleKintoneController extends AppController
 
         if ($this->request->is(['post', 'put', 'patch'])) {
             try {
-                $service->update($client, $id, $this->normalizeUpdateData());
+                // ① 新規アップロードファイルを kintone に送信
+                $uploadedFiles = $this->getUploadedFiles('attachments');
+                $fileKeys      = $service->uploadFiles($client, $uploadedFiles);
+
+                // ② レコード更新（既存ファイル保持 + 新規追加）
+                $service->update(
+                    $client,
+                    $id,
+                    $service->normalizeUpdateData($this->request->getData(), $fileKeys)
+                );
+
                 $this->Flash->success(__('更新しました。'));
                 $this->redirect(['action' => 'index']);
                 return;
@@ -156,8 +187,7 @@ class SampleKintoneController extends AppController
             }
         }
 
-        // GETアクセス時はkintoneから取得した値をフォームにセットする
-        // これにより Form->control() が自動的に選択状態を復元できる
+        // Form->control() が既存値を自動選択できるようリクエストボディにセット
         if (!$this->request->is(['post', 'put', 'patch'])) {
             $this->request = $this->request->withParsedBody($record);
         }
@@ -167,8 +197,6 @@ class SampleKintoneController extends AppController
 
     /**
      * 削除
-     *
-     * POST /sample-kintone/delete/{id}
      */
     public function delete(CybozuOAuthService $cybozuService, int $id): void
     {
@@ -189,180 +217,32 @@ class SampleKintoneController extends AppController
         $this->redirect(['action' => 'index']);
     }
 
-    /**
-     * 添付ファイルダウンロード
-     *
-     * GET /sample-kintone/file/{fileKey}
-     *
-     * kintone からファイルを取得してブラウザにストリームする。
-     * fileKey は URL エンコードされた状態で渡される。
-     *
-     * セキュリティ:
-     *   - 認証済みユーザーのみアクセス可（AppController の認証が有効）
-     *   - fileKey はユーザーが持つ kintone トークンで取得するため、
-     *     他ユーザーのファイルを取得しようとしてもトークンの権限で制御される
-     */
-    public function file(CybozuOAuthService $cybozuService, string $fileKey): void
-    {
-        try {
-            $client = $this->makeClient($cybozuService);
-            $fileData = $client->getFile($fileKey);
-        } catch (KintoneNotLinkedException $e) {
-            $this->Flash->error($e->getMessage(), ['escape' => false]);
-            $this->redirect(['action' => 'index']);
-            return;
-        } catch (RuntimeException $e) {
-            $this->Flash->error(__('ファイルのダウンロードに失敗しました: {0}', $e->getMessage()));
-            $this->redirect(['action' => 'index']);
-            return;
-        }
-
-        // ファイル名はクエリパラメータから取得（view.php のリンクで渡す）
-        // 未指定の場合は 'download' をデフォルトとする
-        $fileName = (string)($this->request->getQuery('name') ?? 'download');
-
-        // RFC 6266 に従い Content-Disposition にファイル名を付与
-        // マルチバイト文字に対応するため filename* パラメータを使用
-        $encodedName = rawurlencode($fileName);
-        $disposition = "attachment; filename=\"{$fileName}\"; filename*=UTF-8''{$encodedName}";
-
-        $response = $this->response
-            ->withType($fileData['contentType'])
-            ->withStringBody($fileData['body'])
-            ->withHeader('Content-Disposition', $disposition);
-
-        $this->response = $response;
-
-        // CakePHP のレンダリングをスキップしてレスポンスを直接返す
-        $this->autoRender = false;
-    }
-
     // =========================================================================
     // private
     // =========================================================================
 
     /**
-     * kintone クライアントを生成する。
+     * アップロードされたファイルを取得する。
      *
-     * 未連携の場合は KintoneNotLinkedException をスローする。
-     * この例外はコントローラ側で escape => false で Flash 表示する。
+     * $this->request->getUploadedFiles() はネストした配列を返すため、
+     * フィールド名を指定して UploadedFileInterface の配列を取り出す。
      *
-     * @throws KintoneNotLinkedException  未連携の場合
-     * @throws RuntimeException           その他のエラー
+     * @return array<int, \Psr\Http\Message\UploadedFileInterface>
      */
-    private function makeClient(CybozuOAuthService $cybozuService): KintoneApiClientInterface
+    private function getUploadedFiles(string $fieldName): array
     {
-        $userId = (string)$this->Authentication->getIdentity()->getIdentifier();
+        $uploaded = $this->request->getUploadedFiles();
+        $files    = $uploaded[$fieldName] ?? [];
 
-        try {
-            return $cybozuService->makeKintoneClient($userId);
-        } catch (RuntimeException) {
-            throw new KintoneNotLinkedException(
-                'kintone と連携されていません。' .
-                '<a href="/auth/cybozu/connect">こちら</a>から連携してください。'
-            );
-        }
-    }
-
-    /**
-     * 新規作成用 POST データ正規化（全フィールド）
-     *
-     * @return array<string, mixed>
-     */
-    private function normalizePostData(): array
-    {
-        $data = $this->request->getData();
-
-        return [
-            'approval'     => (string)($data['approval'] ?? ''),
-            'category'     => $this->extractRadio($data, 'category', '什器'),
-            'tags'         => $this->extractCheckbox($data, 'tags'),
-            'release_date' => (string)($data['release_date'] ?? ''),
-            'product_url'  => (string)($data['product_url'] ?? ''),
-            'model_number' => (string)($data['model_number'] ?? ''),
-            'product_name' => (string)($data['product_name'] ?? ''),
-            'price'        => isset($data['price']) && $data['price'] !== ''
-                ? (int)$data['price']
-                : null,
-            'notes'        => (string)($data['notes'] ?? ''),
-        ];
-    }
-
-    /**
-     * 更新用 POST データ正規化（型番を除外）
-     *
-     * 型番は「値の重複禁止」フィールドのため、更新時に同じ値を送信すると
-     * kintone が重複エラーを返す。登録後は変更不可として更新データから除外する。
-     *
-     * @return array<string, mixed>
-     */
-    private function normalizeUpdateData(): array
-    {
-        $data = $this->request->getData();
-
-        return [
-            'approval'     => (string)($data['approval'] ?? ''),
-            'category'     => $this->extractRadio($data, 'category', '什器'),
-            'tags'         => $this->extractCheckbox($data, 'tags'),
-            'release_date' => (string)($data['release_date'] ?? ''),
-            'product_url'  => (string)($data['product_url'] ?? ''),
-            'product_name' => (string)($data['product_name'] ?? ''),
-            'price'        => isset($data['price']) && $data['price'] !== ''
-                ? (int)$data['price']
-                : null,
-            'notes'        => (string)($data['notes'] ?? ''),
-        ];
-    }
-
-    /**
-     * ラジオボタンの値を取り出す。
-     *
-     * Form->control(type=>'radio') は通常 $data[$name] に文字列で入るが、
-     * CakePHP のバージョンや設定によって $data[$name]['_ids'][0] に入る場合もある。
-     * どちらでも正しく取り出せるように吸収する。
-     *
-     * @param array<string, mixed> $data
-     */
-    private function extractRadio(array $data, string $name, string $default): string
-    {
-        $value = $data[$name] ?? null;
-
-        // 通常パターン: 文字列で直接入ってくる
-        if (is_string($value) && $value !== '') {
-            return $value;
+        if (!is_array($files)) {
+            return [];
         }
 
-        // CakePHP が _ids 形式で送ってきた場合
-        if (is_array($value) && isset($value['_ids'][0])) {
-            return (string)$value['_ids'][0];
-        }
-
-        return $default;
-    }
-
-    /**
-     * チェックボックスの値を配列で取り出す。
-     *
-     * Form->control(multiple=>'checkbox') は $data[$name] に配列で入るか、
-     * $data[$name]['_ids'] に入る場合がある。どちらでも正しく取り出せるように吸収する。
-     *
-     * @param array<string, mixed> $data
-     * @return array<int, string>
-     */
-    private function extractCheckbox(array $data, string $name): array
-    {
-        $value = $data[$name] ?? [];
-
-        // 通常パターン: 配列で直接入ってくる（name="tags[]" の場合）
-        if (is_array($value) && !isset($value['_ids'])) {
-            return array_values(array_filter(array_map('strval', $value)));
-        }
-
-        // CakePHP が _ids 形式で送ってきた場合（multiple=>'checkbox'）
-        if (is_array($value) && isset($value['_ids']) && is_array($value['_ids'])) {
-            return array_values(array_filter(array_map('strval', $value['_ids'])));
-        }
-
-        return [];
+        // 空ファイル（ファイル未選択）を除外
+        return array_values(array_filter(
+            $files,
+            fn($f) => $f instanceof \Psr\Http\Message\UploadedFileInterface
+                && $f->getError() === UPLOAD_ERR_OK
+        ));
     }
 }

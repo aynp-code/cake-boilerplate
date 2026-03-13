@@ -197,48 +197,4 @@ class SampleKintoneService extends AbstractKintoneAppService
         ];
     }
 
-    // =========================================================================
-    // private ヘルパー
-    // =========================================================================
-
-    /**
-     * ラジオボタンの値を取り出す。
-     *
-     * @param array<string, mixed> $data
-     */
-    private function extractRadio(array $data, string $name, string $default): string
-    {
-        $value = $data[$name] ?? null;
-
-        if (is_string($value) && $value !== '') {
-            return $value;
-        }
-
-        if (is_array($value) && isset($value['_ids'][0])) {
-            return (string)$value['_ids'][0];
-        }
-
-        return $default;
-    }
-
-    /**
-     * チェックボックスの値を配列で取り出す。
-     *
-     * @param array<string, mixed> $data
-     * @return array<int, string>
-     */
-    private function extractCheckbox(array $data, string $name): array
-    {
-        $value = $data[$name] ?? [];
-
-        if (is_array($value) && !isset($value['_ids'])) {
-            return array_values(array_filter(array_map('strval', $value)));
-        }
-
-        if (is_array($value) && isset($value['_ids']) && is_array($value['_ids'])) {
-            return array_values(array_filter(array_map('strval', $value['_ids'])));
-        }
-
-        return [];
-    }
 }
