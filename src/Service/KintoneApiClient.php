@@ -9,7 +9,9 @@ use RuntimeException;
 /**
  * kintone REST API クライアント
  *
- * Bearer トークンによる認証を担い、GET / POST / PUT / DELETE / postFile を提供する。
+ * Bearer トークンによる認証を担い、GET / POST / PUT / DELETE を提供する。
+ * HTTP の詳細（stream_context）はこのクラスに閉じ込め、
+ * 上位サービスは配列の入出力だけを意識する。
  */
 class KintoneApiClient implements KintoneApiClientInterface
 {
@@ -39,11 +41,7 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function post(string $path, array $body): array
     {
-        return $this->request(
-            'POST',
-            $this->buildUrl($path),
-            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-        );
+        return $this->request('POST', $this->buildUrl($path), (string)json_encode($body));
     }
 
     /**
@@ -52,11 +50,7 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function put(string $path, array $body): array
     {
-        return $this->request(
-            'PUT',
-            $this->buildUrl($path),
-            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-        );
+        return $this->request('PUT', $this->buildUrl($path), (string)json_encode($body));
     }
 
     /**
@@ -64,73 +58,79 @@ class KintoneApiClient implements KintoneApiClientInterface
      */
     public function delete(string $path, array $body): void
     {
-        $this->request(
-            'DELETE',
-            $this->buildUrl($path),
-            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-        );
+        $this->request('DELETE', $this->buildUrl($path), (string)json_encode($body));
     }
 
     /**
-     * ファイルアップロード（multipart/form-data）
+     * ファイルダウンロード
      *
-     * kintone の添付ファイルは JSON ではなく multipart で送る必要がある。
-     * 成功時は ['fileKey' => '...'] を返す。
+     * kintone からファイルのバイナリデータを取得する。
+     * ブラウザに直接ストリームするのではなく、PHP がいったん受け取って返す。
      *
-     * @return array{fileKey: string}
+     * @return array{body: string, contentType: string}
      * @throws RuntimeException
      */
-    public function postFile(string $filePath, string $fileName, string $mimeType): array
+    public function getFile(string $fileKey): array
     {
-        $url = $this->buildUrl('/k/v1/file.json');
+        $url = $this->buildUrl('/k/v1/file.json') . '?' . http_build_query(
+            ['fileKey' => $fileKey],
+            encoding_type: PHP_QUERY_RFC3986
+        );
 
         $ch = curl_init($url);
         if ($ch === false) {
             throw new RuntimeException("curl_init failed: {$url}");
         }
 
-        $curlFile = new \CURLFile($filePath, $mimeType, $fileName);
-
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => ['file' => $curlFile],
             CURLOPT_HTTPHEADER     => [
                 "Authorization: Bearer {$this->accessToken}",
                 'X-Requested-With: XMLHttpRequest',
-                // Content-Type は curl が multipart/form-data を自動付与するため指定しない
             ],
             CURLOPT_TIMEOUT        => 30,
             CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HEADER         => true, // レスポンスヘッダーも取得してContent-Typeを得る
         ]);
 
-        $raw     = curl_exec($ch);
-        $curlErr = curl_error($ch);
+        $response = curl_exec($ch);
+        $curlErr  = curl_error($ch);
+        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         curl_close($ch);
 
-        if ($raw === false) {
-            throw new RuntimeException("Kintone file upload failed: {$curlErr}");
+        if ($response === false) {
+            throw new RuntimeException("Kintone file download failed: {$curlErr}");
         }
 
-        $decoded = json_decode((string)$raw, true);
+        $responseStr = (string)$response;
+        $headerStr   = substr($responseStr, 0, $headerSize);
+        $body        = substr($responseStr, $headerSize);
 
-        if (!is_array($decoded)) {
-            throw new RuntimeException('Kintone file upload: invalid response.');
+        // Content-Type をレスポンスヘッダーから取得
+        $contentType = 'application/octet-stream';
+        foreach (explode("
+", $headerStr) as $line) {
+            if (stripos($line, 'Content-Type:') === 0) {
+                $contentType = trim(substr($line, strlen('Content-Type:')));
+                break;
+            }
         }
 
-        if (isset($decoded['message'])) {
+        // エラーレスポンス（JSON）の場合
+        if (str_contains($contentType, 'application/json')) {
+            $decoded = json_decode($body, true);
+            $message = is_array($decoded) ? ($decoded['message'] ?? 'Unknown error') : 'Unknown error';
             Log::error(
-                'Kintone file upload error: ' . json_encode($decoded, JSON_UNESCAPED_UNICODE),
+                "Kintone file download error [fileKey={$fileKey}]: {$body}",
                 ['scope' => 'cybozu']
             );
-            throw new RuntimeException('Kintone file upload error: ' . $decoded['message']);
+            throw new RuntimeException("Kintone file download error: {$message}");
         }
 
-        if (empty($decoded['fileKey'])) {
-            throw new RuntimeException('Kintone file upload: fileKey not found in response.');
-        }
-
-        return ['fileKey' => (string)$decoded['fileKey']];
+        return [
+            'body'        => $body,
+            'contentType' => $contentType,
+        ];
     }
 
     // =========================================================================
@@ -177,8 +177,9 @@ class KintoneApiClient implements KintoneApiClientInterface
             curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         }
 
-        $raw     = curl_exec($ch);
-        $curlErr = curl_error($ch);
+        $raw      = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
         curl_close($ch);
 
         if ($raw === false) {

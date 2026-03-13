@@ -90,11 +90,27 @@ $this->Breadcrumbs->addMany([
                     <?php if (!empty($record['attachments'])) : ?>
                         <ul class="list-unstyled mb-0">
                             <?php foreach ($record['attachments'] as $file) : ?>
+                                <?php
+                                    $fileKey  = $file['fileKey'] ?? '';
+                                    $fileName = $file['name'] ?? 'download';
+                                    $fileSize = !empty($file['size'])
+                                        ? number_format((int)$file['size'] / 1024, 1) . ' KB'
+                                        : '';
+                                    // ダウンロードURL: /sample-kintone/file/{fileKey}?name={fileName}
+                                    $downloadUrl = $this->Url->build([
+                                        'controller' => 'SampleKintone',
+                                        'action'     => 'file',
+                                        $fileKey,
+                                        '?'          => ['name' => $fileName],
+                                    ]);
+                                ?>
                                 <li>
-                                    <i class="fas fa-paperclip mr-1"></i>
-                                    <?= h($file['name'] ?? '') ?>
-                                    <?php if (!empty($file['size'])) : ?>
-                                        <small class="text-muted ml-1">(<?= number_format((int)$file['size'] / 1024, 1) ?> KB)</small>
+                                    <a href="<?= h($downloadUrl) ?>" class="text-body">
+                                        <i class="fas fa-paperclip mr-1"></i>
+                                        <?= h($fileName) ?>
+                                    </a>
+                                    <?php if ($fileSize) : ?>
+                                        <small class="text-muted ml-1">(<?= $fileSize ?>)</small>
                                     <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>

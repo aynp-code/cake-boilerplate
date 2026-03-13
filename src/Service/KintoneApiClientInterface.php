@@ -5,6 +5,9 @@ namespace App\Service;
 
 /**
  * kintone REST API クライアントのインターフェース
+ *
+ * 今後のアプリ追加（在庫管理・申請など）では、このインターフェースを
+ * 受け取る専用サービスを作ることで CybozuOAuthService に触れずに済む。
  */
 interface KintoneApiClientInterface
 {
@@ -12,15 +15,16 @@ interface KintoneApiClientInterface
      * GETリクエスト
      *
      * @param string $path  例: '/k/v1/record.json'
-     * @param array<string, mixed> $query
+     * @param array<string, mixed> $query クエリパラメータ
      * @return array<string, mixed>
      * @throws \RuntimeException
      */
     public function get(string $path, array $query = []): array;
 
     /**
-     * POSTリクエスト（レコード作成・JSON）
+     * POSTリクエスト（レコード作成）
      *
+     * @param string $path
      * @param array<string, mixed> $body
      * @return array<string, mixed>
      * @throws \RuntimeException
@@ -28,8 +32,9 @@ interface KintoneApiClientInterface
     public function post(string $path, array $body): array;
 
     /**
-     * PUTリクエスト（レコード更新・JSON）
+     * PUTリクエスト（レコード更新）
      *
+     * @param string $path
      * @param array<string, mixed> $body
      * @return array<string, mixed>
      * @throws \RuntimeException
@@ -39,22 +44,10 @@ interface KintoneApiClientInterface
     /**
      * DELETEリクエスト
      *
+     * @param string $path
      * @param array<string, mixed> $body
+     * @return void
      * @throws \RuntimeException
      */
     public function delete(string $path, array $body): void;
-
-    /**
-     * ファイルアップロード（multipart/form-data）
-     *
-     * kintone の添付ファイルアップロードは JSON ではなく multipart で送る必要がある。
-     * 成功時は ['fileKey' => '...'] を返す。
-     *
-     * @param string $filePath  アップロードするファイルのパス
-     * @param string $fileName  kintone 上に表示するファイル名
-     * @param string $mimeType  MIMEタイプ（例: 'image/png'）
-     * @return array{fileKey: string}
-     * @throws \RuntimeException
-     */
-    public function postFile(string $filePath, string $fileName, string $mimeType): array;
 }

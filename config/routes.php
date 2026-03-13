@@ -65,11 +65,17 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/auth/cybozu/revoke', ['controller' => 'Cybozu', 'action' => 'revoke']);
 
          /*
-         * SampleKintone routes     ← ここに追記
+         * SampleKintone routes
          */
         $builder->resources('SampleKintone', [
             'path' => 'sample-kintone',
         ]);
+        // 添付ファイルダウンロード（fileKey はスラッシュを含む場合があるため .+ でマッチ）
+        $builder->connect(
+            '/sample-kintone/file/{fileKey}',
+            ['controller' => 'SampleKintone', 'action' => 'file'],
+            ['fileKey' => '.+', 'pass' => ['fileKey']]
+        );
 
         /*
          * ...and connect the rest of 'Pages' controller's URLs.
