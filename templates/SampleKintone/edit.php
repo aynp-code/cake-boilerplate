@@ -16,7 +16,7 @@ $this->Breadcrumbs->addMany([
 ?>
 
 <div class="card card-primary card-outline">
-    <?= $this->Form->create(null, ['url' => ['action' => 'edit', $record['id']]]) ?>
+    <?= $this->Form->create(null, ['url' => ['action' => 'edit', $record['id']], 'enctype' => 'multipart/form-data']) ?>
 
     <div class="card-body">
 
@@ -89,26 +89,82 @@ $this->Breadcrumbs->addMany([
             'rows'  => 4,
         ]) ?>
 
-        <?php // ⑩ 添付ファイル（表示のみ・kintone側で管理） ?>
+        <?php // ⑩ 添付ファイル（既存ファイル削除 + 新規アップロード） ?>
         <div class="form-group">
-            <label>添付ファイル</label>
+            <label>添付ファイル（既存）</label>
             <?php if (!empty($record['attachments'])) : ?>
-                <ul class="list-unstyled mb-0">
+                <div class="mb-2">
                     <?php foreach ($record['attachments'] as $file) : ?>
-                        <li>
-                            <i class="fas fa-paperclip mr-1"></i>
-                            <?= h($file['name'] ?? '') ?>
-                            <?php if (!empty($file['size'])) : ?>
-                                <small class="text-muted ml-1">(<?= number_format((int)$file['size'] / 1024, 1) ?> KB)</small>
+                        <?php
+                            $fileKey  = h($file['fileKey'] ?? '');
+                            $fileName = h($file['name'] ?? '');
+                            $fileSize = !empty($file['size'])
+                                ? number_format((int)$file['size'] / 1024, 1) . ' KB'
+                                : '';
+                            $checkId  = 'del_' . $fileKey;
+                        ?>
+                        <div class="d-flex align-items-center mb-1" id="file-row-<?= $fileKey ?>">
+                            <?php // 削除しない場合は hidden で fileKey を送信する ?>
+                            <input
+                                type="hidden"
+                                name="existing_file_keys[]"
+                                value="<?= $fileKey ?>"
+                                id="hidden-<?= $fileKey ?>"
+                            >
+                            <i class="fas fa-paperclip mr-2 text-muted"></i>
+                            <span class="mr-2"><?= $fileName ?></span>
+                            <?php if ($fileSize) : ?>
+                                <small class="text-muted mr-3">(<?= $fileSize ?>)</small>
                             <?php endif; ?>
-                        </li>
+                            <button
+                                type="button"
+                                class="btn btn-xs btn-outline-danger"
+                                onclick="removeExistingFile('<?= $fileKey ?>')"
+                                title="削除"
+                                data-toggle="tooltip"
+                            >
+                                <i class="fas fa-times"></i> 削除
+                            </button>
+                        </div>
                     <?php endforeach; ?>
-                </ul>
+                </div>
             <?php else : ?>
-                <p class="form-control-plaintext text-muted">添付ファイルなし</p>
+                <p class="form-control-plaintext text-muted mb-1">添付ファイルなし</p>
             <?php endif; ?>
-            <small class="form-text text-muted">添付ファイルの追加・削除は kintone 画面から行ってください。</small>
+
+            <label class="mt-2">添付ファイル（新規追加）</label>
+            <div class="custom-file">
+                <input
+                    type="file"
+                    name="attachments[]"
+                    id="attachments"
+                    class="custom-file-input"
+                    multiple
+                >
+                <label class="custom-file-label" for="attachments">ファイルを選択...</label>
+            </div>
+            <small class="form-text text-muted">複数ファイルを同時に選択できます。</small>
         </div>
+
+        <script>
+        /**
+         * 既存ファイルの削除ボタンを押したときの処理
+         * - hidden input を削除することで POST 時に fileKey が送信されなくなる（= kintone 側で削除される）
+         * - 行全体を非表示にしてユーザーに削除済みであることを示す
+         */
+        function removeExistingFile(fileKey) {
+            const row    = document.getElementById('file-row-' + fileKey);
+            const hidden = document.getElementById('hidden-' + fileKey);
+            if (hidden) hidden.remove();
+            if (row)    row.style.display = 'none';
+        }
+
+        // custom-file-input のラベルにファイル名を表示する
+        document.getElementById('attachments').addEventListener('change', function () {
+            const files = Array.from(this.files).map(f => f.name).join(', ');
+            this.nextElementSibling.textContent = files || 'ファイルを選択...';
+        });
+        </script>
 
     </div>
 

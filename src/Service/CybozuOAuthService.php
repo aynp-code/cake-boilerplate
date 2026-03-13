@@ -33,7 +33,7 @@ use RuntimeException;
  */
 class CybozuOAuthService
 {
-    private const SCOPE = 'k:app_record:read k:app_record:write';
+    private const SCOPE = 'k:app_record:read k:app_record:write k:file:read k:file:write';
 
     /**
      * @param string $subdomain      例: 'example'（https://example.cybozu.com の場合）

@@ -16,16 +16,8 @@ use RuntimeException;
  * ## 設計方針
  *
  * - データ変換（normalize / extract）は SampleKintoneService が担う
- * - このコントローラは HTTP の入出力（リクエスト受付・リダイレクト・Flash）のみを担う
- * - 未連携エラー（KintoneNotLinkedException）は escape => false で Flash 表示し、連携ページへ誘導
- * - 通常の kintone API エラー（RuntimeException）は escape あり で Flash 表示
- *
- * ## 新しい kintone アプリのコントローラを作る場合
- *
- * このファイルをコピーして以下を変更してください。
- *   1. クラス名
- *   2. use している Service のクラス名（SampleKintoneService の部分）
- *   3. 各アクション内の new SampleKintoneService() の部分
+ * - このコントローラは HTTP の入出力のみを担う
+ * - 添付ファイルは uploadFiles() でアップロード後に fileKey を normalize*Data() に渡す
  */
 class SampleKintoneController extends AppController
 {
@@ -36,8 +28,6 @@ class SampleKintoneController extends AppController
 
     /**
      * 一覧
-     *
-     * GET /sample-kintone
      */
     public function index(CybozuOAuthService $cybozuService): void
     {
@@ -59,8 +49,6 @@ class SampleKintoneController extends AppController
 
     /**
      * 詳細
-     *
-     * GET /sample-kintone/view/{id}
      */
     public function view(CybozuOAuthService $cybozuService, int $id): void
     {
@@ -87,6 +75,11 @@ class SampleKintoneController extends AppController
      *
      * GET  /sample-kintone/add  → フォーム表示
      * POST /sample-kintone/add  → 登録実行
+     *
+     * 添付ファイルの流れ:
+     *   1. アップロードされたファイルを uploadFiles() で kintone に送信 → fileKey 取得
+     *   2. normalizePostData() に fileKey を渡してレコードデータを生成
+     *   3. create() でレコード登録（添付ファイルも含む）
      */
     public function add(CybozuOAuthService $cybozuService): void
     {
@@ -97,8 +90,18 @@ class SampleKintoneController extends AppController
 
         if ($this->request->is('post')) {
             try {
-                $client   = $this->makeKintoneClient($cybozuService);
-                $recordId = $service->create($client, $service->normalizePostData($this->request->getData()));
+                $client = $this->makeKintoneClient($cybozuService);
+
+                // ① 添付ファイルをアップロードして fileKey を取得
+                $uploadedFiles = $this->getUploadedFiles('attachments');
+                $fileKeys      = $service->uploadFiles($client, $uploadedFiles);
+
+                // ② レコード登録（fileKey を含む）
+                $recordId = $service->create(
+                    $client,
+                    $service->normalizePostData($this->request->getData(), $fileKeys)
+                );
+
                 $this->Flash->success(__('登録しました。（kintone レコード ID: {0}）', $recordId));
                 $this->redirect(['action' => 'index']);
                 return;
@@ -107,8 +110,8 @@ class SampleKintoneController extends AppController
             } catch (RuntimeException $e) {
                 $this->Flash->error(__('登録に失敗しました: {0}', $e->getMessage()));
             }
+
             // 登録失敗時：送信値をフォームに残す
-            // edit と同じく withParsedBody で Form->control() に値をセットする
             $this->request = $this->request->withParsedBody($this->request->getData());
         }
 
@@ -118,8 +121,15 @@ class SampleKintoneController extends AppController
     /**
      * 編集
      *
-     * GET  /sample-kintone/edit/{id}  → フォーム表示（既存値をプリフィル）
+     * GET  /sample-kintone/edit/{id}  → フォーム表示
      * POST /sample-kintone/edit/{id}  → 更新実行
+     *
+     * 添付ファイルの流れ:
+     *   1. フォームの hidden[existing_file_keys][] で「残す既存ファイルの fileKey」を受け取る
+     *      （削除したいファイルは hidden を削除してあるため送信されない）
+     *   2. 新規アップロードファイルを uploadFiles() で kintone に送信 → fileKey 取得
+     *   3. normalizeUpdateData() で 既存(残す分) + 新規 をマージ
+     *   4. update() でレコード更新（添付ファイルフィールドを上書き）
      */
     public function edit(CybozuOAuthService $cybozuService, int $id): void
     {
@@ -143,7 +153,17 @@ class SampleKintoneController extends AppController
 
         if ($this->request->is(['post', 'put', 'patch'])) {
             try {
-                $service->update($client, $id, $service->normalizeUpdateData($this->request->getData()));
+                // ① 新規アップロードファイルを kintone に送信
+                $uploadedFiles = $this->getUploadedFiles('attachments');
+                $fileKeys      = $service->uploadFiles($client, $uploadedFiles);
+
+                // ② レコード更新（既存ファイル保持 + 新規追加）
+                $service->update(
+                    $client,
+                    $id,
+                    $service->normalizeUpdateData($this->request->getData(), $fileKeys)
+                );
+
                 $this->Flash->success(__('更新しました。'));
                 $this->redirect(['action' => 'index']);
                 return;
@@ -157,7 +177,6 @@ class SampleKintoneController extends AppController
         }
 
         // Form->control() が既存値を自動選択できるようリクエストボディにセット
-        // POST失敗時は送信値を、GETアクセス時はkintone取得値を使う
         if (!$this->request->is(['post', 'put', 'patch'])) {
             $this->request = $this->request->withParsedBody($record);
         }
@@ -167,8 +186,6 @@ class SampleKintoneController extends AppController
 
     /**
      * 削除
-     *
-     * POST /sample-kintone/delete/{id}
      */
     public function delete(CybozuOAuthService $cybozuService, int $id): void
     {
@@ -196,11 +213,8 @@ class SampleKintoneController extends AppController
     /**
      * kintone クライアントを生成する。
      *
-     * 未連携の場合は KintoneNotLinkedException をスローする。
-     * この例外はコントローラ側で escape => false で Flash 表示する。
-     *
-     * @throws KintoneNotLinkedException  未連携の場合
-     * @throws RuntimeException           その他のエラー
+     * @throws KintoneNotLinkedException 未連携の場合
+     * @throws RuntimeException その他のエラー
      */
     private function makeKintoneClient(CybozuOAuthService $cybozuService): KintoneApiClientInterface
     {
@@ -214,5 +228,30 @@ class SampleKintoneController extends AppController
                 '<a href="/auth/cybozu/connect">こちら</a>から連携してください。'
             );
         }
+    }
+
+    /**
+     * アップロードされたファイルを取得する。
+     *
+     * $this->request->getUploadedFiles() はネストした配列を返すため、
+     * フィールド名を指定して UploadedFileInterface の配列を取り出す。
+     *
+     * @return array<int, \Psr\Http\Message\UploadedFileInterface>
+     */
+    private function getUploadedFiles(string $fieldName): array
+    {
+        $uploaded = $this->request->getUploadedFiles();
+        $files    = $uploaded[$fieldName] ?? [];
+
+        if (!is_array($files)) {
+            return [];
+        }
+
+        // 空ファイル（ファイル未選択）を除外
+        return array_values(array_filter(
+            $files,
+            fn($f) => $f instanceof \Psr\Http\Message\UploadedFileInterface
+                && $f->getError() === UPLOAD_ERR_OK
+        ));
     }
 }

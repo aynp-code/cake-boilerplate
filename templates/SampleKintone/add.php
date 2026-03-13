@@ -14,7 +14,7 @@ $this->Breadcrumbs->addMany([
 ?>
 
 <div class="card card-primary card-outline">
-    <?= $this->Form->create(null, ['url' => ['action' => 'add'], 'valueSources' => ['data', 'query', 'context']]) ?>
+    <?= $this->Form->create(null, ['url' => ['action' => 'add'], 'valueSources' => ['query', 'context']]) ?>
 
     <div class="card-body">
 
@@ -81,7 +81,29 @@ $this->Breadcrumbs->addMany([
             'rows'  => 4,
         ]) ?>
 
-        <?php // ⑩ 添付ファイルはkintone側で管理するためフォームには表示しない ?>
+        <?php // ⑩ 添付ファイル（複数選択可） ?>
+        <div class="form-group">
+            <label>添付ファイル</label>
+            <div class="custom-file">
+                <input
+                    type="file"
+                    name="attachments[]"
+                    id="attachments"
+                    class="custom-file-input"
+                    multiple
+                >
+                <label class="custom-file-label" for="attachments">ファイルを選択...</label>
+            </div>
+            <small class="form-text text-muted">複数ファイルを同時に選択できます。</small>
+        </div>
+
+        <script>
+        // custom-file-input のラベルにファイル名を表示する
+        document.getElementById('attachments').addEventListener('change', function () {
+            const files = Array.from(this.files).map(f => f.name).join(', ');
+            this.nextElementSibling.textContent = files || 'ファイルを選択...';
+        });
+        </script>
 
     </div>
 

@@ -28,6 +28,12 @@ use RuntimeException;
  *   $id      = $service->create($client, [...]);
  *   $service->update($client, 42, [...]);
  *   $service->delete($client, 42);
+ *
+ * ## 添付ファイル
+ *
+ *   // アップロード（複数可）
+ *   $fileKeys = $service->uploadFiles($client, $uploadedFiles);
+ *   // $data['attachments'] に fileKey の配列を渡すと toKintoneFields() で送信される
  */
 abstract class AbstractKintoneAppService
 {
@@ -35,22 +41,15 @@ abstract class AbstractKintoneAppService
     // 子クラスで実装するメソッド
     // =========================================================================
 
-    /**
-     * kintone アプリ ID
-     */
     abstract protected function appId(): int;
 
     /**
-     * kintone レコード配列 → アプリ内で扱う配列
-     *
-     * @param array<string, mixed> $kintoneRecord  kintone API のレコード1件
+     * @param array<string, mixed> $kintoneRecord
      * @return array<string, mixed>
      */
     abstract protected function toRecord(array $kintoneRecord): array;
 
     /**
-     * アプリ内データ → kintone フィールド形式
-     *
      * @param array<string, mixed> $data
      * @return array<string, array{value: mixed}>
      */
@@ -64,7 +63,7 @@ abstract class AbstractKintoneAppService
      * 1件取得
      *
      * @return array<string, mixed>
-     * @throws RuntimeException レコードが存在しない場合
+     * @throws RuntimeException
      */
     public function find(KintoneApiClientInterface $client, int $recordId): array
     {
@@ -85,9 +84,6 @@ abstract class AbstractKintoneAppService
     /**
      * 一覧取得
      *
-     * @param string $query  kintone クエリ文字列（例: 'order by $id desc'）
-     * @param int    $limit  最大取得件数（kintone 上限 500）
-     * @param int    $offset オフセット（ページング用）
      * @return array<int, array<string, mixed>>
      */
     public function findAll(
@@ -101,15 +97,12 @@ abstract class AbstractKintoneAppService
             'totalCount' => 'true',
         ];
 
-        if ($query !== '') {
-            $params['query'] = $query . " limit {$limit} offset {$offset}";
-        } else {
-            $params['query'] = "limit {$limit} offset {$offset}";
-        }
+        $params['query'] = $query !== ''
+            ? $query . " limit {$limit} offset {$offset}"
+            : "limit {$limit} offset {$offset}";
 
         $response = $client->get('/k/v1/records.json', $params);
-
-        $records = $response['records'] ?? [];
+        $records  = $response['records'] ?? [];
 
         if (!is_array($records)) {
             return [];
@@ -119,7 +112,7 @@ abstract class AbstractKintoneAppService
     }
 
     /**
-     * 件数取得（ページング用）
+     * 件数取得
      */
     public function count(KintoneApiClientInterface $client, string $query = ''): int
     {
@@ -129,16 +122,14 @@ abstract class AbstractKintoneAppService
             'query'      => $query !== '' ? $query . ' limit 1' : 'limit 1',
         ];
 
-        $response = $client->get('/k/v1/records.json', $params);
-
-        return (int)($response['totalCount'] ?? 0);
+        return (int)($client->get('/k/v1/records.json', $params)['totalCount'] ?? 0);
     }
 
     /**
      * 作成
      *
      * @param array<string, mixed> $data
-     * @return int  作成されたレコードの ID
+     * @return int 作成されたレコードID
      * @throws RuntimeException
      */
     public function create(KintoneApiClientInterface $client, array $data): int
@@ -163,7 +154,7 @@ abstract class AbstractKintoneAppService
      * kintone のレコード更新は PUT メソッドを使う。
      * POST で id を渡しても新規作成になるため注意。
      *
-     * @param array<string, mixed> $data  更新するフィールドのみ渡せばよい（部分更新）
+     * @param array<string, mixed> $data 更新するフィールドのみ渡せばよい（部分更新）
      * @throws RuntimeException
      */
     public function update(KintoneApiClientInterface $client, int $recordId, array $data): void
@@ -188,8 +179,53 @@ abstract class AbstractKintoneAppService
         ]);
     }
 
+    /**
+     * 添付ファイルをアップロードして fileKey の配列を返す
+     *
+     * CakePHP の $this->request->getUploadedFiles() で取得した
+     * UploadedFileInterface の配列をそのまま渡してください。
+     *
+     * @param array<int, \Psr\Http\Message\UploadedFileInterface> $uploadedFiles
+     * @return array<int, string>  fileKey の配列
+     * @throws RuntimeException
+     */
+    public function uploadFiles(KintoneApiClientInterface $client, array $uploadedFiles): array
+    {
+        $fileKeys = [];
+
+        foreach ($uploadedFiles as $uploadedFile) {
+            // エラーがある・空のファイルはスキップ
+            if ($uploadedFile->getError() !== UPLOAD_ERR_OK) {
+                continue;
+            }
+
+            $clientFilename = $uploadedFile->getClientFilename() ?? 'file';
+            $clientMimeType = $uploadedFile->getClientMediaType() ?? 'application/octet-stream';
+
+            // CakePHP の UploadedFile は getStream() でストリームを取得できるが
+            // curl の CURLFile はファイルパスが必要なため一時ファイルに書き出す
+            $tmpPath = tempnam(sys_get_temp_dir(), 'kintone_upload_');
+            if ($tmpPath === false) {
+                throw new RuntimeException('Failed to create temp file for upload.');
+            }
+
+            try {
+                $uploadedFile->moveTo($tmpPath);
+                $result     = $client->postFile($tmpPath, $clientFilename, $clientMimeType);
+                $fileKeys[] = $result['fileKey'];
+            } finally {
+                // 一時ファイルを確実に削除
+                if (file_exists($tmpPath)) {
+                    unlink($tmpPath);
+                }
+            }
+        }
+
+        return $fileKeys;
+    }
+
     // =========================================================================
-    // protected ヘルパー（子クラスから使える）
+    // protected ヘルパー
     // =========================================================================
 
     /**

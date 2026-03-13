@@ -19,29 +19,13 @@ namespace App\Service\Kintone;
  *  | 商品名        | 文字列（1行）    |                                     |
  *  | 価格          | 数値             | 必須、¥前付き                       |
  *  | 特記事項      | 文字列（複数行） |                                     |
- *  | 添付ファイル  | 添付ファイル     | 取得・表示のみ（アップロード未対応）|
- *
- * ## 別のアプリへの応用
- *
- * このクラスをコピーして以下を書き換えるだけで新しいアプリのサービスが完成します。
- *   - appId()
- *   - *_OPTIONS 定数
- *   - toRecord() のフィールドマッピング
- *   - toKintoneFields() のフィールドマッピング
- *   - normalizePostData() / normalizeUpdateData() のキー定義
- *
- * AbstractKintoneAppService / KintoneApiClient / CybozuOAuthService は一切触りません。
+ *  | 添付ファイル  | 添付ファイル     | アップロード・削除対応              |
  */
 class SampleKintoneService extends AbstractKintoneAppService
 {
-    /** 承認ドロップダウンの選択肢（kintone 側の設定と一致させること） */
     public const APPROVAL_OPTIONS = ['未承認', '承認'];
-
-    /** 種別ラジオボタンの選択肢（kintone 側の設定と一致させること） */
     public const CATEGORY_OPTIONS = ['什器', 'ソフトウェア', 'その他'];
-
-    /** タグチェックボックスの選択肢（kintone 側の設定と一致させること） */
-    public const TAG_OPTIONS = ['デスク', 'チェア', 'PC関連', '多機能', '人間工学', 'デザイン'];
+    public const TAG_OPTIONS      = ['デスク', 'チェア', 'PC関連', '多機能', '人間工学', 'デザイン'];
 
     protected function appId(): int
     {
@@ -56,17 +40,16 @@ class SampleKintoneService extends AbstractKintoneAppService
      */
     protected function toRecord(array $kintoneRecord): array
     {
-        // チェックボックスは value が文字列の配列で返ってくる
         $tags = $kintoneRecord['タグ']['value'] ?? [];
         if (!is_array($tags)) {
             $tags = [];
         }
 
-        // リンクフィールドの value は文字列で返ってくる
+        // リンクフィールドの value は文字列
         $urlValue   = $kintoneRecord['商品URL']['value'] ?? '';
         $productUrl = is_string($urlValue) ? $urlValue : '';
 
-        // 添付ファイルは value が [{fileKey, name, contentType, size}, ...] の配列
+        // 添付ファイルは [{fileKey, name, contentType, size}, ...] の配列
         $attachments = $kintoneRecord['添付ファイル']['value'] ?? [];
         if (!is_array($attachments)) {
             $attachments = [];
@@ -93,8 +76,8 @@ class SampleKintoneService extends AbstractKintoneAppService
     /**
      * アプリ内配列 → kintone フィールド形式
      *
-     * 渡されたキーのみ送信するため、部分更新（edit）にも対応しています。
-     * 添付ファイルはマルチパート送信が必要なため送信対象外とします。
+     * 添付ファイルは $data['attachments'] に fileKey の配列を渡すと送信される。
+     * キーが存在しない場合は送信しない（部分更新対応）。
      *
      * @param array<string, mixed> $data
      * @return array<string, array{value: mixed}>
@@ -112,17 +95,14 @@ class SampleKintoneService extends AbstractKintoneAppService
         }
 
         if (array_key_exists('tags', $data)) {
-            // チェックボックスは文字列の配列で渡す
             $fields['タグ'] = ['value' => (array)$data['tags']];
         }
 
         if (array_key_exists('release_date', $data)) {
-            // 日付は YYYY-MM-DD 形式、空の場合は null
             $fields['発売日'] = ['value' => $data['release_date'] !== '' ? $data['release_date'] : null];
         }
 
         if (array_key_exists('product_url', $data)) {
-            // リンクフィールドの value は文字列で渡す
             $fields['商品URL'] = ['value' => (string)($data['product_url'] ?? '')];
         }
 
@@ -135,7 +115,6 @@ class SampleKintoneService extends AbstractKintoneAppService
         }
 
         if (array_key_exists('price', $data)) {
-            // 数値フィールドは文字列で渡す（null は空文字）
             $fields['価格'] = ['value' => $data['price'] !== null ? (string)$data['price'] : ''];
         }
 
@@ -143,7 +122,16 @@ class SampleKintoneService extends AbstractKintoneAppService
             $fields['特記事項'] = ['value' => $data['notes']];
         }
 
-        // 添付ファイルはマルチパート送信が必要なため送信しない
+        if (array_key_exists('attachments', $data)) {
+            // kintone の添付ファイルは [{fileKey: '...'}] の配列形式で渡す
+            // 既存ファイルの保持と新規アップロードの両方を含む
+            $fields['添付ファイル'] = [
+                'value' => array_map(
+                    fn(string $key) => ['fileKey' => $key],
+                    (array)$data['attachments']
+                ),
+            ];
+        }
 
         return $fields;
     }
@@ -151,13 +139,13 @@ class SampleKintoneService extends AbstractKintoneAppService
     /**
      * 新規作成用 POST データ正規化（全フィールド）
      *
-     * コントローラから受け取った生のリクエストデータを
-     * create() に渡せる形に変換します。
+     * 添付ファイルの fileKey は別途 uploadFiles() で取得してから渡すこと。
      *
      * @param array<string, mixed> $requestData  $this->request->getData() の値
+     * @param array<int, string>   $fileKeys     アップロード済みファイルの fileKey 配列
      * @return array<string, mixed>
      */
-    public function normalizePostData(array $requestData): array
+    public function normalizePostData(array $requestData, array $fileKeys = []): array
     {
         return [
             'approval'     => (string)($requestData['approval'] ?? ''),
@@ -171,20 +159,28 @@ class SampleKintoneService extends AbstractKintoneAppService
                 ? (int)$requestData['price']
                 : null,
             'notes'        => (string)($requestData['notes'] ?? ''),
+            'attachments'  => $fileKeys,
         ];
     }
 
     /**
      * 更新用 POST データ正規化（型番を除外）
      *
-     * 型番は「値の重複禁止」フィールドのため、更新時に同じ値を送信すると
-     * kintone が重複エラーを返す。登録後は変更不可として更新データから除外する。
+     * 添付ファイルの扱い：
+     *   - $requestData['existing_file_keys'][]  → 削除されなかった既存ファイルの fileKey
+     *   - $fileKeys（引数）                     → 今回新規アップロードした fileKey
+     *   → 両者をマージして kintone に送信することで「残す既存 + 新規追加」が実現する
      *
      * @param array<string, mixed> $requestData  $this->request->getData() の値
+     * @param array<int, string>   $fileKeys     アップロード済みファイルの fileKey 配列
      * @return array<string, mixed>
      */
-    public function normalizeUpdateData(array $requestData): array
+    public function normalizeUpdateData(array $requestData, array $fileKeys = []): array
     {
+        // フォームの hidden で送られてきた「残す既存ファイル」の fileKey
+        $existingKeys = (array)($requestData['existing_file_keys'] ?? []);
+        $existingKeys = array_values(array_filter(array_map('strval', $existingKeys)));
+
         return [
             'approval'     => (string)($requestData['approval'] ?? ''),
             'category'     => $this->extractRadio($requestData, 'category', '什器'),
@@ -196,6 +192,8 @@ class SampleKintoneService extends AbstractKintoneAppService
                 ? (int)$requestData['price']
                 : null,
             'notes'        => (string)($requestData['notes'] ?? ''),
+            // 残す既存ファイル + 今回新規アップロード
+            'attachments'  => array_merge($existingKeys, $fileKeys),
         ];
     }
 
@@ -205,10 +203,6 @@ class SampleKintoneService extends AbstractKintoneAppService
 
     /**
      * ラジオボタンの値を取り出す。
-     *
-     * Form->control(type=>'radio') は通常 $data[$name] に文字列で入るが、
-     * CakePHP のバージョンや設定によって $data[$name]['_ids'][0] に入る場合もある。
-     * どちらでも正しく取り出せるように吸収する。
      *
      * @param array<string, mixed> $data
      */
@@ -229,9 +223,6 @@ class SampleKintoneService extends AbstractKintoneAppService
 
     /**
      * チェックボックスの値を配列で取り出す。
-     *
-     * Form->control(multiple=>'checkbox') は $data[$name] に配列で入るか、
-     * $data[$name]['_ids'] に入る場合がある。どちらでも正しく取り出せるように吸収する。
      *
      * @param array<string, mixed> $data
      * @return array<int, string>
