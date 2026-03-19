@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Entity;
 
+use Authentication\PasswordHasher\DefaultPasswordHasher;
 use Cake\ORM\Entity;
 
 /**
@@ -64,12 +65,19 @@ class User extends Entity
         'password',
     ];
 
-    protected function _setPassword($password)
+    /**
+     * Hash the password before setting it.
+     *
+     * @param string|null $password The password to hash.
+     * @return string|null
+     */
+    protected function _setPassword(?string $password): ?string
     {
         if ($password === null || $password === '') {
             // 空の場合は既存の値を維持（edit時に未入力でも上書きしない）
             return $this->_fields['password'] ?? null;
         }
-        return (new \Authentication\PasswordHasher\DefaultPasswordHasher())->hash($password);
+
+        return (new DefaultPasswordHasher())->hash($password);
     }
 }

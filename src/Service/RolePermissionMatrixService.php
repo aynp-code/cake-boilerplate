@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Model\Table\RolePermissionsTable;
-use Cake\Datasource\ResultSetInterface;
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\Utility\Text;
 
@@ -14,8 +13,11 @@ class RolePermissionMatrixService
 
     private const SEP = '||';
 
+    /**
+     * @param \App\Service\ControllerActionCatalog $catalog The controller action catalog.
+     */
     public function __construct(
-        private readonly ControllerActionCatalog $catalog = new ControllerActionCatalog()
+        private readonly ControllerActionCatalog $catalog = new ControllerActionCatalog(),
     ) {
     }
 
@@ -23,7 +25,7 @@ class RolePermissionMatrixService
      * 画面表示用の ViewModel を返す
      *
      * @return array{
-     *   roles: \Cake\Datasource\ResultSetInterface,
+     *   roles: \Cake\Datasource\ResultSetInterface<int, \App\Model\Entity\Role>,
      *   actionRows: array<int, array{plugin:?string,prefix:?string,controller:string,action:string}>,
      *   allowedMap: array<string, array<string, bool>>
      * }
@@ -34,7 +36,7 @@ class RolePermissionMatrixService
         /** @var \App\Model\Table\RolePermissionsTable $RolePermissions */
         $RolePermissions = $this->fetchTable('RolePermissions');
 
-        /** @var ResultSetInterface $roles */
+        /** @var \Cake\Datasource\ResultSetInterface<int, \App\Model\Entity\Role> $roles */
         $roles = $Roles->find()
             ->select(['id', 'display_name'])
             ->orderBy(['display_name' => 'ASC'])
@@ -51,8 +53,19 @@ class RolePermissionMatrixService
             ->all();
 
         foreach ($existing as $p) {
-            $key = $this->jsonKey($p->plugin, $p->prefix, (string)$p->controller, (string)$p->action);
-            $allowedMap[$key][(string)$p->role_id] = true;
+            if (!($p instanceof EntityInterface)) {
+                continue;
+            }
+
+            $pPlugin = $p->get('plugin');
+            $pPrefix = $p->get('prefix');
+            $key = $this->jsonKey(
+                is_string($pPlugin) ? $pPlugin : null,
+                is_string($pPrefix) ? $pPrefix : null,
+                (string)$p->get('controller'),
+                (string)$p->get('action'),
+            );
+            $allowedMap[$key][(string)$p->get('role_id')] = true;
         }
 
         return compact('roles', 'actionRows', 'allowedMap');
@@ -66,7 +79,7 @@ class RolePermissionMatrixService
     public function save(array $posted): void
     {
         $Roles = $this->fetchTable('Roles');
-        /** @var RolePermissionsTable $RolePermissions */
+        /** @var \App\Model\Table\RolePermissionsTable $RolePermissions */
         $RolePermissions = $this->fetchTable('RolePermissions');
 
         // roleId 一覧（表示順は不要）
@@ -86,12 +99,18 @@ class RolePermissionMatrixService
         /** @var array<string, true> $existingSet */
         $existingSet = [];
         foreach ($existing as $p) {
+            if (!($p instanceof EntityInterface)) {
+                continue;
+            }
+
+            $pPlugin = $p->get('plugin');
+            $pPrefix = $p->get('prefix');
             $cell = $this->cellKey(
-                (string)$p->role_id,
-                $p->plugin,
-                $p->prefix,
-                (string)$p->controller,
-                (string)$p->action
+                (string)$p->get('role_id'),
+                is_string($pPlugin) ? $pPlugin : null,
+                is_string($pPrefix) ? $pPrefix : null,
+                (string)$p->get('controller'),
+                (string)$p->get('action'),
             );
             $existingSet[$cell] = true;
         }
@@ -104,7 +123,11 @@ class RolePermissionMatrixService
             $rowKey = $this->rowKey($row['plugin'], $row['prefix'], $row['controller'], $row['action']);
 
             foreach ($roles as $role) {
-                $roleId = (string)$role->id;
+                if (!($role instanceof EntityInterface)) {
+                    continue;
+                }
+
+                $roleId = (string)$role->get('id');
 
                 // チェックONだけ採用（HTMLフォーム由来なので truthy 判定でOK）
                 if (empty($posted[$rowKey][$roleId])) {
@@ -155,6 +178,15 @@ class RolePermissionMatrixService
         $RolePermissions->bulkSyncAllowedTrue($rowsToInsert, $cellsToDelete);
     }
 
+    /**
+     * Build a row key for the permission matrix.
+     *
+     * @param string|null $plugin The plugin name.
+     * @param string|null $prefix The prefix.
+     * @param string $controller The controller name.
+     * @param string $action The action name.
+     * @return string
+     */
     private function rowKey(?string $plugin, ?string $prefix, string $controller, string $action): string
     {
         return implode(self::SEP, [
@@ -165,8 +197,23 @@ class RolePermissionMatrixService
         ]);
     }
 
-    private function cellKey(string $roleId, ?string $plugin, ?string $prefix, string $controller, string $action): string
-    {
+    /**
+     * Build a cell key for the permission matrix.
+     *
+     * @param string $roleId The role ID.
+     * @param string|null $plugin The plugin name.
+     * @param string|null $prefix The prefix.
+     * @param string $controller The controller name.
+     * @param string $action The action name.
+     * @return string
+     */
+    private function cellKey(
+        string $roleId,
+        ?string $plugin,
+        ?string $prefix,
+        string $controller,
+        string $action,
+    ): string {
         return implode(self::SEP, [
             $roleId,
             $plugin ?? '',
@@ -176,10 +223,20 @@ class RolePermissionMatrixService
         ]);
     }
 
+    /**
+     * Build a JSON key for the allowed map.
+     *
+     * @param string|null $plugin The plugin name.
+     * @param string|null $prefix The prefix.
+     * @param string $controller The controller name.
+     * @param string $action The action name.
+     * @return string
+     */
     private function jsonKey(?string $plugin, ?string $prefix, string $controller, string $action): string
     {
         // json_encode が false を返すケースを避ける（UTF-8前提だが保険）
         $json = json_encode([$plugin, $prefix, $controller, $action], JSON_UNESCAPED_UNICODE);
+
         return is_string($json) ? $json : '';
     }
 }

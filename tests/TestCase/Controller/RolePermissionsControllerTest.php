@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
-use App\Controller\RolePermissionsController;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
@@ -35,14 +34,14 @@ class RolePermissionsControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // テストユーザーとしてログイン
         $this->session([
             'Auth' => [
                 'id' => 'a64e238c-86dd-4d28-afca-b407993cdb24',
                 'username' => 'test_user',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
-            ]
+            ],
         ]);
     }
 

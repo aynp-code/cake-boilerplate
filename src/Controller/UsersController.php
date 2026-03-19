@@ -12,7 +12,12 @@ use Cake\Event\EventInterface;
  */
 class UsersController extends AppController
 {
-
+    /**
+     * Actions to perform before the controller action is run.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\Controller\Controller> $event The event object.
+     * @return void
+     */
     public function beforeFilter(EventInterface $event)
     {
         parent::beforeFilter($event);
@@ -40,7 +45,7 @@ class UsersController extends AppController
      * @return \Cake\Http\Response|null|void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view($id = null)
+    public function view(?string $id = null)
     {
         // ✅ 監査ユーザ（CreatedByUser/ModifiedByUser）は AppTable 側で contain を拡張して共通化
         $contain = $this->Users->withAuditUsersContain(['CreatedByUser', 'ModifiedByUser', 'Roles']);
@@ -81,7 +86,7 @@ class UsersController extends AppController
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function edit($id = null)
+    public function edit(?string $id = null)
     {
         $user = $this->Users->get($id, contain: []);
         $user->set('password', '');
@@ -108,7 +113,7 @@ class UsersController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete($id = null)
+    public function delete(?string $id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
         $user = $this->Users->get($id);
@@ -121,6 +126,11 @@ class UsersController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Login method.
+     *
+     * @return \Cake\Http\Response|null|void Redirects on successful login, renders view otherwise.
+     */
     public function login()
     {
         $this->request->allowMethod(['get', 'post']);
@@ -132,6 +142,7 @@ class UsersController extends AppController
                 'action' => 'display',
                 'home',
             ];
+
             return $this->redirect($target);
         }
         // 失敗時
@@ -140,10 +151,16 @@ class UsersController extends AppController
         }
     }
 
+    /**
+     * Logout method.
+     *
+     * @return \Cake\Http\Response|null Redirects to login page.
+     */
     public function logout()
     {
         $this->request->allowMethod(['post', 'get']);
         $this->Authentication->logout();
+
         return $this->redirect(['action' => 'login']);
     }
 }

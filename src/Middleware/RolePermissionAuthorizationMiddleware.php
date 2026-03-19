@@ -39,6 +39,13 @@ class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
         $this->skip = $skip;
     }
 
+    /**
+     * Process an incoming request and return a response.
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request The request.
+     * @param \Psr\Http\Server\RequestHandlerInterface $handler The request handler.
+     * @return \Psr\Http\Message\ResponseInterface
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!method_exists($request, 'getParam')) {
@@ -80,7 +87,7 @@ class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
         }
 
         $roleId = null;
-        if (method_exists($identity, 'get')) {
+        if (is_object($identity) && method_exists($identity, 'get')) {
             $roleId = $identity->get('role_id');
         }
 
@@ -89,10 +96,10 @@ class RolePermissionAuthorizationMiddleware implements MiddlewareInterface
         }
 
         $allowed = $this->checker->can($roleId, [
-            'plugin'     => $this->normalizer->normalizePlugin($request->getParam('plugin')),
-            'prefix'     => $this->normalizer->normalizePrefix($request->getParam('prefix')),
+            'plugin' => $this->normalizer->normalizePlugin($request->getParam('plugin')),
+            'prefix' => $this->normalizer->normalizePrefix($request->getParam('prefix')),
             'controller' => $controller,
-            'action'     => $action,
+            'action' => $action,
         ]);
 
         if (!$allowed) {

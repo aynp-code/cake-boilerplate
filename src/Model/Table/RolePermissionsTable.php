@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use ArrayObject;
 use Cake\Cache\Cache;
+use Cake\Database\Connection;
 use Cake\Datasource\ConnectionManager;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\EventInterface;
@@ -14,7 +16,6 @@ use Cake\Validation\Validator;
  * RolePermissions Model
  *
  * @property \App\Model\Table\RolesTable&\Cake\ORM\Association\BelongsTo $Roles
- *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
 class RolePermissionsTable extends AppTable
@@ -103,6 +104,12 @@ class RolePermissionsTable extends AppTable
         return $validator;
     }
 
+    /**
+     * Validation rules for create.
+     *
+     * @param \Cake\Validation\Validator $validator Validator instance.
+     * @return \Cake\Validation\Validator
+     */
     public function validationCreate(Validator $validator): Validator
     {
         return $this->validationDefault($validator);
@@ -116,12 +123,12 @@ class RolePermissionsTable extends AppTable
         $rules->add(
             $rules->isUnique(
                 ['role_id', 'plugin', 'prefix', 'controller', 'action'],
-                ['allowMultipleNulls' => true]
+                ['allowMultipleNulls' => true],
             ),
             [
                 'errorField' => 'role_id',
                 'message' => __('This combination of role_id, plugin, prefix, controller and action already exists'),
-            ]
+            ],
         );
 
         $rules->add($rules->existsIn(['role_id'], 'Roles'), ['errorField' => 'role_id']);
@@ -163,7 +170,15 @@ class RolePermissionsTable extends AppTable
         }
     }
 
-    public function afterSave(EventInterface $event, EntityInterface $entity, \ArrayObject $options): void
+    /**
+     * Invalidate role permission cache after save.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\ORM\Table> $event The event.
+     * @param \Cake\Datasource\EntityInterface $entity The entity that was saved.
+     * @param \ArrayObject<array-key, mixed> $options The options passed to save.
+     * @return void
+     */
+    public function afterSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
     {
         // bulkSyncAllowedTrue() では transaction 後にまとめて invalidate したいので抑止可能にする
         if (!empty($options[self::OPT_SKIP_ROLE_CACHE_INVALIDATION])) {
@@ -174,7 +189,15 @@ class RolePermissionsTable extends AppTable
         $this->invalidateRoleCache(is_string($roleId) ? $roleId : null);
     }
 
-    public function afterDelete(EventInterface $event, EntityInterface $entity, \ArrayObject $options): void
+    /**
+     * Invalidate role permission cache after delete.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\ORM\Table> $event The event.
+     * @param \Cake\Datasource\EntityInterface $entity The entity that was deleted.
+     * @param \ArrayObject<array-key, mixed> $options The options passed to delete.
+     * @return void
+     */
+    public function afterDelete(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
     {
         if (!empty($options[self::OPT_SKIP_ROLE_CACHE_INVALIDATION])) {
             return;
@@ -201,7 +224,9 @@ class RolePermissionsTable extends AppTable
      */
     public function bulkSyncAllowedTrue(array $rowsToInsert, array $cellsToDelete): void
     {
+        /** @var \Cake\Database\Connection $conn */
         $conn = ConnectionManager::get('default');
+        assert($conn instanceof Connection);
 
         // 変更があった roleId だけ invalidate する（重複除去）
         $touchedRoleIds = [];

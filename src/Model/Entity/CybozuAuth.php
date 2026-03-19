@@ -5,6 +5,7 @@ namespace App\Model\Entity;
 
 use Cake\ORM\Entity;
 use Cake\Utility\Security;
+use Throwable;
 
 /**
  * CybozuAuth Entity
@@ -31,16 +32,16 @@ class CybozuAuth extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        'user_id'       => true,
-        'access_token'  => true,
+        'user_id' => true,
+        'access_token' => true,
         'refresh_token' => true,
-        'expires_at'    => true,
-        'scope'         => true,
-        'created'       => true,
-        'created_by'    => true,
-        'modified'      => true,
-        'modified_by'   => true,
-        'user'          => true,
+        'expires_at' => true,
+        'scope' => true,
+        'created' => true,
+        'created_by' => true,
+        'modified' => true,
+        'modified_by' => true,
+        'user' => true,
     ];
 
     /**
@@ -83,6 +84,7 @@ class CybozuAuth extends Entity
         if ($this->expires_at === null) {
             return false;
         }
+
         return $this->expires_at->isFuture()
             && $this->expires_at->diffInSeconds() > 60;
     }
@@ -91,6 +93,12 @@ class CybozuAuth extends Entity
     // private helpers
     // -----------------------------------------------------------------------
 
+    /**
+     * Encrypt a plain text value for storage.
+     *
+     * @param string $plain The plain text to encrypt.
+     * @return string
+     */
     private function encrypt(string $plain): string
     {
         // 空文字はそのまま（暗号化済みかどうかの判定用）
@@ -101,9 +109,16 @@ class CybozuAuth extends Entity
         if ($this->looksEncrypted($plain)) {
             return $plain;
         }
+
         return base64_encode(Security::encrypt($plain, Security::getSalt()));
     }
 
+    /**
+     * Decrypt a cipher text value from storage.
+     *
+     * @param string $cipher The cipher text to decrypt.
+     * @return string
+     */
     private function decrypt(string $cipher): string
     {
         if ($cipher === '') {
@@ -115,8 +130,9 @@ class CybozuAuth extends Entity
                 return $cipher; // すでに平文の場合（テスト等）
             }
             $plain = Security::decrypt($decoded, Security::getSalt());
+
             return $plain ?? $cipher;
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return $cipher;
         }
     }

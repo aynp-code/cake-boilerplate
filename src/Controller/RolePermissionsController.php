@@ -14,6 +14,11 @@ class RolePermissionsController extends AppController
 {
     private RolePermissionMatrixService $matrixService;
 
+    /**
+     * Initialization hook method.
+     *
+     * @return void
+     */
     public function initialize(): void
     {
         parent::initialize();
@@ -47,7 +52,7 @@ class RolePermissionsController extends AppController
      * @return \Cake\Http\Response|null|void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view($id = null)
+    public function view(?string $id = null)
     {
         // ✅ 監査ユーザ（CreatedByUser/ModifiedByUser）は AppTable 側で contain を拡張して共通化
         $contain = $this->RolePermissions->withAuditUsersContain(['Roles']);
@@ -69,11 +74,12 @@ class RolePermissionsController extends AppController
             $rolePermission = $this->RolePermissions->patchEntity(
                 $rolePermission,
                 $this->request->getData(),
-                ['validate' => 'create']
+                ['validate' => 'create'],
             );
 
             if ($this->RolePermissions->save($rolePermission)) {
                 $this->Flash->success(__('The role permission has been saved.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -91,7 +97,7 @@ class RolePermissionsController extends AppController
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function edit($id = null)
+    public function edit(?string $id = null)
     {
         $rolePermission = $this->RolePermissions->get($id, contain: []);
 
@@ -102,6 +108,7 @@ class RolePermissionsController extends AppController
 
             if ($this->RolePermissions->save($rolePermission)) {
                 $this->Flash->success(__('The role permission has been saved.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -119,7 +126,7 @@ class RolePermissionsController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete($id = null)
+    public function delete(?string $id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
 
@@ -134,6 +141,11 @@ class RolePermissionsController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Matrix method - display and save the permission matrix.
+     *
+     * @return \Cake\Http\Response|null|void Redirects on successful save, renders view otherwise.
+     */
     public function matrix()
     {
         if ($this->request->is('post')) {
@@ -141,6 +153,7 @@ class RolePermissionsController extends AppController
             $this->matrixService->save((array)$perm);
 
             $this->Flash->success(__('Permissions updated.'));
+
             return $this->redirect(['action' => 'matrix']);
         }
 

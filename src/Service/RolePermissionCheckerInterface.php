@@ -8,7 +8,7 @@ interface RolePermissionCheckerInterface
     /**
      * 指定ロールが対象アクションを実行できるか判定する。
      *
-     * @param array{plugin?:?string,prefix?:?string,controller:string,action:string} $target
+     * @param array<string, mixed> $target
      */
     public function can(string $roleId, array $target): bool;
 

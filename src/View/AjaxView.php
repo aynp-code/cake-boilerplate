@@ -34,7 +34,7 @@ class AjaxView extends AppView
 
         $this->setLayout('ajax');
         $this->setResponse(
-            $this->getResponse()->withType('ajax')
+            $this->getResponse()->withType('ajax'),
         );
     }
 }

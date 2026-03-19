@@ -37,6 +37,10 @@ use Cake\Log\Log;
  * ],
  * ```
  */
+/**
+ * @property \Cake\Http\ServerRequest $request
+ * @property \Cake\Http\Response $response
+ */
 class KintoneWebhookController extends Controller
 {
     /**

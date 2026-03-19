@@ -3,16 +3,15 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Query\SelectQuery;
+use ArrayObject;
+use Cake\Event\EventInterface;
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 /**
  * Users Model
  *
  * @property \App\Model\Table\RolesTable&\Cake\ORM\Association\BelongsTo $Roles
- *
  * @method \App\Model\Entity\User newEmptyEntity()
  * @method \App\Model\Entity\User newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\User> newEntities(array $data, array $options = [])
@@ -26,7 +25,6 @@ use Cake\Validation\Validator;
  * @method iterable<\App\Model\Entity\User>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\User> saveManyOrFail(iterable $entities, array $options = [])
  * @method iterable<\App\Model\Entity\User>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\User>|false deleteMany(iterable $entities, array $options = [])
  * @method iterable<\App\Model\Entity\User>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\User> deleteManyOrFail(iterable $entities, array $options = [])
- *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
 class UsersTable extends AppTable
@@ -35,7 +33,7 @@ class UsersTable extends AppTable
      * 関連データがある場合は削除を禁止する
      * DeleteGuardBehavior が beforeDelete で参照し、関連レコードが残っていれば削除を止める。
      *
-     * @return string[]
+     * @return array<string>
      */
     public function restrictDeleteAssociations(): array
     {
@@ -58,7 +56,7 @@ class UsersTable extends AppTable
         $this->setTable('users');
         $this->setDisplayField('display_name');
         $this->setPrimaryKey('id');
-                
+
         $this->belongsTo('Roles', [
             'foreignKey' => 'role_id',
             'joinType' => 'INNER',
@@ -66,11 +64,10 @@ class UsersTable extends AppTable
 
         $this->hasOne('CybozuAuths', [
             'foreignKey' => 'user_id',
-            'dependent'  => true, // ユーザ削除時に連動削除
+            'dependent' => true, // ユーザ削除時に連動削除
         ]);
     }
 
-    
     /**
      * Default validation rules.
      *
@@ -112,7 +109,7 @@ class UsersTable extends AppTable
 
         $validator
             ->boolean('is_kintone_linked')
-            ->allowEmptyString ('is_kintone_linked');
+            ->allowEmptyString('is_kintone_linked');
 
         $validator
             ->uuid('role_id')
@@ -144,7 +141,6 @@ class UsersTable extends AppTable
         return $validator;
     }
 
-    
     /**
      * Validation rules for create.
      *
@@ -173,13 +169,24 @@ class UsersTable extends AppTable
     {
         $rules->add($rules->isUnique(['username']), ['errorField' => 'username']);
         $rules->add($rules->isUnique(['email']), ['errorField' => 'email']);
-        $rules->add($rules->isUnique(['kintone_username'], ['allowMultipleNulls' => true]), ['errorField' => 'kintone_username']);
+        $rules->add(
+            $rules->isUnique(['kintone_username'], ['allowMultipleNulls' => true]),
+            ['errorField' => 'kintone_username'],
+        );
         $rules->add($rules->existsIn(['role_id'], 'Roles'), ['errorField' => 'role_id']);
 
         return $rules;
     }
 
-    public function beforeMarshal(\Cake\Event\EventInterface $event, \ArrayObject $data, \ArrayObject $options): void
+    /**
+     * Remove empty password from data before marshalling.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\ORM\Table> $event The event.
+     * @param \ArrayObject<array-key, mixed> $data The data being marshalled.
+     * @param \ArrayObject<array-key, mixed> $options The marshalling options.
+     * @return void
+     */
+    public function beforeMarshal(EventInterface $event, ArrayObject $data, ArrayObject $options): void
     {
         // 空文字の password はリクエストから取り除く（edit時の「未入力は更新しない」実現）
         if (array_key_exists('password', (array)$data) && $data['password'] === '') {

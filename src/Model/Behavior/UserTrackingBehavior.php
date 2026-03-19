@@ -20,6 +20,11 @@ class UserTrackingBehavior extends Behavior
 {
     protected array $_defaultConfig = [];
 
+    /**
+     * Returns the events this behavior listens to.
+     *
+     * @return array<string, mixed>
+     */
     public function implementedEvents(): array
     {
         return [
@@ -35,9 +40,9 @@ class UserTrackingBehavior extends Behavior
      * 実装差異や型の取り扱いで崩れると補完が効かず必須バリデーションで落ちるため、
      * ここは堅く書く。
      *
-     * @param \Cake\Event\EventInterface $event
-     * @param \ArrayObject $data
-     * @param \ArrayObject $options
+     * @param \Cake\Event\EventInterface<\Cake\ORM\Table> $event
+     * @param \ArrayObject<array-key, mixed> $data
+     * @param \ArrayObject<array-key, mixed> $options
      */
     public function beforeMarshal(EventInterface $event, ArrayObject $data, ArrayObject $options): void
     {
@@ -71,9 +76,9 @@ class UserTrackingBehavior extends Behavior
     /**
      * beforeSave: 予備措置（Entityが直接作られたケース）
      *
-     * @param \Cake\Event\EventInterface $event
+     * @param \Cake\Event\EventInterface<\Cake\ORM\Table> $event
      * @param \Cake\Datasource\EntityInterface $entity
-     * @param \ArrayObject $options
+     * @param \ArrayObject<array-key, mixed> $options
      */
     public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
     {

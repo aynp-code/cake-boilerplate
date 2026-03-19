@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use Cake\Core\Configure;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Throwable;
 
 /**
  * CurrentUser middleware
@@ -44,10 +46,17 @@ class CurrentUserMiddleware implements MiddlewareInterface
     public const ATTRIBUTE = 'currentUser';
 
     // 暫定的な後方互換キー（UserTrackingBehavior 移行後に削除）
-    private const LEGACY_KEY_ID           = 'Auth.User.id';
-    private const LEGACY_KEY_ROLE_ID      = 'Auth.User.role_id';
+    private const LEGACY_KEY_ID = 'Auth.User.id';
+    private const LEGACY_KEY_ROLE_ID = 'Auth.User.role_id';
     private const LEGACY_KEY_DISPLAY_NAME = 'Auth.User.display_name';
 
+    /**
+     * Process an incoming request and return a response.
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request The request.
+     * @param \Psr\Http\Server\RequestHandlerInterface $handler The request handler.
+     * @return \Psr\Http\Message\ResponseInterface
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $identity = $request->getAttribute('identity');
@@ -61,24 +70,24 @@ class CurrentUserMiddleware implements MiddlewareInterface
 
         // Request Attribute として伝播（スコープはこのリクエストのみ）
         $request = $request->withAttribute(self::ATTRIBUTE, [
-            'id'           => $userId,
-            'role_id'      => $roleId,
+            'id' => $userId,
+            'role_id' => $roleId,
             'display_name' => $displayName,
         ]);
 
         // 後方互換: UserTrackingBehavior が Configure::read() を使っているため暫定で残す
         // TODO: UserTrackingBehavior を Request Attribute ベースに移行したら削除
-        \Cake\Core\Configure::write(self::LEGACY_KEY_ID, $userId);
-        \Cake\Core\Configure::write(self::LEGACY_KEY_ROLE_ID, $roleId);
-        \Cake\Core\Configure::write(self::LEGACY_KEY_DISPLAY_NAME, $displayName);
+        Configure::write(self::LEGACY_KEY_ID, $userId);
+        Configure::write(self::LEGACY_KEY_ROLE_ID, $roleId);
+        Configure::write(self::LEGACY_KEY_DISPLAY_NAME, $displayName);
 
         try {
             return $handler->handle($request);
         } finally {
             // 長寿命プロセス対策: 必ず掃除
-            \Cake\Core\Configure::delete(self::LEGACY_KEY_ID);
-            \Cake\Core\Configure::delete(self::LEGACY_KEY_ROLE_ID);
-            \Cake\Core\Configure::delete(self::LEGACY_KEY_DISPLAY_NAME);
+            Configure::delete(self::LEGACY_KEY_ID);
+            Configure::delete(self::LEGACY_KEY_ROLE_ID);
+            Configure::delete(self::LEGACY_KEY_DISPLAY_NAME);
         }
     }
 
@@ -89,19 +98,19 @@ class CurrentUserMiddleware implements MiddlewareInterface
      */
     private function extractUserData(mixed $identity): array
     {
-        $userId      = null;
-        $roleId      = null;
+        $userId = null;
+        $roleId = null;
         $displayName = null;
 
         try {
-            if (method_exists($identity, 'getIdentifier')) {
+            if (is_object($identity) && method_exists($identity, 'getIdentifier')) {
                 $v = $identity->getIdentifier();
                 if (is_scalar($v) || (is_object($v) && method_exists($v, '__toString'))) {
                     $userId = (string)$v;
                 }
             }
 
-            if (method_exists($identity, 'get')) {
+            if (is_object($identity) && method_exists($identity, 'get')) {
                 $r = $identity->get('role_id');
                 if (is_scalar($r) || (is_object($r) && method_exists($r, '__toString'))) {
                     $roleId = (string)$r;
@@ -112,7 +121,7 @@ class CurrentUserMiddleware implements MiddlewareInterface
                     $displayName = (string)$d;
                 }
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // identity の不正な実装で落とさない
         }
 

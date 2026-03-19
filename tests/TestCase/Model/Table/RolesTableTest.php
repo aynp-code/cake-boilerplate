@@ -5,6 +5,7 @@ namespace App\Test\TestCase\Model\Table;
 
 use App\Model\Table\RolesTable;
 use Cake\TestSuite\TestCase;
+use Cake\Utility\Text;
 
 /**
  * App\Model\Table\RolesTable Test Case
@@ -61,7 +62,7 @@ class RolesTableTest extends TestCase
      */
     public function testRestrictDeleteAssociations(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\RolesTable::class, $this->Roles);
+        $this->assertInstanceOf(RolesTable::class, $this->Roles);
     }
 
     /**
@@ -76,8 +77,8 @@ class RolesTableTest extends TestCase
         $entity = $this->Roles->patchEntity($entity, [
             'display_name' => 'Test Role',
             'description' => 'Test Description',
-            'created_by' => \Cake\Utility\Text::uuid(),
-            'modified_by' => \Cake\Utility\Text::uuid(),
+            'created_by' => Text::uuid(),
+            'modified_by' => Text::uuid(),
         ]);
 
         $this->assertEmpty($entity->getErrors());
@@ -91,7 +92,7 @@ class RolesTableTest extends TestCase
      */
     public function testValidationCreate(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\RolesTable::class, $this->Roles);
+        $this->assertInstanceOf(RolesTable::class, $this->Roles);
     }
 
     /**
@@ -102,6 +103,6 @@ class RolesTableTest extends TestCase
      */
     public function testBuildRules(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\RolesTable::class, $this->Roles);
+        $this->assertInstanceOf(RolesTable::class, $this->Roles);
     }
 }

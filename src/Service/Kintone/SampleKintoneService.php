@@ -25,8 +25,13 @@ class SampleKintoneService extends AbstractKintoneAppService
 {
     public const APPROVAL_OPTIONS = ['未承認', '承認'];
     public const CATEGORY_OPTIONS = ['什器', 'ソフトウェア', 'その他'];
-    public const TAG_OPTIONS      = ['デスク', 'チェア', 'PC関連', '多機能', '人間工学', 'デザイン'];
+    public const TAG_OPTIONS = ['デスク', 'チェア', 'PC関連', '多機能', '人間工学', 'デザイン'];
 
+    /**
+     * Return the kintone app ID.
+     *
+     * @return int
+     */
     protected function appId(): int
     {
         return 11;
@@ -46,7 +51,7 @@ class SampleKintoneService extends AbstractKintoneAppService
         }
 
         // リンクフィールドの value は文字列
-        $urlValue   = $kintoneRecord['商品URL']['value'] ?? '';
+        $urlValue = $kintoneRecord['商品URL']['value'] ?? '';
         $productUrl = is_string($urlValue) ? $urlValue : '';
 
         // 添付ファイルは [{fileKey, name, contentType, size}, ...] の配列
@@ -56,20 +61,20 @@ class SampleKintoneService extends AbstractKintoneAppService
         }
 
         return [
-            'id'           => (int)$this->value($kintoneRecord, '$id', 0),
-            'revision'     => (int)$this->value($kintoneRecord, '$revision', 0),
-            'approval'     => (string)$this->value($kintoneRecord, '承認', ''),
-            'category'     => (string)$this->value($kintoneRecord, '種別', '什器'),
-            'tags'         => $tags,
+            'id' => (int)$this->value($kintoneRecord, '$id', 0),
+            'revision' => (int)$this->value($kintoneRecord, '$revision', 0),
+            'approval' => (string)$this->value($kintoneRecord, '承認', ''),
+            'category' => (string)$this->value($kintoneRecord, '種別', '什器'),
+            'tags' => $tags,
             'release_date' => (string)$this->value($kintoneRecord, '発売日', ''),
-            'product_url'  => $productUrl,
+            'product_url' => $productUrl,
             'model_number' => (string)$this->value($kintoneRecord, '型番', ''),
             'product_name' => (string)$this->value($kintoneRecord, '商品名', ''),
-            'price'        => $this->value($kintoneRecord, '価格') !== null
+            'price' => $this->value($kintoneRecord, '価格') !== null
                 ? (int)$this->value($kintoneRecord, '価格')
                 : null,
-            'notes'        => (string)$this->value($kintoneRecord, '特記事項', ''),
-            'attachments'  => $attachments,
+            'notes' => (string)$this->value($kintoneRecord, '特記事項', ''),
+            'attachments' => $attachments,
         ];
     }
 
@@ -128,7 +133,7 @@ class SampleKintoneService extends AbstractKintoneAppService
             $fields['添付ファイル'] = [
                 'value' => array_map(
                     fn(string $key) => ['fileKey' => $key],
-                    (array)$data['attachments']
+                    (array)$data['attachments'],
                 ),
             ];
         }
@@ -148,18 +153,18 @@ class SampleKintoneService extends AbstractKintoneAppService
     public function normalizePostData(array $requestData, array $fileKeys = []): array
     {
         return [
-            'approval'     => (string)($requestData['approval'] ?? ''),
-            'category'     => $this->extractRadio($requestData, 'category', '什器'),
-            'tags'         => $this->extractCheckbox($requestData, 'tags'),
+            'approval' => (string)($requestData['approval'] ?? ''),
+            'category' => $this->extractRadio($requestData, 'category', '什器'),
+            'tags' => $this->extractCheckbox($requestData, 'tags'),
             'release_date' => (string)($requestData['release_date'] ?? ''),
-            'product_url'  => (string)($requestData['product_url'] ?? ''),
+            'product_url' => (string)($requestData['product_url'] ?? ''),
             'model_number' => (string)($requestData['model_number'] ?? ''),
             'product_name' => (string)($requestData['product_name'] ?? ''),
-            'price'        => isset($requestData['price']) && $requestData['price'] !== ''
+            'price' => isset($requestData['price']) && $requestData['price'] !== ''
                 ? (int)$requestData['price']
                 : null,
-            'notes'        => (string)($requestData['notes'] ?? ''),
-            'attachments'  => $fileKeys,
+            'notes' => (string)($requestData['notes'] ?? ''),
+            'attachments' => $fileKeys,
         ];
     }
 
@@ -182,19 +187,18 @@ class SampleKintoneService extends AbstractKintoneAppService
         $existingKeys = array_values(array_filter(array_map('strval', $existingKeys)));
 
         return [
-            'approval'     => (string)($requestData['approval'] ?? ''),
-            'category'     => $this->extractRadio($requestData, 'category', '什器'),
-            'tags'         => $this->extractCheckbox($requestData, 'tags'),
+            'approval' => (string)($requestData['approval'] ?? ''),
+            'category' => $this->extractRadio($requestData, 'category', '什器'),
+            'tags' => $this->extractCheckbox($requestData, 'tags'),
             'release_date' => (string)($requestData['release_date'] ?? ''),
-            'product_url'  => (string)($requestData['product_url'] ?? ''),
+            'product_url' => (string)($requestData['product_url'] ?? ''),
             'product_name' => (string)($requestData['product_name'] ?? ''),
-            'price'        => isset($requestData['price']) && $requestData['price'] !== ''
+            'price' => isset($requestData['price']) && $requestData['price'] !== ''
                 ? (int)$requestData['price']
                 : null,
-            'notes'        => (string)($requestData['notes'] ?? ''),
+            'notes' => (string)($requestData['notes'] ?? ''),
             // 残す既存ファイル + 今回新規アップロード
-            'attachments'  => array_merge($existingKeys, $fileKeys),
+            'attachments' => array_merge($existingKeys, $fileKeys),
         ];
     }
-
 }

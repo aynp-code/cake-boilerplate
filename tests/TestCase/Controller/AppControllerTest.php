@@ -19,7 +19,7 @@ class AppControllerTest extends TestCase
         // so we only assert here.
         $this->assertTrue(
             $controller->components()->has('Flash'),
-            'AppController should load the Flash component.'
+            'AppController should load the Flash component.',
         );
     }
 }

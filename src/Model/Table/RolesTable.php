@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 /**
@@ -13,7 +11,6 @@ use Cake\Validation\Validator;
  *
  * @property \App\Model\Table\RolePermissionsTable&\Cake\ORM\Association\HasMany $RolePermissions
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\HasMany $Users
- *
  * @method \App\Model\Entity\Role newEmptyEntity()
  * @method \App\Model\Entity\Role newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Role> newEntities(array $data, array $options = [])
@@ -27,7 +24,6 @@ use Cake\Validation\Validator;
  * @method iterable<\App\Model\Entity\Role>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\Role> saveManyOrFail(iterable $entities, array $options = [])
  * @method iterable<\App\Model\Entity\Role>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\Role>|false deleteMany(iterable $entities, array $options = [])
  * @method iterable<\App\Model\Entity\Role>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\Role> deleteManyOrFail(iterable $entities, array $options = [])
- *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
 class RolesTable extends AppTable
@@ -36,13 +32,13 @@ class RolesTable extends AppTable
      * 関連データがある場合は削除を禁止する
      * DeleteGuardBehavior が beforeDelete で参照し、関連レコードが残っていれば削除を止める。
      *
-     * @return string[]
+     * @return array<string>
      */
     public function restrictDeleteAssociations(): array
     {
         return [
             // 関連（hasMany / hasOne / belongsToMany 等）をここに追加します。
-                                
+
             // 'RolePermissions',
             // 'Users',
         ];
@@ -61,7 +57,7 @@ class RolesTable extends AppTable
         $this->setTable('roles');
         $this->setDisplayField('display_name');
         $this->setPrimaryKey('id');
-                
+
         $this->hasMany('RolePermissions', [
             'foreignKey' => 'role_id',
         ]);
@@ -70,7 +66,6 @@ class RolesTable extends AppTable
         ]);
     }
 
-    
     /**
      * Default validation rules.
      *
@@ -101,11 +96,9 @@ class RolesTable extends AppTable
             ->requirePresence('modified_by', 'create')
             ->notEmptyString('modified_by');
 
-
         return $validator;
     }
 
-    
     /**
      * Validation rules for create.
      *

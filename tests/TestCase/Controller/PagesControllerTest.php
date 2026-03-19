@@ -47,14 +47,14 @@ class PagesControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // テストユーザーとしてログイン
         $this->session([
             'Auth' => [
                 'id' => 'a64e238c-86dd-4d28-afca-b407993cdb24',
                 'username' => 'Lorem ipsum dolor sit amet',
                 'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
-            ]
+            ],
         ]);
     }
 

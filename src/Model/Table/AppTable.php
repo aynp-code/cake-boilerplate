@@ -8,6 +8,12 @@ use Cake\ORM\Table;
 
 class AppTable extends Table
 {
+    /**
+     * Initialize method.
+     *
+     * @param array<string, mixed> $config The configuration for the Table.
+     * @return void
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -58,7 +64,7 @@ class AppTable extends Table
      */
     public function withAuditUsersContain(
         array $contain = [],
-        array $relatedTypes = ['HasMany', 'BelongsToMany']
+        array $relatedTypes = ['HasMany', 'BelongsToMany'],
     ): array {
         // 自テーブル側の監査ユーザ
         $contain = $this->addAuditUsersToContain($contain);
@@ -103,9 +109,9 @@ class AppTable extends Table
      * Finder: find('withAuditUsers', contain: [...]) で使えます。
      * view などで監査ユーザの表示名を関連側も含めて取る用途向け。
      *
-     * @param \Cake\ORM\Query\SelectQuery $query
+     * @param \Cake\ORM\Query\SelectQuery<\Cake\Datasource\EntityInterface> $query
      * @param array<string, mixed> $options
-     * @return \Cake\ORM\Query\SelectQuery
+     * @return \Cake\ORM\Query\SelectQuery<\Cake\Datasource\EntityInterface>
      */
     public function findWithAuditUsers(SelectQuery $query, array $options): SelectQuery
     {
@@ -128,14 +134,16 @@ class AppTable extends Table
      */
     protected function addAuditUsersToContain(array $contain): array
     {
-        if ($this->hasAssociation('CreatedByUser')
+        if (
+            $this->hasAssociation('CreatedByUser')
             && !in_array('CreatedByUser', $contain, true)
             && !array_key_exists('CreatedByUser', $contain)
         ) {
             $contain[] = 'CreatedByUser';
         }
 
-        if ($this->hasAssociation('ModifiedByUser')
+        if (
+            $this->hasAssociation('ModifiedByUser')
             && !in_array('ModifiedByUser', $contain, true)
             && !array_key_exists('ModifiedByUser', $contain)
         ) {

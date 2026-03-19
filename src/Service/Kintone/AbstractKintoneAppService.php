@@ -21,11 +21,11 @@ use RuntimeException;
  * ## CRUD
  *
  *   $service = new SampleKintoneService();
- *   $client  = $cybozuOAuthService->makeKintoneClient($userId);
+ *   $client = $cybozuOAuthService->makeKintoneClient($userId);
  *
- *   $list    = $service->findAll($client);
- *   $record  = $service->find($client, 42);
- *   $id      = $service->create($client, [...]);
+ *   $list = $service->findAll($client);
+ *   $record = $service->find($client, 42);
+ *   $id = $service->create($client, [...]);
  *   $service->update($client, 42, [...]);
  *   $service->delete($client, 42);
  *
@@ -47,6 +47,11 @@ abstract class AbstractKintoneAppService
     // 子クラスで実装するメソッド
     // =========================================================================
 
+    /**
+     * Return the kintone app ID for this service.
+     *
+     * @return int
+     */
     abstract protected function appId(): int;
 
     /**
@@ -69,13 +74,13 @@ abstract class AbstractKintoneAppService
      * 1件取得
      *
      * @return array<string, mixed>
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function find(KintoneApiClientInterface $client, int $recordId): array
     {
         $response = $client->get('/k/v1/record.json', [
             'app' => $this->appId(),
-            'id'  => $recordId,
+            'id' => $recordId,
         ]);
 
         $record = $response['record'] ?? null;
@@ -99,7 +104,7 @@ abstract class AbstractKintoneAppService
         int $offset = 0,
     ): array {
         $params = [
-            'app'        => $this->appId(),
+            'app' => $this->appId(),
             'totalCount' => 'true',
         ];
 
@@ -108,7 +113,7 @@ abstract class AbstractKintoneAppService
             : "limit {$limit} offset {$offset}";
 
         $response = $client->get('/k/v1/records.json', $params);
-        $records  = $response['records'] ?? [];
+        $records = $response['records'] ?? [];
 
         if (!is_array($records)) {
             return [];
@@ -119,13 +124,17 @@ abstract class AbstractKintoneAppService
 
     /**
      * 件数取得
+     *
+     * @param \App\Service\KintoneApiClientInterface $client The kintone API client.
+     * @param string $query The kintone query string.
+     * @return int
      */
     public function count(KintoneApiClientInterface $client, string $query = ''): int
     {
         $params = [
-            'app'        => $this->appId(),
+            'app' => $this->appId(),
             'totalCount' => 'true',
-            'query'      => $query !== '' ? $query . ' limit 1' : 'limit 1',
+            'query' => $query !== '' ? $query . ' limit 1' : 'limit 1',
         ];
 
         return (int)($client->get('/k/v1/records.json', $params)['totalCount'] ?? 0);
@@ -136,12 +145,12 @@ abstract class AbstractKintoneAppService
      *
      * @param array<string, mixed> $data
      * @return int 作成されたレコードID
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function create(KintoneApiClientInterface $client, array $data): int
     {
         $response = $client->post('/k/v1/record.json', [
-            'app'    => $this->appId(),
+            'app' => $this->appId(),
             'record' => $this->toKintoneFields($data),
         ]);
 
@@ -161,13 +170,13 @@ abstract class AbstractKintoneAppService
      * POST で id を渡しても新規作成になるため注意。
      *
      * @param array<string, mixed> $data 更新するフィールドのみ渡せばよい（部分更新）
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function update(KintoneApiClientInterface $client, int $recordId, array $data): void
     {
         $client->put('/k/v1/record.json', [
-            'app'    => $this->appId(),
-            'id'     => $recordId,
+            'app' => $this->appId(),
+            'id' => $recordId,
             'record' => $this->toKintoneFields($data),
         ]);
     }
@@ -175,7 +184,7 @@ abstract class AbstractKintoneAppService
     /**
      * 削除
      *
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function delete(KintoneApiClientInterface $client, int $recordId): void
     {
@@ -193,7 +202,7 @@ abstract class AbstractKintoneAppService
      *
      * @param array<int, \Psr\Http\Message\UploadedFileInterface> $uploadedFiles
      * @return array<int, string>  fileKey の配列
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function uploadFiles(KintoneApiClientInterface $client, array $uploadedFiles): array
     {
@@ -217,7 +226,7 @@ abstract class AbstractKintoneAppService
 
             try {
                 $uploadedFile->moveTo($tmpPath);
-                $result     = $client->postFile($tmpPath, $clientFilename, $clientMimeType);
+                $result = $client->postFile($tmpPath, $clientFilename, $clientMimeType);
                 $fileKeys[] = $result['fileKey'];
             } finally {
                 // 一時ファイルを確実に削除
@@ -237,7 +246,10 @@ abstract class AbstractKintoneAppService
     /**
      * kintone フィールド値を安全に取り出す
      *
-     * @param array<string, mixed> $record
+     * @param array<string, mixed> $record The kintone record array.
+     * @param string $fieldCode The field code to retrieve.
+     * @param mixed $default The default value if field is not found.
+     * @return mixed
      */
     protected function value(array $record, string $fieldCode, mixed $default = null): mixed
     {
@@ -253,7 +265,10 @@ abstract class AbstractKintoneAppService
      *
      * normalizePostData() / normalizeUpdateData() の実装で使用する。
      *
-     * @param array<string, mixed> $data
+     * @param array<string, mixed> $data The request data array.
+     * @param string $name The field name.
+     * @param string $default The default value.
+     * @return string
      */
     protected function extractRadio(array $data, string $name, string $default): string
     {
@@ -285,11 +300,15 @@ abstract class AbstractKintoneAppService
     {
         $value = $data[$name] ?? [];
 
-        if (is_array($value) && !isset($value['_ids'])) {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        if (!isset($value['_ids'])) {
             return array_values(array_filter(array_map('strval', $value)));
         }
 
-        if (is_array($value) && isset($value['_ids']) && is_array($value['_ids'])) {
+        if (is_array($value['_ids'])) {
             return array_values(array_filter(array_map('strval', $value['_ids'])));
         }
 

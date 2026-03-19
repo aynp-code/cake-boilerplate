@@ -10,6 +10,11 @@ namespace App\Controller;
  */
 class RolesController extends AppController
 {
+    /**
+     * Index method.
+     *
+     * @return \Cake\Http\Response|null|void Renders view
+     */
     public function index()
     {
         // ✅ 監査ユーザ（CreatedByUser/ModifiedByUser）は AppTable 側で contain を拡張して共通化
@@ -22,7 +27,14 @@ class RolesController extends AppController
         $this->set(compact('roles'));
     }
 
-    public function view($id = null)
+    /**
+     * View method.
+     *
+     * @param string $id Role id.
+     * @return \Cake\Http\Response|null|void Renders view
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function view(string $id)
     {
         $contain = $this->Roles->withAuditUsersContain(['RolePermissions', 'Users']);
         $role = $this->Roles->get($id, contain: $contain);
@@ -30,6 +42,11 @@ class RolesController extends AppController
         $this->set(compact('role'));
     }
 
+    /**
+     * Add method.
+     *
+     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
+     */
     public function add()
     {
         $role = $this->Roles->newEmptyEntity();
@@ -40,6 +57,7 @@ class RolesController extends AppController
 
             if ($this->Roles->save($role)) {
                 $this->Flash->success(__('The role has been saved.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -49,7 +67,14 @@ class RolesController extends AppController
         $this->set(compact('role'));
     }
 
-    public function edit($id = null)
+    /**
+     * Edit method.
+     *
+     * @param string $id Role id.
+     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function edit(string $id)
     {
         $role = $this->Roles->get($id, contain: []);
 
@@ -60,6 +85,7 @@ class RolesController extends AppController
 
             if ($this->Roles->save($role)) {
                 $this->Flash->success(__('The role has been saved.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -69,7 +95,14 @@ class RolesController extends AppController
         $this->set(compact('role'));
     }
 
-    public function delete($id = null)
+    /**
+     * Delete method.
+     *
+     * @param string $id Role id.
+     * @return \Cake\Http\Response|null Redirects to index.
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function delete(string $id)
     {
         $this->request->allowMethod(['post', 'delete']);
 

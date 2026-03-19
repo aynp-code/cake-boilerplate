@@ -60,7 +60,7 @@ class UsersTableTest extends TestCase
      */
     public function testRestrictDeleteAssociations(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\UsersTable::class, $this->Users);
+        $this->assertInstanceOf(UsersTable::class, $this->Users);
     }
 
     /**
@@ -93,7 +93,7 @@ class UsersTableTest extends TestCase
      */
     public function testValidationCreate(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\UsersTable::class, $this->Users);
+        $this->assertInstanceOf(UsersTable::class, $this->Users);
     }
 
     /**
@@ -104,6 +104,6 @@ class UsersTableTest extends TestCase
      */
     public function testBuildRules(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\UsersTable::class, $this->Users);
+        $this->assertInstanceOf(UsersTable::class, $this->Users);
     }
 }

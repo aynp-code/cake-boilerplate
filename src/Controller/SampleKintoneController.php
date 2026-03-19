@@ -8,6 +8,7 @@ use App\Exception\KintoneNotLinkedException;
 use App\Service\CybozuOAuthService;
 use App\Service\Kintone\SampleKintoneService;
 use Cake\Event\EventInterface;
+use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 
 /**
@@ -32,6 +33,12 @@ class SampleKintoneController extends AppController
 {
     use KintoneClientTrait;
 
+    /**
+     * Actions to perform before the controller action is run.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\Controller\Controller> $event The event object.
+     * @return void
+     */
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
@@ -45,7 +52,7 @@ class SampleKintoneController extends AppController
         $service = new SampleKintoneService();
 
         try {
-            $client  = $this->makeClient($cybozuService);
+            $client = $this->makeClient($cybozuService);
             $records = $service->findAll($client, 'order by $id desc');
         } catch (KintoneNotLinkedException $e) {
             $this->Flash->error($e->getMessage(), ['escape' => false]);
@@ -71,10 +78,12 @@ class SampleKintoneController extends AppController
         } catch (KintoneNotLinkedException $e) {
             $this->Flash->error($e->getMessage(), ['escape' => false]);
             $this->redirect(['action' => 'index']);
+
             return;
         } catch (RuntimeException $e) {
             $this->Flash->error($e->getMessage());
             $this->redirect(['action' => 'index']);
+
             return;
         }
 
@@ -94,10 +103,10 @@ class SampleKintoneController extends AppController
      */
     public function add(CybozuOAuthService $cybozuService): void
     {
-        $service         = new SampleKintoneService();
+        $service = new SampleKintoneService();
         $approvalOptions = SampleKintoneService::APPROVAL_OPTIONS;
         $categoryOptions = SampleKintoneService::CATEGORY_OPTIONS;
-        $tagOptions      = SampleKintoneService::TAG_OPTIONS;
+        $tagOptions = SampleKintoneService::TAG_OPTIONS;
 
         if ($this->request->is('post')) {
             try {
@@ -105,16 +114,17 @@ class SampleKintoneController extends AppController
 
                 // ① 添付ファイルをアップロードして fileKey を取得
                 $uploadedFiles = $this->getUploadedFiles('attachments');
-                $fileKeys      = $service->uploadFiles($client, $uploadedFiles);
+                $fileKeys = $service->uploadFiles($client, $uploadedFiles);
 
                 // ② レコード登録（fileKey を含む）
                 $recordId = $service->create(
                     $client,
-                    $service->normalizePostData($this->request->getData(), $fileKeys)
+                    $service->normalizePostData($this->request->getData(), $fileKeys),
                 );
 
                 $this->Flash->success(__('登録しました。（kintone レコード ID: {0}）', $recordId));
                 $this->redirect(['action' => 'index']);
+
                 return;
             } catch (KintoneNotLinkedException $e) {
                 $this->Flash->error($e->getMessage(), ['escape' => false]);
@@ -144,10 +154,10 @@ class SampleKintoneController extends AppController
      */
     public function edit(CybozuOAuthService $cybozuService, int $id): void
     {
-        $service         = new SampleKintoneService();
+        $service = new SampleKintoneService();
         $approvalOptions = SampleKintoneService::APPROVAL_OPTIONS;
         $categoryOptions = SampleKintoneService::CATEGORY_OPTIONS;
-        $tagOptions      = SampleKintoneService::TAG_OPTIONS;
+        $tagOptions = SampleKintoneService::TAG_OPTIONS;
 
         try {
             $client = $this->makeClient($cybozuService);
@@ -155,10 +165,12 @@ class SampleKintoneController extends AppController
         } catch (KintoneNotLinkedException $e) {
             $this->Flash->error($e->getMessage(), ['escape' => false]);
             $this->redirect(['action' => 'index']);
+
             return;
         } catch (RuntimeException $e) {
             $this->Flash->error($e->getMessage());
             $this->redirect(['action' => 'index']);
+
             return;
         }
 
@@ -166,21 +178,23 @@ class SampleKintoneController extends AppController
             try {
                 // ① 新規アップロードファイルを kintone に送信
                 $uploadedFiles = $this->getUploadedFiles('attachments');
-                $fileKeys      = $service->uploadFiles($client, $uploadedFiles);
+                $fileKeys = $service->uploadFiles($client, $uploadedFiles);
 
                 // ② レコード更新（既存ファイル保持 + 新規追加）
                 $service->update(
                     $client,
                     $id,
-                    $service->normalizeUpdateData($this->request->getData(), $fileKeys)
+                    $service->normalizeUpdateData($this->request->getData(), $fileKeys),
                 );
 
                 $this->Flash->success(__('更新しました。'));
                 $this->redirect(['action' => 'index']);
+
                 return;
             } catch (KintoneNotLinkedException $e) {
                 $this->Flash->error($e->getMessage(), ['escape' => false]);
                 $this->redirect(['action' => 'index']);
+
                 return;
             } catch (RuntimeException $e) {
                 $this->Flash->error(__('更新に失敗しました: {0}', $e->getMessage()));
@@ -232,7 +246,7 @@ class SampleKintoneController extends AppController
     private function getUploadedFiles(string $fieldName): array
     {
         $uploaded = $this->request->getUploadedFiles();
-        $files    = $uploaded[$fieldName] ?? [];
+        $files = $uploaded[$fieldName] ?? [];
 
         if (!is_array($files)) {
             return [];
@@ -241,8 +255,8 @@ class SampleKintoneController extends AppController
         // 空ファイル（ファイル未選択）を除外
         return array_values(array_filter(
             $files,
-            fn($f) => $f instanceof \Psr\Http\Message\UploadedFileInterface
-                && $f->getError() === UPLOAD_ERR_OK
+            fn($f) => $f instanceof UploadedFileInterface
+                && $f->getError() === UPLOAD_ERR_OK,
         ));
     }
 }

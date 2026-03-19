@@ -9,6 +9,7 @@ use Cake\I18n\DateTime;
 use Cake\Log\Log;
 use Cake\ORM\TableRegistry;
 use RuntimeException;
+use Throwable;
 
 /**
  * Cybozu OAuth トークン管理サービス
@@ -79,7 +80,7 @@ class CybozuOAuthService
             $auth = $this->refreshToken($auth);
 
             return $auth->access_token;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::warning("Cybozu token refresh failed for user {$userId}: " . $e->getMessage(), ['scope' => 'cybozu']);
 
             return null;
@@ -91,17 +92,17 @@ class CybozuOAuthService
      *
      * @param string $userId
      * @param array{access_token:string, refresh_token:string, expires_in:int, scope:string} $tokenData
-     * @return CybozuAuth
+     * @return \App\Model\Entity\CybozuAuth
      */
     public function saveToken(string $userId, array $tokenData): CybozuAuth
     {
         $expiresAt = DateTime::now()->modify("+{$tokenData['expires_in']} seconds");
 
         return $this->authsTable()->upsertForUser($userId, [
-            'access_token'  => $tokenData['access_token'],
+            'access_token' => $tokenData['access_token'],
             'refresh_token' => $tokenData['refresh_token'],
-            'expires_at'    => $expiresAt,
-            'scope'         => $tokenData['scope'] ?? null,
+            'expires_at' => $expiresAt,
+            'scope' => $tokenData['scope'] ?? null,
         ]);
     }
 
@@ -136,11 +137,11 @@ class CybozuOAuthService
     public function buildAuthorizationUrl(string $state): string
     {
         $params = http_build_query([
-            'client_id'     => $this->clientId,
-            'redirect_uri'  => $this->redirectUri,
-            'state'         => $state,
+            'client_id' => $this->clientId,
+            'redirect_uri' => $this->redirectUri,
+            'state' => $state,
             'response_type' => 'code',
-            'scope'         => self::SCOPE,
+            'scope' => self::SCOPE,
         ], encoding_type: PHP_QUERY_RFC3986);
 
         return "https://{$this->subdomain}.cybozu.com/oauth2/authorization?{$params}";
@@ -151,15 +152,15 @@ class CybozuOAuthService
      *
      * @param string $code
      * @return array{access_token:string, refresh_token:string, expires_in:int, scope:string}
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function fetchToken(string $code): array
     {
-        $url  = "https://{$this->subdomain}.cybozu.com/oauth2/token";
+        $url = "https://{$this->subdomain}.cybozu.com/oauth2/token";
         $body = http_build_query([
-            'grant_type'   => 'authorization_code',
+            'grant_type' => 'authorization_code',
             'redirect_uri' => $this->redirectUri,
-            'code'         => $code,
+            'code' => $code,
         ]);
 
         return $this->doTokenRequest($url, $body);
@@ -174,7 +175,7 @@ class CybozuOAuthService
      *   $myAppService = new MyKintoneAppService($appId);
      *   $result = $myAppService->doSomething($client, ...);
      *
-     * @throws RuntimeException トークンが取得できない場合
+     * @throws \RuntimeException トークンが取得できない場合
      */
     public function makeKintoneClient(string $userId): KintoneApiClientInterface
     {
@@ -197,13 +198,13 @@ class CybozuOAuthService
      * cybozu のリフレッシュレスポンスには refresh_token が含まれない場合があるため、
      * 空の場合は既存の refresh_token を保持する。
      *
-     * @throws RuntimeException  refresh 失敗時
+     * @throws \RuntimeException  refresh 失敗時
      */
     private function refreshToken(CybozuAuth $auth): CybozuAuth
     {
-        $url  = "https://{$this->subdomain}.cybozu.com/oauth2/token";
+        $url = "https://{$this->subdomain}.cybozu.com/oauth2/token";
         $body = http_build_query([
-            'grant_type'    => 'refresh_token',
+            'grant_type' => 'refresh_token',
             'refresh_token' => $auth->refresh_token,
         ]);
 
@@ -211,16 +212,16 @@ class CybozuOAuthService
         $expiresAt = DateTime::now()->modify("+{$tokenData['expires_in']} seconds");
 
         $auth = $this->authsTable()->patchEntity($auth, [
-            'access_token'  => $tokenData['access_token'],
+            'access_token' => $tokenData['access_token'],
             // refresh_token はレスポンスに含まれない場合があるため、空なら既存の値を保持する
             'refresh_token' => $tokenData['refresh_token'] !== '' ? $tokenData['refresh_token'] : $auth->refresh_token,
-            'expires_at'    => $expiresAt,
-            'scope'         => $tokenData['scope'] ?? $auth->scope,
+            'expires_at' => $expiresAt,
+            'scope' => $tokenData['scope'] ?? $auth->scope,
         ]);
 
         if (!$this->authsTable()->save($auth)) {
             throw new RuntimeException(
-                'Failed to save refreshed token: ' . json_encode($auth->getErrors(), JSON_UNESCAPED_UNICODE)
+                'Failed to save refreshed token: ' . json_encode($auth->getErrors(), JSON_UNESCAPED_UNICODE),
             );
         }
 
@@ -233,25 +234,26 @@ class CybozuOAuthService
      * token エンドポイントへリクエストし、token データを返す共通処理。
      *
      * @return array{access_token:string, refresh_token:string, expires_in:int, scope:string}
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     private function doTokenRequest(string $url, string $body): array
     {
         $opts = [
             'http' => [
-                'method'        => 'POST',
-                'header'        => implode("\r\n", [
+                'method' => 'POST',
+                'header' => implode("\r\n", [
                     'Content-Type: application/x-www-form-urlencoded',
                     'Authorization: Basic ' . base64_encode("{$this->clientId}:{$this->clientSecret}"),
                 ]),
-                'content'       => $body,
+                'content' => $body,
                 'ignore_errors' => true,
-                'timeout'       => 15,
+                'timeout' => 15,
             ],
         ];
 
         $context = stream_context_create($opts);
-        $raw     = @file_get_contents($url, false, $context);
+        // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+        $raw = @file_get_contents($url, false, $context);
 
         if ($raw === false) {
             throw new RuntimeException("Cybozu token request failed: POST {$url}");
@@ -266,7 +268,7 @@ class CybozuOAuthService
         if (isset($response['error'])) {
             Log::error('Cybozu token error: ' . json_encode($response), ['scope' => 'cybozu']);
             throw new RuntimeException(
-                "Cybozu token error: {$response['error']} - " . ($response['error_description'] ?? '')
+                "Cybozu token error: {$response['error']} - " . ($response['error_description'] ?? ''),
             );
         }
 
@@ -275,10 +277,10 @@ class CybozuOAuthService
         }
 
         return [
-            'access_token'  => (string)$response['access_token'],
+            'access_token' => (string)$response['access_token'],
             'refresh_token' => (string)($response['refresh_token'] ?? ''),
-            'expires_in'    => (int)($response['expires_in'] ?? 3600),
-            'scope'         => (string)($response['scope'] ?? ''),
+            'expires_in' => (int)($response['expires_in'] ?? 3600),
+            'scope' => (string)($response['scope'] ?? ''),
         ];
     }
 
@@ -286,9 +288,12 @@ class CybozuOAuthService
     // private: TableRegistry
     // =========================================================================
 
+    /**
+     * @return \App\Model\Table\CybozuAuthsTable
+     */
     private function authsTable(): CybozuAuthsTable
     {
-        /** @var CybozuAuthsTable */
+        /** @var \App\Model\Table\CybozuAuthsTable */
         return TableRegistry::getTableLocator()->get('CybozuAuths');
     }
 }

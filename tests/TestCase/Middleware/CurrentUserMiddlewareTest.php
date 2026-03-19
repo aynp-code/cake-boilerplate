@@ -8,6 +8,7 @@ use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 class CurrentUserMiddlewareTest extends TestCase
@@ -26,6 +27,7 @@ class CurrentUserMiddlewareTest extends TestCase
             {
                 return 'user-1';
             }
+
             public function get($key)
             {
                 return match ($key) {
@@ -39,10 +41,11 @@ class CurrentUserMiddlewareTest extends TestCase
         $middleware = new CurrentUserMiddleware();
 
         $handler = new class implements RequestHandlerInterface {
-            public function handle(\Psr\Http\Message\ServerRequestInterface $request): Response
+            public function handle(ServerRequestInterface $request): Response
             {
                 TestCase::assertSame('user-1', Configure::read('Auth.User.id'));
                 TestCase::assertSame('role-1', Configure::read('Auth.User.role_id'));
+
                 return new Response();
             }
         };

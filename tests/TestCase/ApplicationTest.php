@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace App\Test\TestCase;
 
 use App\Application;
+use Authentication\Middleware\AuthenticationMiddleware;
 use Cake\Core\Configure;
 use Cake\Error\Middleware\ErrorHandlerMiddleware;
 use Cake\Http\Middleware\BodyParserMiddleware;
@@ -86,7 +87,7 @@ class ApplicationTest extends TestCase
 
         $this->assertNotEmpty($stack);
 
-        $classes = array_map(static fn ($m) => get_class($m), $stack);
+        $classes = array_map(static fn($m) => get_class($m), $stack);
 
         $errorIndex = array_search(ErrorHandlerMiddleware::class, $classes, true);
         $assetIndex = array_search(AssetMiddleware::class, $classes, true);
@@ -113,11 +114,11 @@ class ApplicationTest extends TestCase
 
         // Authentication is optional. If the plugin is installed, ensure the
         // middleware is in the queue and runs before CSRF.
-        if (class_exists(\Authentication\Middleware\AuthenticationMiddleware::class)) {
-            $authIndex = array_search(\Authentication\Middleware\AuthenticationMiddleware::class, $classes, true);
+        if (class_exists(AuthenticationMiddleware::class)) {
+            $authIndex = array_search(AuthenticationMiddleware::class, $classes, true);
             $this->assertNotFalse(
                 $authIndex,
-                'AuthenticationMiddleware should be in the middleware queue when installed.'
+                'AuthenticationMiddleware should be in the middleware queue when installed.',
             );
             $this->assertGreaterThan($routingIndex, $authIndex, 'Authentication should run after Routing.');
             $this->assertGreaterThan($authIndex, $csrfIndex, 'CSRF should run after Authentication.');

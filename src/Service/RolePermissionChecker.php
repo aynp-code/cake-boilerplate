@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use Cake\Cache\Cache;
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\Locator\LocatorAwareTrait;
 
 class RolePermissionChecker implements RolePermissionCheckerInterface
@@ -13,7 +14,9 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
     private const CACHE_CONFIG = '_cake_permissions';
     private const CACHE_KEY_PREFIX = 'perm:role:';
 
-    /** @var array<string, array<string,bool>> roleId => permissionMap */
+    /**
+     * @var array<string, array<string,bool>> roleId => permissionMap
+     */
     private array $memo = [];
 
     /**
@@ -25,16 +28,20 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
     }
 
     /**
-     * @param array{plugin?:?string,prefix?:mixed,controller:string,action:string} $target
+     * Check if a role is allowed to access a target controller/action.
+     *
+     * @param string $roleId The role ID to check.
+     * @param array<string, mixed> $target The target to check.
+     * @return bool
      */
     public function can(string $roleId, array $target): bool
     {
         $map = $this->getRolePermissionMap($roleId);
 
-        $plugin     = $this->normalizer->normalizePlugin($target['plugin'] ?? null) ?? '';
-        $prefix     = $this->normalizer->normalizePrefix($target['prefix'] ?? null) ?? '';
+        $plugin = $this->normalizer->normalizePlugin($target['plugin'] ?? null) ?? '';
+        $prefix = $this->normalizer->normalizePrefix($target['prefix'] ?? null) ?? '';
         $controller = (string)$target['controller'];
-        $action     = (string)$target['action'];
+        $action = (string)$target['action'];
 
         // 具体 → 汎用（ワイルドカード）の順にチェック
         $candidates = [
@@ -82,10 +89,14 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
 
         $map = [];
         foreach ($rows as $r) {
-            $plugin     = $this->normalizer->normalizePlugin($r->plugin ?? null) ?? '';
-            $prefix     = $this->normalizer->normalizePrefix($r->prefix ?? null) ?? '';
-            $controller = (string)$r->controller;
-            $action     = (string)$r->action;
+            if (!($r instanceof EntityInterface)) {
+                continue;
+            }
+
+            $plugin = $this->normalizer->normalizePlugin($r->get('plugin')) ?? '';
+            $prefix = $this->normalizer->normalizePrefix($r->get('prefix')) ?? '';
+            $controller = (string)$r->get('controller');
+            $action = (string)$r->get('action');
 
             $map[$this->key($plugin, $prefix, $controller, $action)] = true;
         }
@@ -95,12 +106,27 @@ class RolePermissionChecker implements RolePermissionCheckerInterface
         return $this->memo[$roleId] = $map;
     }
 
+    /**
+     * Invalidate cached permissions for a role.
+     *
+     * @param string $roleId The role ID to invalidate.
+     * @return void
+     */
     public function invalidateRole(string $roleId): void
     {
         unset($this->memo[$roleId]);
         Cache::delete(self::CACHE_KEY_PREFIX . $roleId, self::CACHE_CONFIG);
     }
 
+    /**
+     * Build a cache key for a permission entry.
+     *
+     * @param string $plugin The plugin name.
+     * @param string $prefix The prefix.
+     * @param string $controller The controller name.
+     * @param string $action The action name.
+     * @return string
+     */
     private function key(string $plugin, string $prefix, string $controller, string $action): string
     {
         return "{$plugin}|{$prefix}|{$controller}|{$action}";

@@ -6,8 +6,9 @@ namespace App\Service;
 use Cake\Utility\Inflector;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use RegexIterator;
 use ReflectionClass;
+use ReflectionMethod;
+use RegexIterator;
 
 class ControllerActionCatalog
 {
@@ -19,13 +20,15 @@ class ControllerActionCatalog
      *   ['plugin' => null, 'prefix' => 'Admin', 'controller' => 'Users', 'action' => 'index'],
      *   ...
      * ]
+     *
+     * @return array<int, array{plugin:?string,prefix:?string,controller:string,action:string}>
      */
     public function collect(): array
     {
         $controllerRoot = ROOT . DS . 'src' . DS . 'Controller';
 
         $it = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($controllerRoot, RecursiveDirectoryIterator::SKIP_DOTS)
+            new RecursiveDirectoryIterator($controllerRoot, RecursiveDirectoryIterator::SKIP_DOTS),
         );
         $files = new RegexIterator($it, '/^.+Controller\.php$/i', RegexIterator::GET_MATCH);
 
@@ -50,9 +53,9 @@ class ControllerActionCatalog
             foreach ($this->extractActions($fqcn) as $action) {
                 $rows[] = [
                     'plugin' => null,
-                    'prefix' => $prefix,          // null or 'Admin' or 'Api/V1'
-                    'controller' => $controller,  // 'Users'
-                    'action' => $action,          // 'index'
+                    'prefix' => $prefix, // null or 'Admin' or 'Api/V1'
+                    'controller' => $controller, // 'Users'
+                    'action' => $action, // 'index'
                 ];
             }
         }
@@ -61,7 +64,7 @@ class ControllerActionCatalog
         usort($rows, function (array $a, array $b) {
             return strcmp(
                 ($a['prefix'] ?? '') . ':' . $a['controller'] . ':' . $a['action'],
-                ($b['prefix'] ?? '') . ':' . $b['controller'] . ':' . $b['action']
+                ($b['prefix'] ?? '') . ':' . $b['controller'] . ':' . $b['action'],
             );
         });
 
@@ -73,14 +76,18 @@ class ControllerActionCatalog
      * - src/Controller/UsersController.php => [null, 'Users']
      * - src/Controller/Admin/UsersController.php => ['Admin', 'Users']
      * - src/Controller/Api/V1/UsersController.php => ['Api/V1', 'Users']
+     *
+     * @param string $controllerRoot The root directory for controllers.
+     * @param string $filepath The full file path.
+     * @return array{0:?string,1:string}
      */
     private function inferPrefixAndController(string $controllerRoot, string $filepath): array
     {
         $relative = str_replace($controllerRoot . DS, '', $filepath);
         $parts = explode(DS, $relative);
 
-        $filename = array_pop($parts); // UsersController.php
-        $controller = preg_replace('/Controller\.php$/i', '', $filename);
+        $filename = array_pop($parts) ?? ''; // UsersController.php
+        $controller = preg_replace('/Controller\.php$/i', '', $filename) ?? $filename;
 
         $prefix = null;
         if (!empty($parts)) {
@@ -88,7 +95,7 @@ class ControllerActionCatalog
             // 例: admin_panel -> AdminPanel
             $normalizedParts = array_map(
                 fn(string $p): string => Inflector::camelize($p),
-                $parts
+                $parts,
             );
 
             $prefix = implode('/', $normalizedParts);
@@ -99,6 +106,10 @@ class ControllerActionCatalog
 
     /**
      * prefix/controller から FQCN を組み立て
+     *
+     * @param string|null $prefix The prefix.
+     * @param string $controller The controller name.
+     * @return string
      */
     private function inferFqcn(?string $prefix, string $controller): string
     {
@@ -114,9 +125,13 @@ class ControllerActionCatalog
 
     /**
      * Controllerクラスから action 一覧を抽出
+     *
+     * @param string $controllerFqcn The fully qualified class name.
+     * @return array<int, string>
      */
     private function extractActions(string $controllerFqcn): array
     {
+        assert(class_exists($controllerFqcn));
         $ref = new ReflectionClass($controllerFqcn);
 
         $exclude = [
@@ -132,7 +147,7 @@ class ControllerActionCatalog
 
         $actions = [];
 
-        foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $m) {
+        foreach ($ref->getMethods(ReflectionMethod::IS_PUBLIC) as $m) {
             if ($m->getDeclaringClass()->getName() !== $controllerFqcn) {
                 continue;
             }

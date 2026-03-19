@@ -3,27 +3,26 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\Entity\CybozuAuth;
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use RuntimeException;
 
 /**
  * CybozuAuths Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
- *
  * @method \App\Model\Entity\CybozuAuth newEmptyEntity()
  * @method \App\Model\Entity\CybozuAuth newEntity(array $data, array $options = [])
  * @method \App\Model\Entity\CybozuAuth patchEntity(\Cake\Datasource\EntityInterface $entity, array $data, array $options = [])
  * @method \App\Model\Entity\CybozuAuth|false save(\Cake\Datasource\EntityInterface $entity, array $options = [])
  * @method \App\Model\Entity\CybozuAuth saveOrFail(\Cake\Datasource\EntityInterface $entity, array $options = [])
- *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
 class CybozuAuthsTable extends AppTable
 {
     /**
-     * @return string[]
+     * @return array<string>
      */
     public function restrictDeleteAssociations(): array
     {
@@ -46,7 +45,7 @@ class CybozuAuthsTable extends AppTable
 
         $this->belongsTo('Users', [
             'foreignKey' => 'user_id',
-            'joinType'   => 'INNER',
+            'joinType' => 'INNER',
         ]);
     }
 
@@ -110,7 +109,7 @@ class CybozuAuthsTable extends AppTable
      * @return \App\Model\Entity\CybozuAuth
      * @throws \RuntimeException
      */
-    public function upsertForUser(string $userId, array $data): \App\Model\Entity\CybozuAuth
+    public function upsertForUser(string $userId, array $data): CybozuAuth
     {
         /** @var \App\Model\Entity\CybozuAuth|null $existing */
         $existing = $this->find()
@@ -124,7 +123,7 @@ class CybozuAuthsTable extends AppTable
         }
 
         if (!$this->save($auth)) {
-            throw new \RuntimeException('Failed to save CybozuAuth: ' . json_encode($auth->getErrors()));
+            throw new RuntimeException('Failed to save CybozuAuth: ' . json_encode($auth->getErrors()));
         }
 
         return $auth;
@@ -136,7 +135,7 @@ class CybozuAuthsTable extends AppTable
      * @param string $userId
      * @return \App\Model\Entity\CybozuAuth|null
      */
-    public function findByUserId(string $userId): ?\App\Model\Entity\CybozuAuth
+    public function findByUserId(string $userId): ?CybozuAuth
     {
         /** @var \App\Model\Entity\CybozuAuth|null */
         return $this->find()

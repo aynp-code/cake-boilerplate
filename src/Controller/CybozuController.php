@@ -25,6 +25,12 @@ use RuntimeException;
  */
 class CybozuController extends AppController
 {
+    /**
+     * Actions to perform before the controller action is run.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\Controller\Controller> $event The event object.
+     * @return void
+     */
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
@@ -39,7 +45,10 @@ class CybozuController extends AppController
     {
         $this->request->allowMethod(['get']);
 
-        $currentUserId = (string)$this->Authentication->getIdentity()->getIdentifier();
+        $identity = $this->Authentication->getIdentity();
+        assert($identity !== null);
+        $rawId = $identity->getIdentifier();
+        $currentUserId = is_scalar($rawId) ? (string)$rawId : '';
 
         $token = $cybozuService->getValidToken($currentUserId);
         if ($token !== null) {
@@ -97,10 +106,12 @@ class CybozuController extends AppController
             return;
         }
 
-        /** @var \App\Model\Entity\User $currentUser */
-        $identityId  = (string)$this->Authentication->getIdentity()->getIdentifier();
+        $identity = $this->Authentication->getIdentity();
+        assert($identity !== null);
+        $rawId = $identity->getIdentifier();
+        $identityId = is_scalar($rawId) ? (string)$rawId : '';
         /** @var \App\Model\Table\UsersTable $Users */
-        $Users       = $this->fetchTable('Users');
+        $Users = $this->fetchTable('Users');
         $currentUser = $Users->get($identityId);
 
         try {
@@ -109,7 +120,7 @@ class CybozuController extends AppController
 
             // 3) whoami アプリでレコード経由の本人確認
             // callback 時点ではまだ saveToken していないため access_token を直接渡してクライアントを生成
-            $client    = new KintoneApiClient(
+            $client = new KintoneApiClient(
                 $cybozuService->getSubdomain(),
                 $tokenData['access_token'],
             );
@@ -126,7 +137,7 @@ class CybozuController extends AppController
             $this->Flash->error(__(
                 'Kintone login code mismatch. Expected "{0}", but got "{1}". Check the kintone_username setting.',
                 $currentUser->kintone_username,
-                $loginCode
+                $loginCode,
             ));
             $this->redirect($returnUrl ?? ['controller' => 'Users', 'action' => 'view', $currentUser->id]);
 
@@ -162,16 +173,19 @@ class CybozuController extends AppController
     {
         $this->request->allowMethod(['post']);
 
-        $currentUser = $this->Authentication->getIdentity()->getOriginalData();
-        $returnUrl   = $this->referer(['controller' => 'Pages', 'action' => 'display', 'home'], true);
+        $identity = $this->Authentication->getIdentity();
+        assert($identity !== null);
+        /** @var \App\Model\Entity\User $currentUser */
+        $currentUser = $identity->getOriginalData();
+        $returnUrl = $this->referer(['controller' => 'Pages', 'action' => 'display', 'home'], true);
 
         try {
             $cybozuService->revokeToken((string)$currentUser->id);
 
             /** @var \App\Model\Table\UsersTable $Users */
             $Users = $this->fetchTable('Users');
-            $user  = $Users->get($currentUser->id);
-            $user  = $Users->patchEntity($user, ['is_kintone_linked' => false]);
+            $user = $Users->get($currentUser->id);
+            $user = $Users->patchEntity($user, ['is_kintone_linked' => false]);
             $Users->save($user);
         } catch (RuntimeException $e) {
             $this->Flash->error(__('Failed to revoke Cybozu link: {0}', $e->getMessage()));

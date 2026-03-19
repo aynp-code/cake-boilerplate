@@ -61,7 +61,7 @@ class RolePermissionsTableTest extends TestCase
      */
     public function testRestrictDeleteAssociations(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\RolePermissionsTable::class, $this->RolePermissions);
+        $this->assertInstanceOf(RolePermissionsTable::class, $this->RolePermissions);
     }
 
     /**
@@ -93,7 +93,7 @@ class RolePermissionsTableTest extends TestCase
      */
     public function testValidationCreate(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\RolePermissionsTable::class, $this->RolePermissions);
+        $this->assertInstanceOf(RolePermissionsTable::class, $this->RolePermissions);
     }
 
     /**
@@ -104,6 +104,6 @@ class RolePermissionsTableTest extends TestCase
      */
     public function testBuildRules(): void
     {
-        $this->assertInstanceOf(\App\Model\Table\RolePermissionsTable::class, $this->RolePermissions);
+        $this->assertInstanceOf(RolePermissionsTable::class, $this->RolePermissions);
     }
 }

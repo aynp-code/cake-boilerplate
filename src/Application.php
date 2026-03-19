@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App;
 
 use App\Middleware\CurrentUserMiddleware;
+use App\Middleware\RolePermissionAuthorizationMiddleware;
 use App\Service\CybozuOAuthService;
 use App\Service\KintoneWhoAmIService;
 use Authentication\AuthenticationService;
@@ -18,16 +19,24 @@ use Cake\Event\EventManagerInterface;
 use Cake\Http\BaseApplication;
 use Cake\Http\Middleware\BodyParserMiddleware;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
-use App\Middleware\RolePermissionAuthorizationMiddleware;
 use Cake\Http\MiddlewareQueue;
 use Cake\I18n\I18n;
 use Cake\ORM\Locator\TableLocator;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
 use Psr\Http\Message\ServerRequestInterface;
+use RuntimeException;
 
+/**
+ * @extends \Cake\Http\BaseApplication<\App\Application>
+ */
 class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {
+    /**
+     * Perform application bootstrap actions.
+     *
+     * @return void
+     */
     public function bootstrap(): void
     {
         parent::bootstrap();
@@ -40,6 +49,12 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         I18n::setLocale($locale);
     }
 
+    /**
+     * Setup the middleware queue for the application.
+     *
+     * @param \Cake\Http\MiddlewareQueue $middlewareQueue The middleware queue to set up.
+     * @return \Cake\Http\MiddlewareQueue
+     */
     public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     {
         $middlewareQueue
@@ -75,12 +90,18 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
                     'samesite' => 'Lax',
                 ]))->skipCheckCallback(function (ServerRequestInterface $request): bool {
                     return str_starts_with($request->getUri()->getPath(), '/webhook/');
-                })
+                }),
             );
 
         return $middlewareQueue;
     }
 
+    /**
+     * Register application services into the DI container.
+     *
+     * @param \Cake\Core\ContainerInterface $container The container to add services to.
+     * @return void
+     */
     public function services(ContainerInterface $container): void
     {
         // CybozuOAuthService: 設定値をコンストラクタ引数として注入
@@ -93,14 +114,14 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
                 || empty($config['oauth']['client_secret'])
                 || empty($config['oauth']['redirect_uri'])
             ) {
-                throw new \RuntimeException('Cybozu configuration is incomplete. Check app_local.php Cybozu section.');
+                throw new RuntimeException('Cybozu configuration is incomplete. Check app_local.php Cybozu section.');
             }
 
             return new CybozuOAuthService(
-                subdomain:    $config['subdomain'],
-                clientId:     $config['oauth']['client_id'],
+                subdomain: $config['subdomain'],
+                clientId: $config['oauth']['client_id'],
                 clientSecret: $config['oauth']['client_secret'],
-                redirectUri:  $config['oauth']['redirect_uri'],
+                redirectUri: $config['oauth']['redirect_uri'],
             );
         });
 
@@ -109,13 +130,19 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             $appId = (int)Configure::read('Cybozu.apps.whoami');
 
             if ($appId === 0) {
-                throw new \RuntimeException('Cybozu.apps.whoami is not configured. Check app_local.php.');
+                throw new RuntimeException('Cybozu.apps.whoami is not configured. Check app_local.php.');
             }
 
             return new KintoneWhoAmIService(appId: $appId);
         });
     }
 
+    /**
+     * Register event listeners for the application.
+     *
+     * @param \Cake\Event\EventManagerInterface $eventManager The event manager to register listeners with.
+     * @return \Cake\Event\EventManagerInterface
+     */
     public function events(EventManagerInterface $eventManager): EventManagerInterface
     {
         return $eventManager;

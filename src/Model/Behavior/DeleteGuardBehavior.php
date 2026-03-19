@@ -38,6 +38,14 @@ class DeleteGuardBehavior extends Behavior
         'skipMissingAssociation' => true,
     ];
 
+    /**
+     * Guard against deletion when related records exist.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\ORM\Table> $event The event.
+     * @param \Cake\Datasource\EntityInterface $entity The entity being deleted.
+     * @param \ArrayObject<array-key, mixed> $options The options passed to delete.
+     * @return bool
+     */
     public function beforeDelete(EventInterface $event, EntityInterface $entity, ArrayObject $options): bool
     {
         /** @var \Cake\ORM\Table $table */
@@ -67,6 +75,7 @@ class DeleteGuardBehavior extends Behavior
                 }
                 $entity->setError((string)$this->getConfig('errorField'), "Missing association: {$alias}");
                 $event->stopPropagation();
+
                 return false;
             }
 
@@ -75,6 +84,10 @@ class DeleteGuardBehavior extends Behavior
             // HasMany / HasOne: target の foreignKey = 自分のID
             if ($assoc instanceof HasMany || $assoc instanceof HasOne) {
                 $fk = $assoc->getForeignKey();
+                if (!is_string($fk)) {
+                    continue;
+                }
+
                 $count = $assoc->getTarget()->find()
                     ->where([$fk => $id])
                     ->count();
@@ -89,6 +102,9 @@ class DeleteGuardBehavior extends Behavior
             if ($assoc instanceof BelongsToMany) {
                 $junction = $assoc->junction();
                 $fk = $assoc->getForeignKey();
+                if (!is_string($fk)) {
+                    continue;
+                }
 
                 $count = $junction->find()
                     ->where([$fk => $id])
@@ -111,11 +127,12 @@ class DeleteGuardBehavior extends Behavior
 
             $entity->setError(
                 (string)$this->getConfig('errorField'),
-                __('This record cannot be deleted because it is in use: {0}', implode(', ', $msgParts))
+                __('This record cannot be deleted because it is in use: {0}', implode(', ', $msgParts)),
             );
 
             // 削除を中止
             $event->stopPropagation();
+
             return false;
         }
 
@@ -123,7 +140,7 @@ class DeleteGuardBehavior extends Behavior
     }
 
     /**
-     * @return string[]
+     * @return array<string>
      */
     private function resolveAssociationsToCheck(Table $table): array
     {

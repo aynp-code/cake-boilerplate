@@ -33,8 +33,11 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
 
     private function makeIdentityWithRoleId(?string $roleId): object
     {
-        return new class($roleId) {
-            public function __construct(private ?string $roleId) {}
+        return new class ($roleId) {
+            public function __construct(private ?string $roleId)
+            {
+            }
+
             public function get($key)
             {
                 return $key === 'role_id' ? $this->roleId : null;
@@ -57,19 +60,22 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
         $request = $this->makeRequest(
             'Users',
             'index',
-            $this->makeIdentityWithRoleId('role-1')
+            $this->makeIdentityWithRoleId('role-1'),
         );
 
         $checker = new class implements RolePermissionCheckerInterface {
             public array $lastTarget = [];
             public ?string $lastRoleId = null;
 
-            public function invalidateRole(string $roleId): void {}
+            public function invalidateRole(string $roleId): void
+            {
+            }
 
             public function can(string $roleId, array $target): bool
             {
                 $this->lastRoleId = $roleId;
                 $this->lastTarget = $target;
+
                 return true;
             }
         };
@@ -92,11 +98,13 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
         $request = $this->makeRequest(
             'Users',
             'index',
-            $this->makeIdentityWithRoleId('role-1')
+            $this->makeIdentityWithRoleId('role-1'),
         );
 
         $checker = new class implements RolePermissionCheckerInterface {
-            public function invalidateRole(string $roleId): void {}
+            public function invalidateRole(string $roleId): void
+            {
+            }
 
             public function can(string $roleId, array $target): bool
             {
@@ -114,11 +122,15 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
 
         $checker = new class implements RolePermissionCheckerInterface {
             public bool $called = false;
-            public function invalidateRole(string $roleId): void {}
+
+            public function invalidateRole(string $roleId): void
+            {
+            }
 
             public function can(string $roleId, array $target): bool
             {
                 $this->called = true;
+
                 return false;
             }
         };
@@ -136,11 +148,15 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
 
         $checker = new class implements RolePermissionCheckerInterface {
             public bool $called = false;
-            public function invalidateRole(string $roleId): void {}
+
+            public function invalidateRole(string $roleId): void
+            {
+            }
 
             public function can(string $roleId, array $target): bool
             {
                 $this->called = true;
+
                 return false;
             }
         };
@@ -157,16 +173,20 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
         $request = $this->makeRequest(
             'Users',
             'index',
-            $this->makeIdentityWithRoleId('role-1')
+            $this->makeIdentityWithRoleId('role-1'),
         );
 
         $checker = new class implements RolePermissionCheckerInterface {
             public bool $called = false;
-            public function invalidateRole(string $roleId): void {}
+
+            public function invalidateRole(string $roleId): void
+            {
+            }
 
             public function can(string $roleId, array $target): bool
             {
                 $this->called = true;
+
                 return false;
             }
         };

@@ -17,6 +17,12 @@ use Cake\Utility\Inflector;
  */
 class RoutePermissionTargetNormalizer
 {
+    /**
+     * Normalize the plugin name to a consistent format.
+     *
+     * @param mixed $plugin The plugin value to normalize.
+     * @return string|null
+     */
     public function normalizePlugin(mixed $plugin): ?string
     {
         return $this->normalizeNullableString($plugin);
@@ -49,12 +55,19 @@ class RoutePermissionTargetNormalizer
         return $prefix === '' ? null : $prefix;
     }
 
+    /**
+     * Normalize a mixed value to a nullable trimmed string.
+     *
+     * @param mixed $v The value to normalize.
+     * @return string|null
+     */
     private function normalizeNullableString(mixed $v): ?string
     {
         if (!is_string($v)) {
             return null;
         }
         $v = trim($v);
+
         return $v === '' ? null : $v;
     }
 }

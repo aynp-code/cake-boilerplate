@@ -5,6 +5,7 @@ namespace App\Service;
 
 use Cake\Log\Log;
 use RuntimeException;
+use Throwable;
 
 /**
  * kintone の「whoami アプリ」を使ってログインコードを解決するサービス
@@ -19,6 +20,9 @@ use RuntimeException;
  */
 class KintoneWhoAmIService
 {
+    /**
+     * @param int $appId The kintone whoami app ID.
+     */
     public function __construct(
         private readonly int $appId,
     ) {
@@ -27,10 +31,10 @@ class KintoneWhoAmIService
     /**
      * アクセストークンを使って kintone ログインコード（$creator.code）を返す。
      *
-     * @param KintoneApiClientInterface $client  呼び出し元で生成したクライアント
+     * @param \App\Service\KintoneApiClientInterface $client  呼び出し元で生成したクライアント
      * @param string $username  アプリに書き込む login_id の値
      * @return string  kintone ログインコード
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function resolveLoginCode(KintoneApiClientInterface $client, string $username): string
     {
@@ -41,7 +45,7 @@ class KintoneWhoAmIService
         } finally {
             try {
                 $this->deleteRecord($client, $recordId);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::warning('KintoneWhoAmI: deleteRecord failed: ' . $e->getMessage(), ['scope' => 'cybozu']);
             }
         }
@@ -57,10 +61,18 @@ class KintoneWhoAmIService
     // private
     // =========================================================================
 
+    /**
+     * Add a record to the whoami kintone app.
+     *
+     * @param \App\Service\KintoneApiClientInterface $client The kintone API client.
+     * @param string $username The username to write to the record.
+     * @return string The created record ID.
+     * @throws \RuntimeException
+     */
     private function addRecord(KintoneApiClientInterface $client, string $username): string
     {
         $response = $client->post('/k/v1/record.json', [
-            'app'    => $this->appId,
+            'app' => $this->appId,
             'record' => [
                 'login_id' => ['value' => $username],
             ],
@@ -74,11 +86,19 @@ class KintoneWhoAmIService
         return $recordId;
     }
 
+    /**
+     * Get the CREATOR field code from a kintone record.
+     *
+     * @param \App\Service\KintoneApiClientInterface $client The kintone API client.
+     * @param string $recordId The record ID to retrieve.
+     * @return string The creator code.
+     * @throws \RuntimeException
+     */
     private function getCreatorCode(KintoneApiClientInterface $client, string $recordId): string
     {
         $response = $client->get('/k/v1/record.json', [
             'app' => $this->appId,
-            'id'  => (int)$recordId,
+            'id' => (int)$recordId,
         ]);
 
         $record = $response['record'] ?? [];
@@ -94,10 +114,17 @@ class KintoneWhoAmIService
         }
 
         throw new RuntimeException(
-            'CREATOR field not found in kintone record. Available fields: ' . implode(', ', array_keys($record))
+            'CREATOR field not found in kintone record. Available fields: ' . implode(', ', array_keys($record)),
         );
     }
 
+    /**
+     * Delete a record from the whoami kintone app.
+     *
+     * @param \App\Service\KintoneApiClientInterface $client The kintone API client.
+     * @param string $recordId The record ID to delete.
+     * @return void
+     */
     private function deleteRecord(KintoneApiClientInterface $client, string $recordId): void
     {
         $client->delete('/k/v1/records.json', [
