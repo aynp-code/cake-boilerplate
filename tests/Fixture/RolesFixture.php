@@ -27,6 +27,15 @@ class RolesFixture extends TestFixture
                 'modified' => '2026-02-05 14:19:57',
                 'modified_by' => 'e29e19c0-0512-442a-9d4e-d1cc07b052e2',
             ],
+            [
+                'id' => 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+                'display_name' => 'Delete target role',
+                'description' => 'Used only for delete test',
+                'created' => '2026-02-05 14:19:57',
+                'created_by' => '43ac863a-db3b-4ed8-93d5-3e7ecfecbf14',
+                'modified' => '2026-02-05 14:19:57',
+                'modified_by' => 'e29e19c0-0512-442a-9d4e-d1cc07b052e2',
+            ],
         ];
         parent::init();
     }

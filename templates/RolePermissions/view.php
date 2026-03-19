@@ -78,7 +78,7 @@ $this->Breadcrumbs->addMany([
                     <tr>
                 <th><?= __('Created By') ?></th>
                 <td>
-                    <?php if ($rolePermission->has('created_by_user')) : ?>
+                    <?php if ($rolePermission->created_by_user !== null) : ?>
                         <?= $this->Html->link(
                             h($rolePermission->created_by_user->display_name),
                             ['controller' => 'Users', 'action' => 'view', $rolePermission->created_by_user->id]
@@ -101,7 +101,7 @@ $this->Breadcrumbs->addMany([
                     <tr>
                 <th><?= __('Modified By') ?></th>
                 <td>
-                    <?php if ($rolePermission->has('modified_by_user')) : ?>
+                    <?php if ($rolePermission->modified_by_user !== null) : ?>
                         <?= $this->Html->link(
                             h($rolePermission->modified_by_user->display_name),
                             ['controller' => 'Users', 'action' => 'view', $rolePermission->modified_by_user->id]

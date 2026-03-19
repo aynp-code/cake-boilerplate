@@ -64,6 +64,8 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
             public array $lastTarget = [];
             public ?string $lastRoleId = null;
 
+            public function invalidateRole(string $roleId): void {}
+
             public function can(string $roleId, array $target): bool
             {
                 $this->lastRoleId = $roleId;
@@ -94,6 +96,8 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
         );
 
         $checker = new class implements RolePermissionCheckerInterface {
+            public function invalidateRole(string $roleId): void {}
+
             public function can(string $roleId, array $target): bool
             {
                 return false;
@@ -110,6 +114,8 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
 
         $checker = new class implements RolePermissionCheckerInterface {
             public bool $called = false;
+            public function invalidateRole(string $roleId): void {}
+
             public function can(string $roleId, array $target): bool
             {
                 $this->called = true;
@@ -130,6 +136,8 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
 
         $checker = new class implements RolePermissionCheckerInterface {
             public bool $called = false;
+            public function invalidateRole(string $roleId): void {}
+
             public function can(string $roleId, array $target): bool
             {
                 $this->called = true;
@@ -154,6 +162,8 @@ class RolePermissionAuthorizationMiddlewareTest extends TestCase
 
         $checker = new class implements RolePermissionCheckerInterface {
             public bool $called = false;
+            public function invalidateRole(string $roleId): void {}
+
             public function can(string $roleId, array $target): bool
             {
                 $this->called = true;

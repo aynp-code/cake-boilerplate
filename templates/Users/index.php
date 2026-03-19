@@ -93,9 +93,9 @@ $this->Breadcrumbs->addMany([
                         <td><?= h($user->email) ?></td>
                         <td><?= $user->has('role') ? $this->Html->link($user->role->display_name, ['controller' => 'Roles', 'action' => 'view', $user->role->id]) : '' ?></td>                        <td><?= ($user->is_active) ? __('Yes') : __('No') ?></td>
                         <td><?= h($user->created) ?></td>
-                        <td><?= $user->has('created_by_user') ? $this->Html->link($user->created_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]) : '' ?></td>
+                        <td><?= $user->created_by_user !== null ? $this->Html->link($user->created_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]) : '' ?></td>
                         <td><?= h($user->modified) ?></td>
-                        <td><?= $user->has('modified_by_user') ? $this->Html->link($user->modified_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $user->modified_by_user->id]) : '' ?></td>
+                        <td><?= $user->modified_by_user !== null ? $this->Html->link($user->modified_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $user->modified_by_user->id]) : '' ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

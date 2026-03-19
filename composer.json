@@ -11,6 +11,7 @@
         "cakephp/authorization": "^3.4",
         "cakephp/cakephp": "^5.3.0",
         "cakephp/migrations": "^4.0.0",
+        "robmorgan/phinx": "^0.16.10 <0.16.11",
         "cakephp/plugin-installer": "^2.0",
         "dereuromark/cakephp-queue": "^8.9",
         "mobiledetect/mobiledetectlib": "^4.8.03"

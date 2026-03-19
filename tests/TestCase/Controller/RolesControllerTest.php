@@ -103,7 +103,7 @@ class RolesControllerTest extends TestCase
     public function testDelete(): void
     {
         $this->enableCsrfToken();
-        $this->post('/roles/delete/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee');
+        $this->post('/roles/delete/ffffffff-ffff-ffff-ffff-ffffffffffff');
         $this->assertResponseSuccess();
     }
 }

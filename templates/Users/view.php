@@ -111,7 +111,7 @@ $this->Breadcrumbs->addMany([
                     <tr>
                 <th><?= __('Created By') ?></th>
                 <td>
-                    <?php if ($user->has('created_by_user')) : ?>
+                    <?php if ($user->created_by_user !== null) : ?>
                         <?= $this->Html->link(
                             h($user->created_by_user->display_name),
                             ['controller' => 'Users', 'action' => 'view', $user->created_by_user->id]
@@ -134,7 +134,7 @@ $this->Breadcrumbs->addMany([
                     <tr>
                 <th><?= __('Modified By') ?></th>
                 <td>
-                    <?php if ($user->has('modified_by_user')) : ?>
+                    <?php if ($user->modified_by_user !== null) : ?>
                         <?= $this->Html->link(
                             h($user->modified_by_user->display_name),
                             ['controller' => 'Users', 'action' => 'view', $user->modified_by_user->id]

@@ -96,9 +96,9 @@ $this->Breadcrumbs->addMany([
                         <td><?= h($rolePermission->action) ?></td>
                         <td><?= ($rolePermission->allowed) ? __('Yes') : __('No') ?></td>
                         <td><?= h($rolePermission->created) ?></td>
-                        <td><?= $rolePermission->has('created_by_user') ? $this->Html->link($rolePermission->created_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $rolePermission->created_by_user->id]) : '' ?></td>
+                        <td><?= $rolePermission->created_by_user !== null ? $this->Html->link($rolePermission->created_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $rolePermission->created_by_user->id]) : '' ?></td>
                         <td><?= h($rolePermission->modified) ?></td>
-                        <td><?= $rolePermission->has('modified_by_user') ? $this->Html->link($rolePermission->modified_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $rolePermission->modified_by_user->id]) : '' ?></td>
+                        <td><?= $rolePermission->modified_by_user !== null ? $this->Html->link($rolePermission->modified_by_user->display_name, ['controller' => 'Users', 'action' => 'view', $rolePermission->modified_by_user->id]) : '' ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
