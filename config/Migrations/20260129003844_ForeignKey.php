@@ -9,7 +9,7 @@ final class ForeignKey extends BaseMigration
     {
         $this->table('users')
             ->addIndex(['role_id'], [
-                'constraint' => 'IDX_USERS_ROLE_ID',
+                'name' => 'IDX_USERS_ROLE_ID',
             ])
             ->addForeignKey('role_id', 'roles', 'id', [
                 'constraint' => 'FK_USERS_ROLES',
