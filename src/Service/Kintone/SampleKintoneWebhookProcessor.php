@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Service\Kintone;
 
-use App\Model\Entity\KintoneWebhookQueue;
 use Cake\I18n\DateTime;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\Utility\Text;
@@ -85,16 +84,21 @@ class SampleKintoneWebhookProcessor extends AbstractKintoneWebhookProcessor
     }
 
     /**
-     * DELETE イベント: kintone_webhook_records からレコードを削除する。
+     * DELETE イベント: kintone_webhook_records から該当レコードを削除する。
      *
-     * kintone API からレコードを取得できないため、必要な場合は
-     * payload から情報を抜き出して処理を実装してください。
+     * kintone の $id（レコードID）と レコード番号（RECORD_NUMBER フィールド）は
+     * 通常同じ値になるため、$recordId を kintone_record_number の検索キーとして使用する。
      *
-     * @param \App\Model\Entity\KintoneWebhookQueue $job キュージョブ
+     * @param int $appId kintone アプリID
+     * @param int $recordId kintone レコードID（レコード番号と同値を前提）
      * @return void
      */
-    protected function handleDelete(KintoneWebhookQueue $job): void
+    protected function handleDelete(int $appId, int $recordId): void
     {
+        /** @var \App\Model\Table\KintoneWebhookRecordsTable $table */
+        $table = $this->fetchTable('KintoneWebhookRecords');
+
+        $table->deleteAll(['kintone_record_number' => (string)$recordId]);
     }
 
     // =========================================================================

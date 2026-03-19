@@ -32,6 +32,8 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
     {
         parent::bootstrap();
 
+        $this->addPlugin('Queue');
+
         FactoryLocator::add('Table', (new TableLocator())->allowFallbackClass(false));
 
         $locale = Configure::read('App.defaultLocale', 'ja_JP');

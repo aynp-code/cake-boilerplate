@@ -7,7 +7,6 @@ use Cake\Controller\Controller;
 use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Log\Log;
-use Cake\Utility\Text;
 
 /**
  * KintoneWebhook Controller
@@ -69,9 +68,12 @@ class KintoneWebhookController extends Controller
         $body = (array)$this->request->getData();
 
         $appId = (int)(is_array($body['app'] ?? null) ? ($body['app']['id'] ?? 0) : 0);
-        $recordId = (int)(is_array($body['record'] ?? null) && is_array($body['record']['$id'] ?? null)
-            ? ($body['record']['$id']['value'] ?? 0)
-            : 0);
+        // DELETE_RECORD はトップレベルの recordId、それ以外は record.$id.value にレコードIDが入る
+        $recordId = isset($body['recordId'])
+            ? (int)$body['recordId']
+            : (int)(is_array($body['record'] ?? null) && is_array($body['record']['$id'] ?? null)
+                ? ($body['record']['$id']['value'] ?? 0)
+                : 0);
         $eventType = (string)($body['type'] ?? '');
 
         if ($appId === 0 || $recordId === 0 || $eventType === '') {
@@ -83,47 +85,27 @@ class KintoneWebhookController extends Controller
             return $this->jsonResponse(['error' => 'Bad Request: missing required fields'], 400);
         }
 
-        /** @var \App\Model\Table\KintoneWebhookQueuesTable $queuesTable */
-        $queuesTable = $this->fetchTable('KintoneWebhookQueues');
+        /** @var \Queue\Model\Table\QueuedJobsTable $queuedJobsTable */
+        $queuedJobsTable = $this->fetchTable('Queue.QueuedJobs');
 
-        $queue = $queuesTable->newEntity([
-            'id' => Text::uuid(),
-            'app_id' => $appId,
-            'record_id' => $recordId,
-            'event_type' => $eventType,
-            'payload' => json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'status' => 'pending',
-            'attempts' => 0,
-        ]);
-
-        if ($queue->getErrors()) {
-            Log::error('KintoneWebhook: validation error', [
-                'scope' => 'kintone_webhook',
-                'errors' => $queue->getErrors(),
-            ]);
-
-            return $this->jsonResponse(['error' => 'Bad Request: validation failed'], 400);
-        }
-
-        if (!$queuesTable->save($queue)) {
-            Log::error('KintoneWebhook: failed to save queue', [
-                'scope' => 'kintone_webhook',
+        $job = $queuedJobsTable->createJob(
+            'KintoneWebhook',
+            [
                 'app_id' => $appId,
                 'record_id' => $recordId,
-            ]);
-
-            return $this->jsonResponse(['error' => 'Internal Server Error'], 500);
-        }
+                'event_type' => $eventType,
+            ],
+        );
 
         Log::info('KintoneWebhook: queued', [
             'scope' => 'kintone_webhook',
-            'queue_id' => $queue->id,
+            'job_id' => $job->id,
             'app_id' => $appId,
             'record_id' => $recordId,
             'event_type' => $eventType,
         ]);
 
-        return $this->jsonResponse(['status' => 'queued', 'queue_id' => $queue->id]);
+        return $this->jsonResponse(['status' => 'queued', 'job_id' => $job->id]);
     }
 
     /**

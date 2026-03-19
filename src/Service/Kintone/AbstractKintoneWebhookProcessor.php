@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Service\Kintone;
 
-use App\Model\Entity\KintoneWebhookQueue;
 use App\Service\KintoneApiClient;
 use App\Service\KintoneApiClientInterface;
 use Cake\Core\Configure;
@@ -73,25 +72,34 @@ abstract class AbstractKintoneWebhookProcessor
      *
      * - DELETE イベント: ローカル DB からレコードを削除
      * - その他:          kintone API でレコードを取得して upsert
+     *
+     * @param int $appId kintone アプリID
+     * @param int $recordId kintone レコードID
+     * @param string $eventType イベント種別
+     * @return void
      */
-    public function process(KintoneWebhookQueue $job): void
+    public function process(int $appId, int $recordId, string $eventType): void
     {
-        if ($job->event_type === 'APP.RECORD.DELETE') {
-            $this->handleDelete($job);
+        if ($eventType === 'DELETE_RECORD') {
+            $this->handleDelete($appId, $recordId);
 
             return;
         }
 
         $client = $this->createClient();
-        $record = $this->fetchRecord($client, $job->record_id);
+        $record = $this->fetchRecord($client, $recordId);
         $this->upsert($record);
     }
 
     /**
      * DELETE イベントの処理。
      * デフォルトは何もしない（必要に応じてオーバーライド）。
+     *
+     * @param int $appId kintone アプリID
+     * @param int $recordId kintone レコードID
+     * @return void
      */
-    protected function handleDelete(KintoneWebhookQueue $job): void
+    protected function handleDelete(int $appId, int $recordId): void
     {
         // サブクラスで override して DELETE 処理を実装すること
         // 例: $this->fetchTable('KintoneWebhookRecords')->deleteAll(['kintone_record_number' => ...])

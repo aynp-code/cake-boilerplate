@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "46120b76e8e490604bc2518841f89dcd",
+    "content-hash": "7ff4c68fb2332d5d8d8c82d041a4a853",
     "packages": [
         {
             "name": "almasaeed2010/adminlte",
@@ -90,6 +90,55 @@
                 "source": "https://github.com/arodu/cakelte/tree/v2.0.1"
             },
             "time": "2024-03-05T11:41:23+00:00"
+        },
+        {
+            "name": "brick/varexporter",
+            "version": "0.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/brick/varexporter.git",
+                "reference": "b3a50b8f630a9ed5015ea3e1f00479af261ed80d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/brick/varexporter/zipball/b3a50b8f630a9ed5015ea3e1f00479af261ed80d",
+                "reference": "b3a50b8f630a9ed5015ea3e1f00479af261ed80d",
+                "shasum": ""
+            },
+            "require": {
+                "nikic/php-parser": "^5.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "php-coveralls/php-coveralls": "^2.2",
+                "phpunit/phpunit": "^11.0",
+                "vimeo/psalm": "6.14.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Brick\\VarExporter\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "A powerful alternative to var_export(), which can export closures and objects without __set_state()",
+            "keywords": [
+                "var_export"
+            ],
+            "support": {
+                "issues": "https://github.com/brick/varexporter/issues",
+                "source": "https://github.com/brick/varexporter/tree/0.7.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/BenMorel",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-01-06T22:56:00+00:00"
         },
         {
             "name": "cakephp/authentication",
@@ -588,6 +637,86 @@
             "time": "2025-12-08T15:06:51+00:00"
         },
         {
+            "name": "dereuromark/cakephp-queue",
+            "version": "8.9.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dereuromark/cakephp-queue.git",
+                "reference": "1baab99eeb73f77553bce89bbdf0e293cae01a2e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/dereuromark/cakephp-queue/zipball/1baab99eeb73f77553bce89bbdf0e293cae01a2e",
+                "reference": "1baab99eeb73f77553bce89bbdf0e293cae01a2e",
+                "shasum": ""
+            },
+            "require": {
+                "brick/varexporter": "^0.5.0 || ^0.6.0 || ^0.7.0",
+                "cakephp/cakephp": "^5.1.1",
+                "php": ">=8.2"
+            },
+            "conflict": {
+                "cakephp/migrations": "<4.5"
+            },
+            "require-dev": {
+                "cakedc/cakephp-phpstan": "^4.0.0",
+                "cakephp/bake": "^3.0.1",
+                "cakephp/migrations": "^5.0.0",
+                "dereuromark/cakephp-dto": "^2.1.0",
+                "dereuromark/cakephp-ide-helper": "^2.0.0",
+                "dereuromark/cakephp-templating": "^0.2.7",
+                "dereuromark/cakephp-tools": "^3.12.0",
+                "fig-r/psr2r-sniffer": "dev-master",
+                "friendsofcake/search": "^7.7.0",
+                "phpunit/phpunit": "^11.5 || ^12.1 || ^13.0"
+            },
+            "suggest": {
+                "dereuromark/cakephp-ide-helper": "For maximum IDE support, especially around createJob() usage.",
+                "dereuromark/cakephp-tools": "For the QueueEmailTask (if you don't write your own task here). Also for admin backend.",
+                "friendsofcake/search": "For admin backend and filtering of current jobs."
+            },
+            "type": "cakephp-plugin",
+            "autoload": {
+                "psr-4": {
+                    "Queue\\": "src/",
+                    "Queue\\Test\\Fixture\\": "tests/Fixture/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mark Scherer",
+                    "homepage": "https://www.dereuromark.de",
+                    "role": "Maintainer"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/dereuromark/cakephp-queue/graphs/contributors",
+                    "role": "Contributor"
+                }
+            ],
+            "description": "The Queue plugin for CakePHP provides deferred task execution.",
+            "homepage": "https://github.com/dereuromark/cakephp-queue",
+            "keywords": [
+                "admin-panel",
+                "async",
+                "background",
+                "cakephp",
+                "deferred tasks",
+                "jobs",
+                "queue",
+                "workers"
+            ],
+            "support": {
+                "issues": "https://github.com/dereuromark/cakephp-queue/issues",
+                "source": "https://github.com/dereuromark/cakephp-queue"
+            },
+            "time": "2026-03-17T21:51:39+00:00"
+        },
+        {
             "name": "friendsofcake/bootstrap-ui",
             "version": "5.1.2",
             "source": {
@@ -944,6 +1073,64 @@
                 }
             ],
             "time": "2026-01-09T16:21:59+00:00"
+        },
+        {
+            "name": "nikic/php-parser",
+            "version": "v5.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nikic/PHP-Parser.git",
+                "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/dca41cd15c2ac9d055ad70dbfd011130757d1f82",
+                "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82",
+                "shasum": ""
+            },
+            "require": {
+                "ext-ctype": "*",
+                "ext-json": "*",
+                "ext-tokenizer": "*",
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "ircmaxell/php-yacc": "^0.0.7",
+                "phpunit/phpunit": "^9.0"
+            },
+            "bin": [
+                "bin/php-parse"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "5.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PhpParser\\": "lib/PhpParser"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Nikita Popov"
+                }
+            ],
+            "description": "A PHP parser written in PHP",
+            "keywords": [
+                "parser",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/nikic/PHP-Parser/issues",
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.7.0"
+            },
+            "time": "2025-12-06T11:56:16+00:00"
         },
         {
             "name": "psr/clock",
@@ -2336,55 +2523,6 @@
         }
     ],
     "packages-dev": [
-        {
-            "name": "brick/varexporter",
-            "version": "0.7.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/brick/varexporter.git",
-                "reference": "b3a50b8f630a9ed5015ea3e1f00479af261ed80d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/brick/varexporter/zipball/b3a50b8f630a9ed5015ea3e1f00479af261ed80d",
-                "reference": "b3a50b8f630a9ed5015ea3e1f00479af261ed80d",
-                "shasum": ""
-            },
-            "require": {
-                "nikic/php-parser": "^5.0",
-                "php": "^8.2"
-            },
-            "require-dev": {
-                "php-coveralls/php-coveralls": "^2.2",
-                "phpunit/phpunit": "^11.0",
-                "vimeo/psalm": "6.14.3"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Brick\\VarExporter\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "A powerful alternative to var_export(), which can export closures and objects without __set_state()",
-            "keywords": [
-                "var_export"
-            ],
-            "support": {
-                "issues": "https://github.com/brick/varexporter/issues",
-                "source": "https://github.com/brick/varexporter/tree/0.7.0"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/BenMorel",
-                    "type": "github"
-                }
-            ],
-            "time": "2026-01-06T22:56:00+00:00"
-        },
         {
             "name": "cakephp/bake",
             "version": "3.6.0",
@@ -3782,64 +3920,6 @@
                 }
             ],
             "time": "2025-08-01T08:46:24+00:00"
-        },
-        {
-            "name": "nikic/php-parser",
-            "version": "v5.7.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/dca41cd15c2ac9d055ad70dbfd011130757d1f82",
-                "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82",
-                "shasum": ""
-            },
-            "require": {
-                "ext-ctype": "*",
-                "ext-json": "*",
-                "ext-tokenizer": "*",
-                "php": ">=7.4"
-            },
-            "require-dev": {
-                "ircmaxell/php-yacc": "^0.0.7",
-                "phpunit/phpunit": "^9.0"
-            },
-            "bin": [
-                "bin/php-parse"
-            ],
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "5.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "PhpParser\\": "lib/PhpParser"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Nikita Popov"
-                }
-            ],
-            "description": "A PHP parser written in PHP",
-            "keywords": [
-                "parser",
-                "php"
-            ],
-            "support": {
-                "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v5.7.0"
-            },
-            "time": "2025-12-06T11:56:16+00:00"
         },
         {
             "name": "phar-io/manifest",
