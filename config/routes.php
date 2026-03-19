@@ -22,6 +22,7 @@
  */
 
 use Cake\Routing\Route\DashedRoute;
+use Cake\Routing\Route\Route;
 use Cake\Routing\RouteBuilder;
 
 /*
@@ -48,6 +49,17 @@ return function (RouteBuilder $routes): void {
      * `{action}` markers.
      */
     $routes->setRouteClass(DashedRoute::class);
+
+    /*
+     * kintone Webhook エンドポイント
+     * - 認証・CSRF 不要（Application.php で除外済み）
+     * - POST /webhook/kintone のみ受け付ける
+     */
+    $routes->scope('/webhook', function (RouteBuilder $builder): void {
+        $builder->setRouteClass(Route::class);
+        // POST のみ許可（controller 側で 405 を返す）
+        $builder->connect('/kintone', ['controller' => 'KintoneWebhook', 'action' => 'receive']);
+    });
 
     $routes->scope('/', function (RouteBuilder $builder): void {
         /*

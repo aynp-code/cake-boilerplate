@@ -129,14 +129,25 @@ return [
     ],
 
     /*
-    * Cybozu OAuth 設定
+    * Cybozu / kintone 連携設定
     *
+    * ## OAuth（既存）
     * - subdomain    : cybozu.com のサブドメイン（例: "example" → https://example.cybozu.com）
     * - client_id    : cybozu OAuth クライアント ID
     * - client_secret: cybozu OAuth クライアントシークレット
     * - redirect_uri : OAuthクライアントに登録したコールバック URL（完全一致が必要）
     *                  例: https://your-app.example.com/auth/cybozu/callback
-    * - app_id       : 連携確認に使う kintone アプリ ID（cybozu アカウント確認用）（レコードを一時的に追加できるアプリ）
+    * - apps.whoami  : 連携確認に使う kintone アプリ ID
+    *
+    * ## Webhook（新規）
+    * - webhook.token          : kintone Webhook 設定画面の「トークン」（空文字で検証スキップ）
+    * - webhook.apps.{id}      : アプリID をキーにした設定配列
+    *   - api_token            : kintone アプリで発行した API トークン（必要な権限: レコード閲覧）
+    *   - processor            : 対応する AbstractKintoneWebhookProcessor のサブクラス FQCN
+    *   ※ subdomain は上位の Cybozu.subdomain を共用する
+    *
+    * ## cron 設定例（1分ごとにキュー処理）
+    * * * * * * docker compose exec -T app bin/cake kintone_webhook_process >> /dev/null 2>&1
     */
     'Cybozu' => [
         'subdomain' => env('KINTONE_SUBDOMAIN', ''),
@@ -147,6 +158,16 @@ return [
         ],
         'apps' => [
             'whoami' => env('KINTONE_WHOAMI_APP_ID', ''),
+        ],
+        'webhook' => [
+            'token' => env('KINTONE_WEBHOOK_TOKEN', ''),
+            'apps'  => [
+                // kintone アプリID をキーにして追加する
+                // 123 => [
+                //     'api_token' => env('KINTONE_WEBHOOK_APP_123_TOKEN', ''),
+                //     'processor' => \App\Service\Kintone\SampleKintoneWebhookProcessor::class,
+                // ],
+            ],
         ],
     ],
 

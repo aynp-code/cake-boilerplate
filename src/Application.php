@@ -58,15 +58,23 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
                 ['controller' => 'Users', 'actions' => ['login', 'logout']],
                 // Cybozu OAuth は認証済みユーザなら常に許可
                 ['controller' => 'Cybozu', 'actions' => ['connect', 'callback', 'revoke']],
+                // kintone webhook は認証不要
+                ['controller' => 'KintoneWebhook', 'actions' => ['receive']],
             ]))
 
             ->add(new BodyParserMiddleware())
 
-            ->add(new CsrfProtectionMiddleware([
-                'httponly' => true,
-                'secure' => !Configure::read('debug'),
-                'samesite' => 'Lax',
-            ]));
+            ->add(
+                // kintone webhook エンドポイントは CSRF 検証をスキップする
+                // CakePHP 5 では skipCheckCallback() メソッドで設定する（コンストラクタ引数では無効）
+                (new CsrfProtectionMiddleware([
+                    'httponly' => true,
+                    'secure' => !Configure::read('debug'),
+                    'samesite' => 'Lax',
+                ]))->skipCheckCallback(function (ServerRequestInterface $request): bool {
+                    return str_starts_with($request->getUri()->getPath(), '/webhook/');
+                })
+            );
 
         return $middlewareQueue;
     }

@@ -4,18 +4,27 @@ declare(strict_types=1);
 namespace App\Service;
 
 use Cake\Log\Log;
+use CURLFile;
 use RuntimeException;
 
 /**
  * kintone REST API クライアント
  *
- * Bearer トークンによる認証を担い、GET / POST / PUT / DELETE / postFile を提供する。
+ * 2種類の認証方式に対応する。
+ * - OAuth アクセストークン: Authorization: Bearer {token}  ($useApiToken = false, デフォルト)
+ * - API トークン:           X-Cybozu-API-Token: {token}   ($useApiToken = true)
  */
 class KintoneApiClient implements KintoneApiClientInterface
 {
+    /**
+     * @param string $subdomain Cybozu サブドメイン
+     * @param string $accessToken OAuth アクセストークン or API トークン
+     * @param bool $useApiToken true のとき X-Cybozu-API-Token ヘッダーを使用する
+     */
     public function __construct(
         private readonly string $subdomain,
         private readonly string $accessToken,
+        private readonly bool $useApiToken = false,
     ) {
     }
 
@@ -42,7 +51,7 @@ class KintoneApiClient implements KintoneApiClientInterface
         return $this->request(
             'POST',
             $this->buildUrl($path),
-            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         );
     }
 
@@ -55,7 +64,7 @@ class KintoneApiClient implements KintoneApiClientInterface
         return $this->request(
             'PUT',
             $this->buildUrl($path),
-            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         );
     }
 
@@ -67,7 +76,7 @@ class KintoneApiClient implements KintoneApiClientInterface
         $this->request(
             'DELETE',
             $this->buildUrl($path),
-            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            (string)json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         );
     }
 
@@ -78,7 +87,7 @@ class KintoneApiClient implements KintoneApiClientInterface
      * 成功時は ['fileKey' => '...'] を返す。
      *
      * @return array{fileKey: string}
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function postFile(string $filePath, string $fileName, string $mimeType): array
     {
@@ -89,22 +98,22 @@ class KintoneApiClient implements KintoneApiClientInterface
             throw new RuntimeException("curl_init failed: {$url}");
         }
 
-        $curlFile = new \CURLFile($filePath, $mimeType, $fileName);
+        $curlFile = new CURLFile($filePath, $mimeType, $fileName);
 
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => ['file' => $curlFile],
-            CURLOPT_HTTPHEADER     => [
-                "Authorization: Bearer {$this->accessToken}",
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => ['file' => $curlFile],
+            CURLOPT_HTTPHEADER => [
+                $this->authHeader(),
                 'X-Requested-With: XMLHttpRequest',
                 // Content-Type は curl が multipart/form-data を自動付与するため指定しない
             ],
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
 
-        $raw     = curl_exec($ch);
+        $raw = curl_exec($ch);
         $curlErr = curl_error($ch);
         curl_close($ch);
 
@@ -121,7 +130,7 @@ class KintoneApiClient implements KintoneApiClientInterface
         if (isset($decoded['message'])) {
             Log::error(
                 'Kintone file upload error: ' . json_encode($decoded, JSON_UNESCAPED_UNICODE),
-                ['scope' => 'cybozu']
+                ['scope' => 'cybozu'],
             );
             throw new RuntimeException('Kintone file upload error: ' . $decoded['message']);
         }
@@ -133,20 +142,20 @@ class KintoneApiClient implements KintoneApiClientInterface
         return ['fileKey' => (string)$decoded['fileKey']];
     }
 
-/**
+    /**
      * ファイルダウンロード
      *
      * kintone からファイルのバイナリデータを取得する。
      * ブラウザに直接ストリームするのではなく、PHP がいったん受け取って返す。
      *
      * @return array{body: string, contentType: string}
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     public function getFile(string $fileKey): array
     {
         $url = $this->buildUrl('/k/v1/file.json') . '?' . http_build_query(
             ['fileKey' => $fileKey],
-            encoding_type: PHP_QUERY_RFC3986
+            encoding_type: PHP_QUERY_RFC3986,
         );
 
         $ch = curl_init($url);
@@ -156,17 +165,17 @@ class KintoneApiClient implements KintoneApiClientInterface
 
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => [
-                "Authorization: Bearer {$this->accessToken}",
+            CURLOPT_HTTPHEADER => [
+                $this->authHeader(),
                 'X-Requested-With: XMLHttpRequest',
             ],
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_HEADER         => true, // レスポンスヘッダーも取得してContent-Typeを得る
+            CURLOPT_HEADER => true, // レスポンスヘッダーも取得してContent-Typeを得る
         ]);
 
         $response = curl_exec($ch);
-        $curlErr  = curl_error($ch);
+        $curlErr = curl_error($ch);
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         curl_close($ch);
 
@@ -175,13 +184,15 @@ class KintoneApiClient implements KintoneApiClientInterface
         }
 
         $responseStr = (string)$response;
-        $headerStr   = substr($responseStr, 0, $headerSize);
-        $body        = substr($responseStr, $headerSize);
+        $headerStr = substr($responseStr, 0, $headerSize);
+        $body = substr($responseStr, $headerSize);
 
         // Content-Type をレスポンスヘッダーから取得
         $contentType = 'application/octet-stream';
-        foreach (explode("
-", $headerStr) as $line) {
+        foreach (
+            explode("
+", $headerStr) as $line
+        ) {
             if (stripos($line, 'Content-Type:') === 0) {
                 $contentType = trim(substr($line, strlen('Content-Type:')));
                 break;
@@ -194,13 +205,13 @@ class KintoneApiClient implements KintoneApiClientInterface
             $message = is_array($decoded) ? ($decoded['message'] ?? 'Unknown error') : 'Unknown error';
             Log::error(
                 "Kintone file download error [fileKey={$fileKey}]: {$body}",
-                ['scope' => 'cybozu']
+                ['scope' => 'cybozu'],
             );
             throw new RuntimeException("Kintone file download error: {$message}");
         }
 
         return [
-            'body'        => $body,
+            'body' => $body,
             'contentType' => $contentType,
         ];
     }
@@ -209,6 +220,23 @@ class KintoneApiClient implements KintoneApiClientInterface
     // private
     // =========================================================================
 
+    /**
+     * 認証ヘッダーを返す。
+     *
+     * - OAuth アクセストークン: Authorization: Bearer {token}
+     * - API トークン:           X-Cybozu-API-Token: {token}
+     */
+    private function authHeader(): string
+    {
+        return $this->useApiToken
+            ? "X-Cybozu-API-Token: {$this->accessToken}"
+            : "Authorization: Bearer {$this->accessToken}";
+    }
+
+    /**
+     * @param string $path API パス（例: /k/v1/record.json）
+     * @return string 完全な URL
+     */
     private function buildUrl(string $path): string
     {
         return "https://{$this->subdomain}.cybozu.com" . $path;
@@ -216,7 +244,7 @@ class KintoneApiClient implements KintoneApiClientInterface
 
     /**
      * @return array<string, mixed>
-     * @throws RuntimeException
+     * @throws \RuntimeException
      */
     private function request(string $method, string $url, ?string $body): array
     {
@@ -227,7 +255,7 @@ class KintoneApiClient implements KintoneApiClientInterface
         }
 
         $headers = [
-            "Authorization: Bearer {$this->accessToken}",
+            $this->authHeader(),
             'X-Requested-With: XMLHttpRequest',
         ];
 
@@ -239,9 +267,9 @@ class KintoneApiClient implements KintoneApiClientInterface
 
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => $method,
-            CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_TIMEOUT => 15,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
 
@@ -249,7 +277,7 @@ class KintoneApiClient implements KintoneApiClientInterface
             curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         }
 
-        $raw     = curl_exec($ch);
+        $raw = curl_exec($ch);
         $curlErr = curl_error($ch);
         curl_close($ch);
 
@@ -274,7 +302,7 @@ class KintoneApiClient implements KintoneApiClientInterface
             }
             Log::error(
                 "Kintone API error [{$method} {$url}]: " . json_encode($decoded, JSON_UNESCAPED_UNICODE),
-                ['scope' => 'cybozu']
+                ['scope' => 'cybozu'],
             );
             throw new RuntimeException("Kintone API error [{$method} {$url}]: {$detail}");
         }
