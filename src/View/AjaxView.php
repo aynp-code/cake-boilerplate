@@ -24,15 +24,6 @@ namespace App\View;
 class AjaxView extends AppView
 {
     /**
-     * The name of the layout file to render the view inside of. The name
-     * specified is the filename of the layout in /templates/Layout without
-     * the .php extension.
-     *
-     * @var string
-     */
-    protected string $layout = 'ajax';
-
-    /**
      * Initialization hook method.
      *
      * @return void
@@ -41,6 +32,9 @@ class AjaxView extends AppView
     {
         parent::initialize();
 
-        $this->response = $this->response->withType('ajax');
+        $this->setLayout('ajax');
+        $this->setResponse(
+            $this->getResponse()->withType('ajax'),
+        );
     }
 }

@@ -15,7 +15,11 @@ declare(strict_types=1);
  */
 namespace App\View;
 
+use App\View\Helper\BreadcrumbsHelper;
+use App\View\Helper\FormHelper;
+use App\View\Helper\HtmlHelper;
 use Cake\View\View;
+use CakeLte\View\CakeLteTrait;
 
 /**
  * Application View
@@ -26,6 +30,10 @@ use Cake\View\View;
  */
 class AppView extends View
 {
+    use CakeLteTrait;
+
+    public string $layout = 'CakeLte.default';
+
     /**
      * Initialization hook method.
      *
@@ -37,5 +45,11 @@ class AppView extends View
      */
     public function initialize(): void
     {
+        $this->helpers['Html'] = ['className' => HtmlHelper::class];
+        $this->helpers['Form'] = ['className' => FormHelper::class];
+        $this->helpers['Breadcrumbs'] = ['className' => BreadcrumbsHelper::class];
+
+        parent::initialize();
+        $this->initializeCakeLte();
     }
 }

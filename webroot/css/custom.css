@@ -1,0 +1,8 @@
+/* 一覧の Actions 列を左端固定 */
+table td.actions,
+table th.actions {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 2;
+}

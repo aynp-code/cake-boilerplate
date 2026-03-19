@@ -1,0 +1,271 @@
+<?php
+/**
+ * @var \{{ namespace }}\View\AppView $this
+ * @var \{{ entityClass }} ${{ singularVar }}
+ */
+?>
+
+<?php
+$this->assign('title', __('{{ singularHumanName }}'));
+$this->Breadcrumbs->addMany([
+    ['title' => __('Home'), 'url' => '/'],
+    ['title' => __('List {{ pluralHumanName }}'), 'url' => ['action' => 'index']],
+    ['title' => __('View')],
+]);
+?>
+
+{% set associations = {'BelongsTo': [], 'HasOne': [], 'HasMany': [], 'BelongsToMany': []}|merge(associations) %}
+{% set fieldsData = Bake.getViewFieldsData(fields, schema, associations) %}
+{% set associationFields = fieldsData.associationFields %}
+{% set groupedFields = fieldsData.groupedFields %}
+{% set pK = '$' ~ singularVar ~ '->' ~ primaryKey[0] %}
+
+{# ✅ 親のID(primaryKey)を非表示：表示対象の fields から除外 #}
+{% set orderedFields = fields|filter(f => f not in primaryKey) %}
+
+<div class="view card card-primary card-outline">
+    <div class="card-header d-sm-flex">
+        <h2 class="card-title"><?= h(${{ singularVar }}->{{ displayField }}) ?></h2>
+    </div>
+
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover text-nowrap">
+
+{# ✅ テーブル項目順（= orderedFields の順）で表示 #}
+{% for field in orderedFields %}
+
+    {# ✅ created_by / modified_by は Users.display_name を優先表示（関連がロードされていれば） #}
+    {% if field == 'created_by' %}
+            <tr>
+                <th><?= __('Created By') ?></th>
+                <td>
+                    <?php if (${{ singularVar }}->has('created_by_user')) : ?>
+                        <?= $this->Html->link(
+                            h(${{ singularVar }}->created_by_user->display_name),
+                            ['controller' => 'Users', 'action' => 'view', ${{ singularVar }}->created_by_user->id]
+                        ) ?>
+                    <?php else : ?>
+                        <?= h(${{ singularVar }}->created_by) ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+
+    {% elseif field == 'modified_by' %}
+            <tr>
+                <th><?= __('Modified By') ?></th>
+                <td>
+                    <?php if (${{ singularVar }}->has('modified_by_user')) : ?>
+                        <?= $this->Html->link(
+                            h(${{ singularVar }}->modified_by_user->display_name),
+                            ['controller' => 'Users', 'action' => 'view', ${{ singularVar }}->modified_by_user->id]
+                        ) ?>
+                    <?php else : ?>
+                        <?= h(${{ singularVar }}->modified_by) ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+
+    {# ✅ belongsTo の外部キーなど（associationFields にあるもの）はリンク表示 #}
+    {% elseif associationFields[field] %}
+        {% set details = associationFields[field] %}
+            <tr>
+                <th><?= __('{{ details.property|humanize }}') ?></th>
+                <td><?= ${{ singularVar }}->has('{{ details.property }}')
+                    ? $this->Html->link(
+                        ${{ singularVar }}->{{ details.property }}->{{ details.displayField }},
+                        ['controller' => '{{ details.controller }}', 'action' => 'view', ${{ singularVar }}->{{ details.property }}->{{ details.primaryKey[0] }}]
+                    )
+                    : '' ?></td>
+            </tr>
+
+    {# ✅ boolean #}
+    {% elseif groupedFields.boolean and (field in groupedFields.boolean) %}
+            <tr>
+                <th><?= __('{{ field|humanize }}') ?></th>
+                <td><?= ${{ singularVar }}->{{ field }} ? __('Yes') : __('No'); ?></td>
+            </tr>
+
+    {# ✅ number #}
+    {% elseif groupedFields.number and (field in groupedFields.number) %}
+            <tr>
+                <th><?= __('{{ field|humanize }}') ?></th>
+                <td><?= $this->Number->format(${{ singularVar }}->{{ field }}) ?></td>
+            </tr>
+
+    {# ✅ date/datetime/time/timestamp など（Bake側では date グループ） #}
+    {% elseif groupedFields.date and (field in groupedFields.date) %}
+            <tr>
+                <th><?= __('{{ field|humanize }}') ?></th>
+                <td><?= h(${{ singularVar }}->{{ field }}) ?></td>
+            </tr>
+
+    {# ✅ text（長文）：テーブル内で表示したい場合はここで出す #}
+    {% elseif groupedFields.text and (field in groupedFields.text) %}
+            <tr>
+                <th><?= __('{{ field|humanize }}') ?></th>
+                <td><?= $this->Text->autoParagraph(h(${{ singularVar }}->{{ field }})); ?></td>
+            </tr>
+
+    {# ✅ それ以外（string 等） #}
+    {% else %}
+            <tr>
+                <th><?= __('{{ field|humanize }}') ?></th>
+                <td><?= h(${{ singularVar }}->{{ field }}) ?></td>
+            </tr>
+    {% endif %}
+
+{% endfor %}
+
+{# ✅ HasOne は「テーブル項目」ではないので、従来通りフィールド表示の後に出す #}
+{% if associations.HasOne %}
+{% for alias, details in associations.HasOne %}
+            <tr>
+                <th><?= __('{{ alias|underscore|singularize|humanize }}') ?></th>
+                <td><?= ${{ singularVar }}->has('{{ details.property }}')
+                    ? $this->Html->link(
+                        ${{ singularVar }}->{{ details.property }}->{{ details.displayField }},
+                        ['controller' => '{{ details.controller }}', 'action' => 'view', ${{ singularVar }}->{{ details.property }}->{{ details.primaryKey[0] }}]
+                    )
+                    : '' ?></td>
+            </tr>
+{% endfor %}
+{% endif %}
+
+        </table>
+    </div>
+
+    <div class="card-footer d-flex">
+        <div class="mr-auto">
+            <?= $this->Form->postLink(
+                __('Delete'),
+                ['action' => 'delete', {{ pK|raw }}],
+                ['confirm' => __('Are you sure you want to delete # {0}?', {{ pK|raw }}), 'class' => 'btn btn-danger']
+            ) ?>
+        </div>
+        <div class="ml-auto">
+            <?= $this->Html->link(__('Edit'), ['action' => 'edit', {{ pK|raw }}], ['class' => 'btn btn-secondary']) ?>
+            <?= $this->Html->link(__('Cancel'), ['action' => 'index'], ['class' => 'btn btn-default']) ?>
+        </div>
+    </div>
+</div>
+
+{% set relations = associations.BelongsToMany|merge(associations.HasMany) %}
+{% for alias, details in relations %}
+{% set otherSingularVar = alias|singularize|variable %}
+{% set otherPluralHumanName = alias|underscore|humanize %}
+{% set otherSingularHumanName = alias|singularize|underscore|humanize %}
+
+{# ✅ Related の表示フィールドから、除外したいフィールド一覧 #}
+{% set excludeFields = [details.primaryKey[0], 'password'] %}
+{% set relatedFields = details.fields
+    |filter(f => f not in excludeFields)
+%}
+
+<div class="related related-{{ otherSingularVar }} view card">
+    <div class="card-header d-flex">
+        <h3 class="card-title"><?= __('Related {{ otherPluralHumanName }}') ?></h3>
+        <div class="ml-auto">
+            <?= $this->Html->link(__('New {{ otherSingularHumanName }}'), ['controller' => '{{details.controller}}', 'action' => 'add', '?' => ['{{ details.foreignKey }}' => {{ pK }}]], ['class' => 'btn btn-primary btn-sm']) ?>
+            <?= $this->Html->link(__('List {{ otherPluralHumanName }}'), ['controller' => '{{details.controller}}', 'action' => 'index'], ['class' => 'btn btn-primary btn-sm']) ?>
+        </div>
+    </div>
+
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover text-nowrap">
+            <tr>
+                {# ✅ Actions を一番左へ #}
+                <th class="actions"><?= __('Actions') ?></th>
+
+{% for field in relatedFields %}
+                {% if field == 'created_by' %}
+                <th><?= __('Created By User') ?></th>
+                {% elseif field == 'modified_by' %}
+                <th><?= __('Modified By User') ?></th>
+                {% else %}
+                <th><?= __('{{ field|humanize }}') ?></th>
+                {% endif %}
+{% endfor %}
+            </tr>
+
+            <?php if (empty(${{ singularVar }}->{{ details.property }})) : ?>
+                <tr>
+                    <td colspan="{{ relatedFields|length + 1 }}" class="text-muted">
+                        <?= __('{{ otherPluralHumanName }} record not found!') ?>
+                    </td>
+                </tr>
+            <?php else : ?>
+                <?php foreach (${{ singularVar }}->{{ details.property }} as ${{ otherSingularVar }}) : ?>
+                    <tr>
+{% set otherPk = '$' ~ otherSingularVar ~ '->' ~ details.primaryKey[0] %}
+
+                        {# ✅ Actions を一番左へ（行側も） #}
+                        <td class="actions text-nowrap">
+                            <?= $this->Html->link(
+                                '<i class="fas fa-eye"></i>',
+                                ['controller' => '{{ details.controller }}', 'action' => 'view', {{ otherPk|raw }}],
+                                [
+                                    'class' => 'btn btn-xs btn-outline-info',
+                                    'escape' => false,
+                                    'title' => __('View'),
+                                    'data-toggle' => 'tooltip',
+                                ]
+                            ) ?>
+
+                            <?= $this->Html->link(
+                                '<i class="fas fa-edit"></i>',
+                                ['controller' => '{{ details.controller }}', 'action' => 'edit', {{ otherPk|raw }}],
+                                [
+                                    'class' => 'btn btn-xs btn-outline-primary ml-1',
+                                    'escape' => false,
+                                    'title' => __('Edit'),
+                                    'data-toggle' => 'tooltip',
+                                ]
+                            ) ?>
+
+                            <?= $this->Form->postLink(
+                                '<i class="fas fa-trash"></i>',
+                                ['controller' => '{{ details.controller }}', 'action' => 'delete', {{ otherPk|raw }}],
+                                [
+                                    'class' => 'btn btn-xs btn-outline-danger ml-1',
+                                    'escape' => false,
+                                    'title' => __('Delete'),
+                                    'data-toggle' => 'tooltip',
+                                    'confirm' => __('Are you sure you want to delete # {0}?', {{ otherPk|raw }}),
+                                ]
+                            ) ?>
+                        </td>
+
+{% for field in relatedFields %}
+                        {% if field == 'created_by' %}
+                        <td>
+                            <?php if (${{ otherSingularVar }}->has('created_by_user')) : ?>
+                                <?= $this->Html->link(
+                                    h(${{ otherSingularVar }}->created_by_user->display_name),
+                                    ['controller' => 'Users', 'action' => 'view', ${{ otherSingularVar }}->created_by_user->id]
+                                ) ?>
+                            <?php else : ?>
+                                <?= h(${{ otherSingularVar }}->created_by) ?>
+                            <?php endif; ?>
+                        </td>
+                        {% elseif field == 'modified_by' %}
+                        <td>
+                            <?php if (${{ otherSingularVar }}->has('modified_by_user')) : ?>
+                                <?= $this->Html->link(
+                                    h(${{ otherSingularVar }}->modified_by_user->display_name),
+                                    ['controller' => 'Users', 'action' => 'view', ${{ otherSingularVar }}->modified_by_user->id]
+                                ) ?>
+                            <?php else : ?>
+                                <?= h(${{ otherSingularVar }}->modified_by) ?>
+                            <?php endif; ?>
+                        </td>
+                        {% else %}
+                        <td><?= h(${{ otherSingularVar }}->{{ field }}) ?></td>
+                        {% endif %}
+{% endfor %}
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </table>
+    </div>
+</div>
+{% endfor %}

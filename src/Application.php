@@ -1,21 +1,16 @@
 <?php
 declare(strict_types=1);
 
-/**
- * CakePHP(tm) : Rapid Development Framework (https://cakephp.org)
- * Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- *
- * Licensed under The MIT License
- * For full copyright and license information, please see the LICENSE.txt
- * Redistributions of files must retain the above copyright notice.
- *
- * @copyright Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- * @link      https://cakephp.org CakePHP(tm) Project
- * @since     3.3.0
- * @license   https://opensource.org/licenses/mit-license.php MIT License
- */
 namespace App;
 
+use App\Middleware\CurrentUserMiddleware;
+use App\Middleware\RolePermissionAuthorizationMiddleware;
+use App\Service\CybozuOAuthService;
+use App\Service\KintoneWhoAmIService;
+use Authentication\AuthenticationService;
+use Authentication\AuthenticationServiceInterface;
+use Authentication\AuthenticationServiceProviderInterface;
+use Authentication\Middleware\AuthenticationMiddleware;
 use Cake\Core\Configure;
 use Cake\Core\ContainerInterface;
 use Cake\Datasource\FactoryLocator;
@@ -25,96 +20,169 @@ use Cake\Http\BaseApplication;
 use Cake\Http\Middleware\BodyParserMiddleware;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
 use Cake\Http\MiddlewareQueue;
+use Cake\I18n\I18n;
 use Cake\ORM\Locator\TableLocator;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
+use Psr\Http\Message\ServerRequestInterface;
+use RuntimeException;
 
 /**
- * Application setup class.
- *
- * This defines the bootstrapping logic and middleware layers you
- * want to use in your application.
- *
  * @extends \Cake\Http\BaseApplication<\App\Application>
  */
-class Application extends BaseApplication
+class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {
     /**
-     * Load all the application configuration and bootstrap logic.
+     * Perform application bootstrap actions.
      *
      * @return void
      */
     public function bootstrap(): void
     {
-        // Call parent to load bootstrap from files.
         parent::bootstrap();
 
-        // By default, does not allow fallback classes.
+        $this->addPlugin('Queue');
+
         FactoryLocator::add('Table', (new TableLocator())->allowFallbackClass(false));
+
+        $locale = Configure::read('App.defaultLocale', 'ja_JP');
+        I18n::setLocale($locale);
     }
 
     /**
-     * Setup the middleware queue your application will use.
+     * Setup the middleware queue for the application.
      *
-     * @param \Cake\Http\MiddlewareQueue $middlewareQueue The middleware queue to setup.
-     * @return \Cake\Http\MiddlewareQueue The updated middleware queue.
+     * @param \Cake\Http\MiddlewareQueue $middlewareQueue The middleware queue to set up.
+     * @return \Cake\Http\MiddlewareQueue
      */
     public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     {
         $middlewareQueue
-            // Catch any exceptions in the lower layers,
-            // and make an error page/response
             ->add(new ErrorHandlerMiddleware(Configure::read('Error'), $this))
-
-            // Handle plugin/theme assets like CakePHP normally does.
             ->add(new AssetMiddleware([
                 'cacheTime' => Configure::read('Asset.cacheTime'),
             ]))
-
-            // Add routing middleware.
-            // If you have a large number of routes connected, turning on routes
-            // caching in production could improve performance.
-            // See https://github.com/CakeDC/cakephp-cached-routing
             ->add(new RoutingMiddleware($this))
 
-            // Parse various types of encoded request bodies so that they are
-            // available as array through $request->getData()
-            // https://book.cakephp.org/5/en/controllers/middleware.html#body-parser-middleware
+            // 認証 → identity を request に付与
+            ->add(new AuthenticationMiddleware($this))
+
+            // identity から Configure(Auth.User.*) をセット（リクエスト中限定）
+            ->add(new CurrentUserMiddleware())
+
+            ->add(new RolePermissionAuthorizationMiddleware(skip: [
+                // login / logout は未認証でもアクセス可能
+                ['controller' => 'Users', 'actions' => ['login', 'logout']],
+                // Cybozu OAuth は認証済みユーザなら常に許可
+                ['controller' => 'Cybozu', 'actions' => ['connect', 'callback', 'revoke']],
+                // kintone webhook は認証不要
+                ['controller' => 'KintoneWebhook', 'actions' => ['receive']],
+            ]))
+
             ->add(new BodyParserMiddleware())
 
-            // Cross Site Request Forgery (CSRF) Protection Middleware
-            // https://book.cakephp.org/5/en/security/csrf.html#cross-site-request-forgery-csrf-middleware
-            ->add(new CsrfProtectionMiddleware([
-                'httponly' => true,
-            ]));
+            ->add(
+                // kintone webhook エンドポイントは CSRF 検証をスキップする
+                // CakePHP 5 では skipCheckCallback() メソッドで設定する（コンストラクタ引数では無効）
+                (new CsrfProtectionMiddleware([
+                    'httponly' => true,
+                    'secure' => !Configure::read('debug'),
+                    'samesite' => 'Lax',
+                ]))->skipCheckCallback(function (ServerRequestInterface $request): bool {
+                    return str_starts_with($request->getUri()->getPath(), '/webhook/');
+                }),
+            );
 
         return $middlewareQueue;
     }
 
     /**
-     * Register application container services.
+     * Register application services into the DI container.
      *
-     * @param \Cake\Core\ContainerInterface $container The Container to update.
+     * @param \Cake\Core\ContainerInterface $container The container to add services to.
      * @return void
-     * @link https://book.cakephp.org/5/en/development/dependency-injection.html#dependency-injection
      */
     public function services(ContainerInterface $container): void
     {
-        // Allow your Tables to be dependency injected
-        //$container->delegate(new \Cake\ORM\Locator\TableContainer());
+        // CybozuOAuthService: 設定値をコンストラクタ引数として注入
+        $container->add(CybozuOAuthService::class, function () {
+            $config = Configure::read('Cybozu');
+
+            if (
+                empty($config['subdomain'])
+                || empty($config['oauth']['client_id'])
+                || empty($config['oauth']['client_secret'])
+                || empty($config['oauth']['redirect_uri'])
+            ) {
+                throw new RuntimeException('Cybozu configuration is incomplete. Check app_local.php Cybozu section.');
+            }
+
+            return new CybozuOAuthService(
+                subdomain: $config['subdomain'],
+                clientId: $config['oauth']['client_id'],
+                clientSecret: $config['oauth']['client_secret'],
+                redirectUri: $config['oauth']['redirect_uri'],
+            );
+        });
+
+        // KintoneWhoAmIService: whoami アプリ ID を注入
+        $container->add(KintoneWhoAmIService::class, function () {
+            $appId = (int)Configure::read('Cybozu.apps.whoami');
+
+            if ($appId === 0) {
+                throw new RuntimeException('Cybozu.apps.whoami is not configured. Check app_local.php.');
+            }
+
+            return new KintoneWhoAmIService(appId: $appId);
+        });
     }
 
     /**
-     * Register custom event listeners here
+     * Register event listeners for the application.
      *
-     * @param \Cake\Event\EventManagerInterface $eventManager
+     * @param \Cake\Event\EventManagerInterface $eventManager The event manager to register listeners with.
      * @return \Cake\Event\EventManagerInterface
-     * @link https://book.cakephp.org/5/en/core-libraries/events.html#registering-listeners
      */
     public function events(EventManagerInterface $eventManager): EventManagerInterface
     {
-        // $eventManager->on(new SomeCustomListenerClass());
-
         return $eventManager;
+    }
+
+    /**
+     * Authentication サービス構築
+     */
+    public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
+    {
+        $service = new AuthenticationService();
+
+        $service->setConfig([
+            'unauthenticatedRedirect' => '/users/login',
+            'queryParam' => 'redirect',
+        ]);
+
+        $service->loadAuthenticator('Authentication.Session');
+
+        $service->loadAuthenticator('Authentication.Form', [
+            'fields' => [
+                'username' => 'username',
+                'password' => 'password',
+            ],
+            'loginUrl' => '/users/login',
+
+            'identifiers' => [
+                'Authentication.Password' => [
+                    'fields' => [
+                        'username' => 'username',
+                        'password' => 'password',
+                    ],
+                    'resolver' => [
+                        'className' => 'Authentication.Orm',
+                        'userModel' => 'Users',
+                    ],
+                ],
+            ],
+        ]);
+
+        return $service;
     }
 }

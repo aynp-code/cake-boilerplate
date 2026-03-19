@@ -15,6 +15,8 @@ declare(strict_types=1);
  * @license   https://opensource.org/licenses/mit-license.php MIT License
  */
 
+use Cake\Cache\Cache;
+use Cake\Cache\Engine\FileEngine;
 use Cake\Chronos\Chronos;
 use Cake\Core\Configure;
 use Cake\TestSuite\ConnectionHelper;
@@ -29,6 +31,19 @@ use Migrations\TestSuite\Migrator;
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 require dirname(__DIR__) . '/config/bootstrap.php';
+
+// Override all non-FileEngine cache configs to FileEngine.
+// This prevents Redis connection warnings when Redis is not available (e.g. CI).
+foreach (Cache::configured() as $name) {
+    $config = Cache::getConfig($name);
+    if (isset($config['className']) && $config['className'] !== FileEngine::class) {
+        Cache::drop($name);
+        Cache::setConfig($name, array_merge($config, [
+            'className' => FileEngine::class,
+            'path' => CACHE . 'test' . DS,
+        ]));
+    }
+}
 
 if (empty($_SERVER['HTTP_HOST']) && !Configure::read('App.fullBaseUrl')) {
     Configure::write('App.fullBaseUrl', 'http://localhost');

@@ -22,6 +22,7 @@
  */
 
 use Cake\Routing\Route\DashedRoute;
+use Cake\Routing\Route\Route;
 use Cake\Routing\RouteBuilder;
 
 /*
@@ -49,6 +50,17 @@ return function (RouteBuilder $routes): void {
      */
     $routes->setRouteClass(DashedRoute::class);
 
+    /*
+     * kintone Webhook エンドポイント
+     * - 認証・CSRF 不要（Application.php で除外済み）
+     * - POST /webhook/kintone のみ受け付ける
+     */
+    $routes->scope('/webhook', function (RouteBuilder $builder): void {
+        $builder->setRouteClass(Route::class);
+        // POST のみ許可（controller 側で 405 を返す）
+        $builder->connect('/kintone', ['controller' => 'KintoneWebhook', 'action' => 'receive']);
+    });
+
     $routes->scope('/', function (RouteBuilder $builder): void {
         /*
          * Here, we are connecting '/' (base path) to a controller called 'Pages',
@@ -56,6 +68,26 @@ return function (RouteBuilder $routes): void {
          * to use (in this case, templates/Pages/home.php)...
          */
         $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'home']);
+
+        /*
+         * Cybozu OAuth routes
+         */
+        $builder->connect('/auth/cybozu/connect', ['controller' => 'Cybozu', 'action' => 'connect']);
+        $builder->connect('/auth/cybozu/callback', ['controller' => 'Cybozu', 'action' => 'callback']);
+        $builder->connect('/auth/cybozu/revoke', ['controller' => 'Cybozu', 'action' => 'revoke']);
+
+         /*
+         * SampleKintone routes
+         */
+        $builder->resources('SampleKintone', [
+            'path' => 'sample-kintone',
+        ]);
+        // 添付ファイルダウンロード（fileKey はスラッシュを含む場合があるため .+ でマッチ）
+        $builder->connect(
+            '/sample-kintone/file/{fileKey}',
+            ['controller' => 'SampleKintone', 'action' => 'file'],
+            ['fileKey' => '.+', 'pass' => ['fileKey']]
+        );
 
         /*
          * ...and connect the rest of 'Pages' controller's URLs.

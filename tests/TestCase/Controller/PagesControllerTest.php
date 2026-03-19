@@ -29,6 +29,36 @@ class PagesControllerTest extends TestCase
     use IntegrationTestTrait;
 
     /**
+     * Fixtures
+     *
+     * @var array<string>
+     */
+    protected array $fixtures = [
+        'app.Users',
+        'app.Roles',
+        'app.RolePermissions',
+    ];
+
+    /**
+     * setUp method
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // テストユーザーとしてログイン
+        $this->session([
+            'Auth' => [
+                'id' => 'a64e238c-86dd-4d28-afca-b407993cdb24',
+                'username' => 'Lorem ipsum dolor sit amet',
+                'role_id' => 'd72b07bd-019d-4ccb-a7f7-17f887f8fba1',
+            ],
+        ]);
+    }
+
+    /**
      * testDisplay method
      *
      * @return void
@@ -38,8 +68,8 @@ class PagesControllerTest extends TestCase
         Configure::write('debug', true);
         $this->get('/pages/home');
         $this->assertResponseOk();
-        $this->assertResponseContains('CakePHP');
-        $this->assertResponseContains('<html>');
+        $this->assertResponseContains('Hello World!');
+        $this->assertResponseContains('<!DOCTYPE html>');
     }
 
     /**

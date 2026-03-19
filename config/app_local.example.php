@@ -18,6 +18,18 @@ return [
     'debug' => True,
 
     /*
+    * アプリケーション共通設定
+    *
+    * - defaultLocale
+    *   アプリケーション全体で使用するデフォルトのロケールを指定します。
+    *   日付・時刻・数値・言語表記などの地域設定に影響します。
+    */
+    'App' => [
+        'defaultLocale' => 'ja_JP',
+        'defaultTimezone' => 'Asia/Tokyo',
+    ],
+    
+    /*
     * DebugKit 設定
     *
     * - ignoreAuthorization
@@ -36,7 +48,7 @@ return [
     *   そのため、極めて機密性の高いデータとして扱う必要があります。
     */
     'Security' => [
-        'salt' => '',
+        'salt' => '__SALT__',
     ],
 
     /*
@@ -64,6 +76,7 @@ return [
             'username' => 'master_user',
             'password' => 'master_password',
             'database' => 'master_database',
+            'defaultTimezone' => 'Asia/Tokyo',
             'roles' => [
                 'master' => [
                     'host' => 'master_db',
@@ -78,6 +91,13 @@ return [
                     'database' => 'replica_database',
                 ],
             ],
+        ],
+        'test' => [
+            'host' => 'test_db',
+            'username' => 'test_user',
+            'password' => 'test_password',
+            'database' => 'test_database',
+            'defaultTimezone' => 'Asia/Tokyo',
         ],
     ],
 
@@ -101,6 +121,56 @@ return [
         ],
     ],
 
+    'Session' => [
+        'defaults' => 'cache',
+        'handler' => [
+            'config' => 'session',
+        ],
+    ],
+
+    /*
+    * Cybozu / kintone 連携設定
+    *
+    * ## OAuth（既存）
+    * - subdomain    : cybozu.com のサブドメイン（例: "example" → https://example.cybozu.com）
+    * - client_id    : cybozu OAuth クライアント ID
+    * - client_secret: cybozu OAuth クライアントシークレット
+    * - redirect_uri : OAuthクライアントに登録したコールバック URL（完全一致が必要）
+    *                  例: https://your-app.example.com/auth/cybozu/callback
+    * - apps.whoami  : 連携確認に使う kintone アプリ ID
+    *
+    * ## Webhook（新規）
+    * - webhook.token          : kintone Webhook 設定画面の「トークン」（空文字で検証スキップ）
+    * - webhook.apps.{id}      : アプリID をキーにした設定配列
+    *   - api_token            : kintone アプリで発行した API トークン（必要な権限: レコード閲覧）
+    *   - processor            : 対応する AbstractKintoneWebhookProcessor のサブクラス FQCN
+    *   ※ subdomain は上位の Cybozu.subdomain を共用する
+    *
+    * ## cron 設定例（1分ごとにキュー処理）
+    * * * * * * docker compose exec -T app bin/cake kintone_webhook_process >> /dev/null 2>&1
+    */
+    'Cybozu' => [
+        'subdomain' => env('KINTONE_SUBDOMAIN', ''),
+        'oauth' => [
+            'client_id'     => env('KINTONE_CLIENT_ID', ''),
+            'client_secret' => env('KINTONE_CLIENT_SECRET', ''),
+            'redirect_uri'  => env('KINTONE_REDIRECT_URI', ''),
+        ],
+        'apps' => [
+            'whoami' => env('KINTONE_WHOAMI_APP_ID', ''),
+        ],
+        'webhook' => [
+            'token' => env('KINTONE_WEBHOOK_TOKEN', ''),
+            'apps'  => [
+                // kintone アプリID をキーにして追加する
+                // 123 => [
+                //     'api_token' => env('KINTONE_WEBHOOK_APP_123_TOKEN', ''),
+                //     'processor' => \App\Service\Kintone\SampleKintoneWebhookProcessor::class,
+                // ],
+            ],
+        ],
+    ],
+
     /*
     * キャッシュ設定
     *
@@ -121,11 +191,19 @@ return [
     'Cache' => [
         'default' => [
             'className' => \Cake\Cache\Engine\RedisEngine::class,
-            'server' => 'redis_host',
+            'server' => 'cake_redis',
             'port' => 6379,
             'database' => 0,
             'prefix' => 'cake_',
             'duration' => '+1 hours',
+        ],
+        'session' => [
+            'className' => \Cake\Cache\Engine\RedisEngine::class,
+            'server' => 'cake_redis',
+            'port' => 6379,
+            'database' => 0,
+            'prefix' => 'cake_sess_',
+            'duration' => 1440, // 秒
         ],
         '_cake_model_' => [
             'className' => \Cake\Cache\Engine\RedisEngine::class,
@@ -134,6 +212,30 @@ return [
             'database' => 1,
             'prefix' => 'cake_model_',
             'duration' => '+1 days',
+        ],
+        '_cake_core_' => [
+            'className' => \Cake\Cache\Engine\RedisEngine::class,
+            'server' => 'redis_host',
+            'port' => 6379,
+            'database' => 2,
+            'prefix' => 'cake_core_',
+            'duration' => '+1 days',
+        ],
+        '_cake_routes_' => [
+            'className' => \Cake\Cache\Engine\RedisEngine::class,
+            'server' => 'redis_host',
+            'port' => 6379,
+            'database' => 2,
+            'prefix' => 'cake_routes_',
+            'duration' => '+1 days',
+        ],
+        '_cake_permissions' => [
+            'className' => \Cake\Cache\Engine\RedisEngine::class,
+            'server' => 'redis_host',
+            'port' => 6379,
+            'database' => 0,
+            'prefix' => 'cake_permissions_',
+            'duration' => '+1 year',
         ],
     ],
 ];

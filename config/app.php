@@ -133,6 +133,18 @@ return [
             'duration' => '+1 years',
             'url' => env('CACHE_CAKEMODEL_URL', null),
         ],
+
+        /*
+         * Role permission cache.
+         * Overridden by app_local.php in production (Redis).
+         * Falls back to FileEngine when Redis is not available (e.g. CI).
+         */
+        '_cake_permissions' => [
+            'className' => FileEngine::class,
+            'prefix' => 'cake_permissions_',
+            'path' => CACHE . 'permissions' . DS,
+            'duration' => '+1 years',
+        ],
     ],
 
     /*
@@ -339,6 +351,7 @@ return [
             'quoteIdentifiers' => false,
             'log' => false,
             //'init' => ['SET GLOBAL innodb_stats_on_metadata = 0'],
+            'url' => env('DATABASE_TEST_URL', null),
         ],
     ],
 
@@ -418,6 +431,14 @@ return [
      */
     'Session' => [
         'defaults' => 'php',
+        'timeout' => 240,
+        'ini' => [
+            'session.cookie_httponly' => true,
+            'session.cookie_secure' => !Cake\Core\Configure::read('debug'),
+            'session.cookie_samesite' => 'Lax',
+            'session.use_strict_mode' => true,
+            // ...
+        ],
     ],
 
     /**
@@ -460,5 +481,15 @@ return [
     'TestSuite' => [
         'errorLevel' => null,
         'fixtureStrategy' => null,
+    ],
+
+    /**
+     * Bake configuration.
+     *
+     * Set the default theme to BoilerplateTheme so that `bin/cake bake`
+     * uses the custom templates without needing the `-t BoilerplateTheme` option.
+     */
+    'Bake' => [
+        'theme' => 'BoilerplateTheme',
     ],
 ];
