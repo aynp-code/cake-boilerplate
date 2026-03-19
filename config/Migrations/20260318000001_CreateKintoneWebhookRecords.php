@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use Migrations\AbstractMigration;
+use Migrations\BaseMigration;
 
 /**
  * kintone webhook 同期レコードテーブルを作成する。
@@ -9,7 +9,7 @@ use Migrations\AbstractMigration;
  * dereuromark/cakephp-queue プラグインがキュー管理を担うため、
  * このマイグレーションでは kintone から同期したデータの保存先のみを作成する。
  */
-class CreateKintoneWebhookRecords extends AbstractMigration
+class CreateKintoneWebhookRecords extends BaseMigration
 {
     public function up(): void
     {

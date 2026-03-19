@@ -44,27 +44,27 @@ class DeleteGuardBehavior extends Behavior
      * @param \Cake\Event\EventInterface<\Cake\ORM\Table> $event The event.
      * @param \Cake\Datasource\EntityInterface $entity The entity being deleted.
      * @param \ArrayObject<array-key, mixed> $options The options passed to delete.
-     * @return bool
+     * @return void
      */
-    public function beforeDelete(EventInterface $event, EntityInterface $entity, ArrayObject $options): bool
+    public function beforeDelete(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
     {
         /** @var \Cake\ORM\Table $table */
         $table = $this->table();
 
         $associations = $this->resolveAssociationsToCheck($table);
         if (!$associations) {
-            return true;
+            return;
         }
 
         $pk = $table->getPrimaryKey();
         $pkField = is_array($pk) ? ($pk[0] ?? null) : $pk;
         if (!$pkField) {
-            return true; // 複合PKなどはここでは対象外
+            return; // 複合PKなどはここでは対象外
         }
 
         $id = $entity->get($pkField);
         if ($id === null || $id === '') {
-            return true;
+            return;
         }
 
         $blocked = [];
@@ -76,7 +76,7 @@ class DeleteGuardBehavior extends Behavior
                 $entity->setError((string)$this->getConfig('errorField'), "Missing association: {$alias}");
                 $event->stopPropagation();
 
-                return false;
+                return;
             }
 
             $assoc = $table->getAssociation($alias);
@@ -133,10 +133,8 @@ class DeleteGuardBehavior extends Behavior
             // 削除を中止
             $event->stopPropagation();
 
-            return false;
+            return;
         }
-
-        return true;
     }
 
     /**

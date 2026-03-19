@@ -133,6 +133,18 @@ return [
             'duration' => '+1 years',
             'url' => env('CACHE_CAKEMODEL_URL', null),
         ],
+
+        /*
+         * Role permission cache.
+         * Overridden by app_local.php in production (Redis).
+         * Falls back to FileEngine when Redis is not available (e.g. CI).
+         */
+        '_cake_permissions' => [
+            'className' => FileEngine::class,
+            'prefix' => 'cake_permissions_',
+            'path' => CACHE . 'permissions' . DS,
+            'duration' => '+1 years',
+        ],
     ],
 
     /*
